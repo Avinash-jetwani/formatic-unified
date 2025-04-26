@@ -34,13 +34,13 @@ const DashboardLayout = ({
   
   return (
     <AppLayout onSidebarToggle={handleSidebarToggle}>
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col min-h-screen max-h-screen overflow-hidden">
         <Navbar 
           sidebarCollapsed={sidebarCollapsed} 
           onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} 
         />
         
-        <div className="flex-grow overflow-y-auto pb-16">
+        <div className="flex-grow overflow-y-auto">
           <div className="max-w-7xl mx-auto px-4 py-4">
             {/* Page header with title and actions */}
             {(title || breadcrumbs || actions) && (

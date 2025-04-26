@@ -7,7 +7,8 @@ import {
     Param, 
     Delete, 
     UseGuards, 
-    Request
+    Request,
+    Put
   } from '@nestjs/common';
   import { FormsService } from './forms.service';
   import { CreateFormDto } from './dto/create-form.dto';
@@ -27,6 +28,12 @@ import {
     @UseGuards(JwtAuthGuard)
     create(@Request() req, @Body() createFormDto: CreateFormDto) {
       return this.formsService.create(req.user.id, createFormDto);
+    }
+  
+    @Post(':id/duplicate')
+    @UseGuards(JwtAuthGuard)
+    duplicate(@Param('id') id: string, @Request() req) {
+      return this.formsService.duplicate(id, req.user.id, req.user.role);
     }
   
     @Get()
@@ -67,6 +74,21 @@ import {
       return this.formsService.addField(id, req.user.id, req.user.role, createFormFieldDto);
     }
   
+    @Put(':id/fields')
+    @UseGuards(JwtAuthGuard)
+    updateFields(
+      @Param('id') id: string,
+      @Request() req,
+      @Body() data: { fields: any[] }
+    ) {
+      return this.formsService.updateFields(
+        id,
+        req.user.id,
+        req.user.role,
+        data.fields
+      );
+    }
+  
     @Patch(':id/fields/:fieldId')
     @UseGuards(JwtAuthGuard)
     updateField(
@@ -97,5 +119,10 @@ import {
     @Get('public/:clientId/:slug')
     findPublicForm(@Param('clientId') clientId: string, @Param('slug') slug: string) {
       return this.formsService.findBySlug(clientId, slug);
+    }
+  
+    @Get('public/:slug')
+    findPublicFormBySlug(@Param('slug') slug: string) {
+      return this.formsService.findBySlugOnly(slug);
     }
   }

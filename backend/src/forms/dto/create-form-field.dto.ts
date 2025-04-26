@@ -2,22 +2,24 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsJSON,
   IsNotEmpty,
   IsNumber,
   IsObject,
   IsOptional,
   IsString,
+  ValidateNested,
 } from 'class-validator';
 import { FieldType } from '@prisma/client';
 
 export class CreateFormFieldDto {
-  @IsString()
-  @IsNotEmpty()
-  label: string;
-
   @IsEnum(FieldType)
   @IsNotEmpty()
   type: FieldType;
+
+  @IsString()
+  @IsNotEmpty()
+  label: string;
 
   @IsString()
   @IsOptional()
@@ -25,19 +27,33 @@ export class CreateFormFieldDto {
 
   @IsBoolean()
   @IsOptional()
-  required?: boolean = false;
-
-  @IsNumber()
-  @IsNotEmpty()
-  order: number;
+  required?: boolean;
 
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
-  options?: string[] = [];
+  options?: string[];
 
-  // ← new: any type‑specific config, e.g. { maxChars: 5000 } or { min:0, max:100, step:1 }
+  @IsNumber()
+  @IsOptional()
+  order?: number;
+
+  @IsNumber()
+  @IsOptional()
+  page?: number;
+
+  @IsJSON()
+  @IsOptional()
+  config?: string;
+  
   @IsObject()
   @IsOptional()
-  config?: Record<string, any>;
+  conditions?: {
+    logicOperator?: 'AND' | 'OR';
+    rules?: {
+      fieldId: string;
+      operator: 'equals' | 'notEquals' | 'contains' | 'greaterThan' | 'lessThan';
+      value: any;
+    }[];
+  };
 }

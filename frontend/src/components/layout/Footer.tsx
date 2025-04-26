@@ -12,16 +12,16 @@ interface FooterProps {
 const Footer = ({ className }: FooterProps) => {
   return (
     <footer className={cn(
-      "border-t border-border py-6 bg-background/80",
+      "border-t border-border py-2 bg-background/80",
       className
     )}>
-      <div className="container flex flex-col items-center justify-between gap-4 md:h-12 md:flex-row">
-        <p className="text-sm text-muted-foreground">
+      <div className="container flex flex-col items-center justify-between md:flex-row">
+        <p className="text-xs text-muted-foreground">
           &copy; {new Date().getFullYear()} Formatic. All rights reserved.
         </p>
         
         <div className="flex items-center gap-4">
-          <nav className="flex items-center gap-4 text-sm">
+          <nav className="flex items-center gap-4 text-xs">
             <Link 
               href="/privacy"
               className="text-muted-foreground hover:text-foreground transition-colors"

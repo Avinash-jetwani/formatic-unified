@@ -1,4 +1,4 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class CreateFormDto {
   @IsString()
@@ -16,4 +16,29 @@ export class CreateFormDto {
   @IsBoolean()
   @IsOptional()
   published?: boolean;
+  
+  @IsString()
+  @IsOptional()
+  submissionMessage?: string;
+  
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  tags?: string[];
+  
+  @IsString()
+  @IsOptional()
+  category?: string;
+  
+  @IsBoolean()
+  @IsOptional()
+  isTemplate?: boolean;
+  
+  @IsUrl()
+  @IsOptional()
+  successRedirectUrl?: string;
+  
+  @IsBoolean()
+  @IsOptional()
+  multiPageEnabled?: boolean;
 }
