@@ -41,17 +41,48 @@ export interface DashboardStats {
 }
 
 /**
+ * Calculates the trend percentage between current and previous periods
+ */
+export const calculateTrend = (data: any[], dateField: string = 'createdAt'): number => {
+  if (!data || data.length === 0) return 0;
+  
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const sixtyDaysAgo = new Date(now);
+  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+  
+  // Count items in the last 30 days
+  const recentItems = data.filter(item => {
+    const date = new Date(item[dateField] || item.submittedAt || item.createdAt);
+    return date >= thirtyDaysAgo && date <= now;
+  }).length;
+  
+  // Count items in the 30 days before that
+  const olderItems = data.filter(item => {
+    const date = new Date(item[dateField] || item.submittedAt || item.createdAt);
+    return date >= sixtyDaysAgo && date < thirtyDaysAgo;
+  }).length;
+  
+  // Calculate percentage change
+  if (olderItems === 0) return recentItems > 0 ? 100 : 0;
+  
+  return Math.round(((recentItems - olderItems) / olderItems) * 100 * 10) / 10;
+};
+
+/**
  * Fetches dashboard statistics for the specified date range
  */
 const getDashboardStats = async (startDate: string, endDate: string, timestamp: number): Promise<DashboardStats> => {
   try {
     // Make parallel requests to reduce loading time
-    const [formsRes, submissionsRes, usersRes, formCompletionRatesRes] = await Promise.all([
-      fetchApi<any[]>('/forms', { method: 'GET' }),
-      fetchApi<any[]>('/submissions', { method: 'GET' }),
+    const [formsRes, submissionsRes, usersRes, formCompletionRatesRes, conversionTrendsRes] = await Promise.all([
+      fetchApi<any[]>('/forms', { method: 'GET', params: { startDate, endDate } }),
+      fetchApi<any[]>('/submissions', { method: 'GET', params: { startDate, endDate } }),
       fetchApi<any[]>('/users', {
         method: 'GET',
-        params: { cacheBreaker: timestamp }
+        params: { startDate, endDate, cacheBreaker: timestamp }
       }),
       fetchApi<any>('/analytics/form-completion-rates', {
         method: 'GET',
@@ -60,8 +91,21 @@ const getDashboardStats = async (startDate: string, endDate: string, timestamp: 
           endDate,
           cacheBreaker: timestamp
         }
-      })
+      }),
+      fetchApi<any[]>('/analytics/conversion-trends', {
+        method: 'GET',
+        params: { 
+          start: startDate, 
+          end: endDate,
+          cacheBreaker: timestamp
+        }
+      }).catch(() => [])
     ]);
+
+    // Calculate actual trend values based on real data
+    const usersTrend = calculateTrend(usersRes, 'createdAt');
+    const formsTrend = calculateTrend(formsRes, 'createdAt');
+    const submissionsTrend = calculateTrend(submissionsRes, 'createdAt');
 
     // Map the API response to our dashboard stats interface
     const stats: DashboardStats = {
@@ -72,15 +116,16 @@ const getDashboardStats = async (startDate: string, endDate: string, timestamp: 
         uptime: 99.95, // Hardcoded as this isn't typically in the database
       },
       trends: {
-        // Calculate trends based on recent activity
-        // For now using placeholder percentages based on data size
-        users: 5.2,
-        forms: formsRes.length > 10 ? 8.7 : 3.5,
-        submissions: submissionsRes.length > 100 ? 12.3 : 6.8,
+        // Use calculated trends based on real data
+        users: usersTrend,
+        forms: formsTrend,
+        submissions: submissionsTrend,
         uptime: 0.1,
       },
       charts: {
-        submissions: generateSubmissionTimeline(submissionsRes, startDate, endDate),
+        submissions: conversionTrendsRes?.length > 0 
+          ? conversionTrendsRes 
+          : generateSubmissionTimeline(submissionsRes, startDate, endDate),
         formPerformance: mapFormPerformanceData(formCompletionRatesRes?.forms || [])
       },
       recentSubmissions: getRecentSubmissions(submissionsRes),

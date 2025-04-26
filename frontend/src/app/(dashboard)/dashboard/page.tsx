@@ -733,9 +733,170 @@ export default function DashboardPage() {
                 </div>
               ) : stats?.charts.submissions && stats.charts.submissions.length > 0 ? (
                 <div className="h-[300px] w-full">
-                  {/* Chart component would go here */}
-                  <div className="h-full bg-muted/20 rounded flex items-center justify-center">
-                    <span className="text-sm text-muted-foreground">Chart visualization would render here.</span>
+                  {/* Render actual chart with submission data */}
+                  <div className="h-full w-full">
+                    <svg width="100%" height="100%" viewBox="0 0 800 300" preserveAspectRatio="none">
+                      {/* Create X axis */}
+                      <line 
+                        x1="40" y1="270" 
+                        x2="780" y2="270" 
+                        stroke="currentColor" 
+                        strokeOpacity="0.2" 
+                        strokeWidth="1"
+                      />
+                      
+                      {/* Create Y axis */}
+                      <line 
+                        x1="40" y1="30" 
+                        x2="40" y2="270" 
+                        stroke="currentColor" 
+                        strokeOpacity="0.2" 
+                        strokeWidth="1"
+                      />
+                      
+                      {/* Plot the data */}
+                      {(() => {
+                        const data = stats.charts.submissions;
+                        if (!data.length) return null;
+                        
+                        // Find max value for scaling
+                        const maxValue = Math.max(...data.map(d => d.value || 0), 1);
+                        
+                        // Calculate points for the path
+                        const points = data.map((item, index) => {
+                          const x = 40 + (740 * index / (data.length - 1 || 1));
+                          const y = 270 - ((item.value || 0) / maxValue * 220);
+                          return `${x},${y}`;
+                        }).join(' ');
+                        
+                        // Create the area path
+                        const areaPath = `
+                          M ${40},${270} 
+                          L ${data.map((item, index) => {
+                            const x = 40 + (740 * index / (data.length - 1 || 1));
+                            const y = 270 - ((item.value || 0) / maxValue * 220);
+                            return `${x},${y}`;
+                          }).join(' L ')} 
+                          L ${40 + 740},${270} 
+                          Z
+                        `;
+                        
+                        // Display dates along x-axis (show first, middle and last)
+                        const dateLabels = [];
+                        if (data.length >= 1) {
+                          // First date
+                          dateLabels.push(
+                            <text 
+                              key="first" 
+                              x="40" 
+                              y="290" 
+                              fontSize="10" 
+                              textAnchor="start" 
+                              fill="currentColor"
+                              fillOpacity="0.6"
+                            >
+                              {new Date(data[0].date).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}
+                            </text>
+                          );
+                          
+                          // Middle date
+                          if (data.length > 2) {
+                            const midIndex = Math.floor(data.length / 2);
+                            dateLabels.push(
+                              <text 
+                                key="middle" 
+                                x={40 + (740 * midIndex / (data.length - 1))} 
+                                y="290" 
+                                fontSize="10" 
+                                textAnchor="middle" 
+                                fill="currentColor"
+                                fillOpacity="0.6"
+                              >
+                                {new Date(data[midIndex].date).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}
+                              </text>
+                            );
+                          }
+                          
+                          // Last date
+                          dateLabels.push(
+                            <text 
+                              key="last" 
+                              x="780" 
+                              y="290" 
+                              fontSize="10" 
+                              textAnchor="end" 
+                              fill="currentColor"
+                              fillOpacity="0.6"
+                            >
+                              {new Date(data[data.length - 1].date).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}
+                            </text>
+                          );
+                        }
+                        
+                        // Display values along y-axis
+                        const valueLabels: React.ReactNode[] = [];
+                        [0, 0.25, 0.5, 0.75, 1].forEach((ratio, i) => {
+                          const value = Math.round(maxValue * ratio);
+                          valueLabels.push(
+                            <text 
+                              key={i} 
+                              x="35" 
+                              y={270 - ratio * 220} 
+                              fontSize="10" 
+                              textAnchor="end" 
+                              dominantBaseline="middle" 
+                              fill="currentColor"
+                              fillOpacity="0.6"
+                            >
+                              {value}
+                            </text>
+                          );
+                        });
+                        
+                        return (
+                          <>
+                            {/* Area under the line */}
+                            <path 
+                              d={areaPath} 
+                              fill="currentColor" 
+                              fillOpacity="0.1" 
+                              stroke="none" 
+                            />
+                            
+                            {/* Line connecting data points */}
+                            <polyline 
+                              points={points} 
+                              fill="none" 
+                              stroke="currentColor" 
+                              strokeWidth="2"
+                              className="text-primary"
+                            />
+                            
+                            {/* Data points */}
+                            {data.map((item, index) => {
+                              const x = 40 + (740 * index / (data.length - 1 || 1));
+                              const y = 270 - ((item.value || 0) / maxValue * 220);
+                              return (
+                                <circle 
+                                  key={index} 
+                                  cx={x} 
+                                  cy={y} 
+                                  r="4" 
+                                  fill="currentColor" 
+                                  className="text-primary"
+                                >
+                                  <title>{new Date(item.date).toLocaleDateString()} - {item.value} submissions</title>
+                                </circle>
+                              );
+                            })}
+                            
+                            {/* Axis labels */}
+                            {dateLabels}
+                            {valueLabels}
+                          </>
+                        );
+                      })()}
+                    </svg>
                   </div>
                 </div>
               ) : (
