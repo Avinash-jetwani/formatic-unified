@@ -34,6 +34,12 @@ model Form {
   client      User         @relation(fields: [clientId], references: [id])
   slug        String       @unique
   published   Boolean      @default(false)
+  submissionMessage String?
+  tags        String[]     @default([])
+  category    String?
+  isTemplate  Boolean      @default(false)
+  successRedirectUrl String?
+  multiPageEnabled Boolean  @default(false)
   fields      FormField[]
   submissions Submission[]
   createdAt   DateTime     @default(now())
@@ -51,6 +57,8 @@ model FormField {
   options     String[]   @default([])
   config      Json?      @default("{}")
   order       Int
+  conditions  Json?      @default("{}")
+  page        Int        @default(1)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }

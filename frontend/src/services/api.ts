@@ -6,6 +6,7 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache',
   },
 });
 
@@ -27,13 +28,32 @@ export const fetchApi = async <T>(
   options: AxiosRequestConfig = {}
 ): Promise<T> => {
   try {
-    // Handle query parameters if provided
+    // Add timestamp to bust cache if not already provided
     if (options.params) {
-      const params = new URLSearchParams();
-      for (const key in options.params) {
-        params.append(key, options.params[key]);
+      if (!options.params.t && !options.params.timestamp && !options.params.cacheBreaker) {
+        options.params.t = new Date().getTime();
       }
-      url = `${url}?${params.toString()}`;
+    } else {
+      options.params = { t: new Date().getTime() };
+    }
+    
+    // Ensure URL starts with /api if it doesn't already
+    if (!url.startsWith('/api') && !url.startsWith('http')) {
+      url = `/api${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+
+    // Handle query parameters if provided
+    const queryParams = new URLSearchParams();
+    if (options.params) {
+      for (const key in options.params) {
+        if (options.params[key] !== undefined && options.params[key] !== null) {
+          queryParams.append(key, options.params[key].toString());
+        }
+      }
+      const queryString = queryParams.toString();
+      if (queryString) {
+        url = `${url}${url.includes('?') ? '&' : '?'}${queryString}`;
+      }
       delete options.params;
     }
 

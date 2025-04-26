@@ -34,10 +34,14 @@ async findAll(userId: string, userRole: Role) {
       include: {
         form: {
           select: {
+            id: true,
             title: true,
+            slug: true,
+            published: true,
             clientId: true,
             client: {
               select: {
+                id: true,
                 name: true,
                 email: true,
               }
@@ -61,7 +65,10 @@ async findAll(userId: string, userRole: Role) {
     include: {
       form: {
         select: {
+          id: true,
           title: true,
+          slug: true,
+          published: true,
           clientId: true,
         }
       }

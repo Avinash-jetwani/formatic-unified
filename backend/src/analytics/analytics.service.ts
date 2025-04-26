@@ -53,8 +53,21 @@ export class AnalyticsService {
     return { avgSubsPerForm: avgSubs };
   }
 
-  async getFormCompletionRates(clientId?: string) {
-    const whereClause = clientId ? { clientId } : {};
+  async getFormCompletionRates(clientId?: string, startDate?: string, endDate?: string) {
+    const whereClause: any = {};
+    
+    // Add client filter if provided
+    if (clientId) {
+      whereClause.clientId = clientId;
+    }
+    
+    // Add date range filters if provided
+    if (startDate && endDate) {
+      whereClause.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      };
+    }
     
     const forms = await this.prisma.form.findMany({
       where: whereClause,
@@ -62,13 +75,26 @@ export class AnalyticsService {
         id: true,
         title: true,
         _count: { select: { submissions: true } },
+        submissions: startDate && endDate ? {
+          where: {
+            createdAt: {
+              gte: new Date(startDate),
+              lte: new Date(endDate)
+            }
+          },
+          select: { id: true }
+        } : undefined
       },
     });
     
     // Calculate completion rates based on actual submission counts
     // This is an estimate as we don't have actual tracking for views/starts yet
     return forms.map(form => {
-      const submissionCount = form._count.submissions;
+      // If date range was provided, use filtered submissions count
+      const submissionCount = startDate && endDate 
+        ? form.submissions?.length || 0
+        : form._count.submissions;
+        
       // For now, we estimate completion rates based on submission count
       // Higher submission counts generally indicate better performing forms
       const rate = submissionCount > 0 
@@ -76,7 +102,9 @@ export class AnalyticsService {
         : 0;
       
       return {
+        id: form.id,
         form: form.title,
+        submissionCount,
         rate,
       };
     });

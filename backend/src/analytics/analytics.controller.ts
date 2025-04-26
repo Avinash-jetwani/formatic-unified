@@ -32,13 +32,15 @@ export class AnalyticsController {
   async getFormCompletionRates(
     @Request() req,
     @Query('clientId') clientId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     // Super admins can view any client's data, clients can only view their own
     if (req.user.role === Role.SUPER_ADMIN) {
-      const data = await this.analytics.getFormCompletionRates(clientId);
+      const data = await this.analytics.getFormCompletionRates(clientId, startDate, endDate);
       return data;
     } else {
-      const data = await this.analytics.getFormCompletionRates(req.user.id);
+      const data = await this.analytics.getFormCompletionRates(req.user.id, startDate, endDate);
       return data;
     }
   }
@@ -94,12 +96,20 @@ export class AnalyticsController {
     @Query('start') start: string,
     @Query('end') end: string,
   ) {
-    // Super admins can view any client's data, clients can only view their own
-    if (req.user.role === Role.SUPER_ADMIN || req.user.id === clientId) {
-      const data = await this.analytics.getConversionTrends(clientId, start, end);
-      return data;
-    } else {
-      return { error: 'Unauthorized', status: 403 };
+    try {
+      // Super admins can view any client's data or global data, clients can only view their own
+      if (req.user.role === Role.SUPER_ADMIN) {
+        const data = await this.analytics.getConversionTrends(clientId, start, end);
+        return data;
+      } else if (req.user.id === clientId) {
+        const data = await this.analytics.getConversionTrends(req.user.id, start, end);
+        return data;
+      } else {
+        return { error: 'Unauthorized', status: 403 };
+      }
+    } catch (error) {
+      console.error('Error getting conversion trends:', error);
+      return [];
     }
   }
 
@@ -129,4 +139,4 @@ export class AnalyticsController {
       return res.status(403).json({ error: 'Unauthorized' });
     }
   }
-  }
+}
