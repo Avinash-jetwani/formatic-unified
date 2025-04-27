@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { CheckCircle2, RefreshCw } from 'lucide-react';
+import { FaStar } from 'react-icons/fa';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -330,17 +331,20 @@ const FormEmbedPage = () => {
         
       case 'DROPDOWN':
         return (
-          <select
-            id={field.id}
-            value={formValues[field.id] || ''}
-            onChange={(e) => handleInputChange(field.id, e.target.value)}
-            className={`w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${errors[field.id] ? 'border-destructive' : ''}`}
-          >
-            <option value="" disabled>{field.placeholder || 'Select an option'}</option>
-            {field.options.map((option) => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              id={field.id}
+              value={formValues[field.id] || ''}
+              onChange={(e) => handleInputChange(field.id, e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200 appearance-none pl-3 pr-10 py-2 cursor-pointer text-gray-900 dark:text-gray-100 dark:bg-gray-800"
+              style={{ minHeight: 48 }}
+            >
+              <option value="" disabled style={{ color: '#888' }}>{field.placeholder || 'Select an option'}</option>
+              {field.options.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
         );
         
       case 'CHECKBOX':
@@ -378,19 +382,20 @@ const FormEmbedPage = () => {
         
       case 'RATING':
         return (
-          <div className="flex items-center space-x-1">
-            {[1, 2, 3, 4, 5].map((rating) => (
+          <div className="flex space-x-2 items-center">
+            {Array.from({ length: field.config?.max || 5 }).map((_, index) => (
               <button
-                key={rating}
+                key={index}
                 type="button"
-                onClick={() => handleInputChange(field.id, rating)}
-                className={`text-2xl focus:outline-none ${
-                  Number(formValues[field.id]) >= rating 
-                    ? 'text-yellow-500' 
-                    : 'text-muted-foreground'
-                }`}
+                onClick={() => handleInputChange(field.id, index + 1)}
+                className={
+                  formValues[field.id] === index + 1
+                    ? 'text-yellow-400 text-2xl scale-110'
+                    : 'text-gray-400 text-2xl hover:text-yellow-300 hover:scale-105'
+                }
+                aria-label={`Rate ${index + 1} star${index === 0 ? '' : 's'}`}
               >
-                ★
+                <FaStar />
               </button>
             ))}
           </div>
@@ -502,7 +507,7 @@ const FormEmbedPage = () => {
     
     setSubmitting(true);
     try {
-      await fetchApi(`/submissions`, {
+      await fetchApi(`/forms/${form.id}/submissions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

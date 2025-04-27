@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,64 +8,64 @@ datasource db {
 }
 
 model User {
-  id        String       @id @default(uuid())
-  email     String       @unique
+  id        String     @id @default(uuid())
+  email     String     @unique
   password  String
   name      String?
+  role      Role       @default(CLIENT)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  lastLogin DateTime?
+  status    UserStatus @default(ACTIVE)
   company   String?
   phone     String?
   website   String?
-  role      Role         @default(CLIENT)
-  status    UserStatus   @default(ACTIVE)
-  lastLogin DateTime?
   forms     Form[]
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
 }
 
 model Form {
-  id          String       @id @default(uuid())
-  title       String
-  description String?
-  clientId    String
-  client      User         @relation(fields: [clientId], references: [id])
-  slug        String       @unique
-  published   Boolean      @default(false)
-  submissionMessage String?
-  tags        String[]     @default([])
-  category    String?
-  isTemplate  Boolean      @default(false)
+  id                 String       @id @default(uuid())
+  title              String
+  description        String?
+  clientId           String
+  slug               String       @unique
+  published          Boolean      @default(false)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  submissionMessage  String?
+  category           String?
+  isTemplate         Boolean      @default(false)
+  tags               String[]     @default([])
+  multiPageEnabled   Boolean      @default(false)
   successRedirectUrl String?
-  multiPageEnabled Boolean  @default(false)
-  fields      FormField[]
-  submissions Submission[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  client             User         @relation(fields: [clientId], references: [id])
+  fields             FormField[]
+  submissions        Submission[]
 }
 
 model FormField {
-  id          String     @id @default(uuid())
+  id          String    @id @default(uuid())
   formId      String
-  form        Form       @relation(fields: [formId], references: [id], onDelete: Cascade)
   type        FieldType
   label       String
   placeholder String?
-  required    Boolean    @default(false)
-  options     String[]   @default([])
-  config      Json?      @default("{}")
+  required    Boolean   @default(false)
+  options     String[]  @default([])
   order       Int
-  conditions  Json?      @default("{}")
-  page        Int        @default(1)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  config      Json?     @default("{}")
+  conditions  Json?     @default("{}")
+  page        Int       @default(1)
+  form        Form      @relation(fields: [formId], references: [id], onDelete: Cascade)
 }
 
 model Submission {
   id        String   @id @default(uuid())
   formId    String
-  form      Form     @relation(fields: [formId], references: [id])
   data      Json
   createdAt DateTime @default(now())
+  form      Form     @relation(fields: [formId], references: [id])
 }
 
 enum Role {
@@ -78,17 +75,17 @@ enum Role {
 
 enum FieldType {
   TEXT
-  LONG_TEXT   
-  EMAIL      
-  PHONE        
-  URL        
-  NUMBER       
-  DATE      
-  TIME        
-  DATETIME    
-  RATING      
-  SLIDER     
-  SCALE      
+  LONG_TEXT
+  EMAIL
+  PHONE
+  URL
+  NUMBER
+  DATE
+  TIME
+  DATETIME
+  RATING
+  SLIDER
+  SCALE
   DROPDOWN
   CHECKBOX
   RADIO

@@ -8,6 +8,7 @@ import { FormsModule } from './forms/forms.module';
 import { SubmissionsModule } from './submissions/submissions.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { ClientsModule } from './clients/clients.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     FormsModule,
     SubmissionsModule,
     AnalyticsModule,
+    ClientsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

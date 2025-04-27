@@ -1,8 +1,9 @@
 // /backend/src/submissions/submissions.service.ts
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { Role } from '@prisma/client';
+import * as PDFDocument from 'pdfkit';
 
 @Injectable()
 export class SubmissionsService {
@@ -104,7 +105,11 @@ async findAll(userId: string, userRole: Role) {
     const submission = await this.prisma.submission.findUnique({
       where: { id },
       include: {
-        form: true,
+        form: {
+          include: {
+            fields: true
+          }
+        },
       },
     });
     
@@ -177,5 +182,61 @@ async findAll(userId: string, userRole: Role) {
     
     await this.prisma.submission.delete({ where: { id } });
     return { id };
+  }
+
+  async exportSubmission(id: string, format: string, userId: string, userRole: Role): Promise<Buffer> {
+    try {
+      // Check if submission exists and user has permission
+      const submission = await this.findOne(id, userId, userRole);
+      
+      if (format !== 'pdf') {
+        throw new Error('Only PDF export is supported');
+      }
+      
+      // Create PDF document
+      const doc = new PDFDocument();
+      const chunks: Buffer[] = [];
+      
+      // Collect PDF chunks
+      doc.on('data', (chunk) => chunks.push(chunk));
+      
+      // Add content to PDF
+      doc.fontSize(20).text('Submission Details', { align: 'center' });
+      doc.moveDown();
+      
+      doc.fontSize(12).text(`Form: ${submission.form.title}`);
+      doc.text(`Submission ID: ${submission.id}`);
+      doc.text(`Date: ${new Date(submission.createdAt).toLocaleString()}`);
+      doc.moveDown();
+      
+      // Add form fields
+      doc.fontSize(14).text('Responses:');
+      doc.moveDown();
+      
+      submission.form.fields.forEach((field) => {
+        doc.fontSize(12).text(`${field.label}:`, { continued: true });
+        doc.text(` ${submission.data[field.id] || 'No response'}`);
+        doc.moveDown();
+      });
+      
+      // Finalize PDF
+      doc.end();
+      
+      // Return PDF buffer
+      return new Promise((resolve, reject) => {
+        doc.on('end', () => {
+          resolve(Buffer.concat(chunks));
+        });
+        
+        doc.on('error', (err) => {
+          reject(new InternalServerErrorException(`Failed to generate PDF: ${err.message}`));
+        });
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(`Failed to export submission: ${error.message}`);
+    }
   }
 }
