@@ -55,7 +55,7 @@ export function Form({ form }: FormProps) {
     setError(null);
 
     try {
-      await fetchApi(`/forms/${form.id}/submissions`, {
+      await fetchApi(`/submissions`, {
         method: 'POST',
         data: {
           formId: form.id,

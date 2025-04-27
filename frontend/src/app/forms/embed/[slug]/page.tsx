@@ -507,7 +507,7 @@ const FormEmbedPage = () => {
     
     setSubmitting(true);
     try {
-      await fetchApi(`/forms/${form.id}/submissions`, {
+      await fetchApi(`/submissions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
