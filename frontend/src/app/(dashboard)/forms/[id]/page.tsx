@@ -37,6 +37,7 @@ import {
 import { fetchApi } from '@/services/api';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Form and field interfaces
 interface Form {
@@ -54,6 +55,13 @@ interface Form {
   isTemplate?: boolean;
   successRedirectUrl?: string;
   multiPageEnabled?: boolean;
+  clientId: string;
+  client?: {
+    id: string;
+    name?: string;
+    email: string;
+    company?: string;
+  }
 }
 
 interface FormField {
@@ -72,6 +80,7 @@ const FormEditPage = () => {
   const router = useRouter();
   const params = useParams();
   const { toast } = useToast();
+  const { isAdmin, user } = useAuth();
   const formId = params?.id as string;
   
   const [form, setForm] = useState<Form | null>(null);
@@ -325,7 +334,15 @@ const FormEditPage = () => {
               {loading ? (
                 <Skeleton className="h-4 w-64 mt-1" />
               ) : (
-                "Edit your form details and manage fields"
+                <>
+                  {"Edit your form details and manage fields"}
+                  {/* Show badge if super admin and form belongs to a client */}
+                  {isAdmin && form?.clientId !== user?.id && (
+                    <Badge variant="outline" className="ml-2">
+                      Client Form
+                    </Badge>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -468,6 +485,38 @@ const FormEditPage = () => {
                     <span className="text-muted-foreground">Slug:</span>
                     <span className="col-span-2 font-mono text-xs">{form?.slug}</span>
                   </div>
+                  
+                  {/* Show client information for super admin users */}
+                  {isAdmin && (
+                    <>
+                      <div className="grid grid-cols-3">
+                        <span className="text-muted-foreground">Owner Type:</span>
+                        <span className="col-span-2">
+                          <Badge variant="outline">
+                            {form?.clientId === user?.id ? 'Admin' : 'Client'}
+                          </Badge>
+                        </span>
+                      </div>
+                      {form?.clientId !== user?.id && form?.client && (
+                        <>
+                          <div className="grid grid-cols-3">
+                            <span className="text-muted-foreground">Client Name:</span>
+                            <span className="col-span-2">{form?.client?.name || 'Not specified'}</span>
+                          </div>
+                          <div className="grid grid-cols-3">
+                            <span className="text-muted-foreground">Client Email:</span>
+                            <span className="col-span-2">{form?.client?.email}</span>
+                          </div>
+                          {form?.client?.company && (
+                            <div className="grid grid-cols-3">
+                              <span className="text-muted-foreground">Company:</span>
+                              <span className="col-span-2">{form?.client?.company}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </TabsContent>

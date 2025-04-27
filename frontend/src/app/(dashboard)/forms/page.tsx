@@ -91,6 +91,12 @@ interface Form {
     submissions: number;
     fields: number;
   }
+  clientId: string;
+  client?: {
+    id: string;
+    name: string;
+    email: string;
+  }
 }
 
 // Fix TypeScript errors
@@ -110,7 +116,7 @@ interface FormTemplate {
 
 const FormsPage = () => {
   const router = useRouter();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { toast } = useToast();
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,6 +126,7 @@ const FormsPage = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [clientFilter, setClientFilter] = useState<'all' | 'mine' | 'clients'>('all');
 
   // Pre-defined form templates
   const formTemplates: FormTemplate[] = [
@@ -408,21 +415,24 @@ const FormsPage = () => {
     }
   };
 
-  // Filter forms based on search term and published status
+  // Filter forms based on search term, published status, and client filter
   const filteredForms = forms.filter(form => {
     const matchesSearch = form.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (form.description && form.description.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    switch (filter) {
-      case 'published':
-        return matchesSearch && form.published;
-      case 'draft':
-        return matchesSearch && !form.published;
-      case 'templates':
-        return form.isTemplate;
-      default: // 'all'
-        return matchesSearch;
-    }
+    // Filter by status (published/draft/template)
+    const matchesStatus = filter === 'all' ? true :
+                         filter === 'published' ? form.published :
+                         filter === 'draft' ? !form.published :
+                         filter === 'templates' ? form.isTemplate : true;
+    
+    // Filter by client (for super admin only)
+    const matchesClient = !isAdmin ? true :
+                         clientFilter === 'all' ? true :
+                         clientFilter === 'mine' ? form.clientId === user?.id :
+                         clientFilter === 'clients' ? form.clientId !== user?.id : true;
+    
+    return matchesSearch && matchesStatus && matchesClient;
   });
   
   // Function to get submissions count
@@ -442,6 +452,11 @@ const FormsPage = () => {
 
   // Extract unique categories
   const uniqueCategories = Array.from(new Set(forms.filter(form => form.category).map(form => form.category || '')));
+
+  // Extract unique client names for filtering
+  const uniqueClients = isAdmin ? Array.from(
+    new Set(forms.filter(form => form.client?.name).map(form => form.client?.name || ''))
+  ) : [];
 
   return (
     <div className="space-y-8">
@@ -476,6 +491,8 @@ const FormsPage = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
+        
+        {/* Status filter dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="whitespace-nowrap">
@@ -503,6 +520,33 @@ const FormsPage = () => {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        
+        {/* Client filter dropdown - only for super admin */}
+        {isAdmin && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="whitespace-nowrap">
+                <ListFilter className="mr-2 h-4 w-4" />
+                {clientFilter === 'all' ? 'All Owners' : clientFilter === 'mine' ? 'My Forms' : 'Client Forms'}
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setClientFilter('all')}>
+                {clientFilter === 'all' && <Check className="mr-2 h-4 w-4" />}
+                All Owners
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setClientFilter('mine')}>
+                {clientFilter === 'mine' && <Check className="mr-2 h-4 w-4" />}
+                My Forms
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setClientFilter('clients')}>
+                {clientFilter === 'clients' && <Check className="mr-2 h-4 w-4" />}
+                Client Forms
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       
       {/* Templates section for new users */}
@@ -608,6 +652,18 @@ const FormsPage = () => {
                   </Badge>
                 </div>
                 <CardDescription className="truncate">{form.description || "No description"}</CardDescription>
+                
+                {/* Show client info for super admin */}
+                {isAdmin && form.client && (
+                  <div className="mt-1 text-xs flex items-center">
+                    <Badge variant="outline" className="mr-1">
+                      {form.clientId === user?.id ? 'Admin' : 'Client'}
+                    </Badge>
+                    {form.clientId !== user?.id && (
+                      <span className="text-muted-foreground truncate">{form.client.name || form.client.email}</span>
+                    )}
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="pb-2">
                 <div className="flex justify-between items-center text-xs text-muted-foreground mb-3">
@@ -682,6 +738,7 @@ const FormsPage = () => {
             <TableRow>
               <TableHead className="w-[300px]">Form</TableHead>
               <TableHead>Status</TableHead>
+              {isAdmin && <TableHead>Owner</TableHead>}
               <TableHead>Fields</TableHead>
               <TableHead>Submissions</TableHead>
               <TableHead>Last Updated</TableHead>
@@ -700,6 +757,7 @@ const FormsPage = () => {
                     </div>
                   </TableCell>
                   <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                  {isAdmin && <TableCell><Skeleton className="h-4 w-24" /></TableCell>}
                   <TableCell><Skeleton className="h-4 w-6" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-10" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-24" /></TableCell>
@@ -708,7 +766,7 @@ const FormsPage = () => {
               ))
             ) : filteredForms.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center">
+                <TableCell colSpan={isAdmin ? 7 : 6} className="h-32 text-center">
                   <FileText className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
                   <h3 className="font-medium">No forms found</h3>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -744,6 +802,21 @@ const FormsPage = () => {
                       {form.published ? "Published" : "Draft"}
                     </Badge>
                   </TableCell>
+                  {/* Client information column (for super admin only) */}
+                  {isAdmin && (
+                    <TableCell>
+                      {form.clientId === user?.id ? (
+                        <Badge variant="secondary">Admin</Badge>
+                      ) : form.client ? (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-xs">{form.client.name || 'Client'}</span>
+                          <span className="text-xs text-muted-foreground truncate max-w-[150px]">{form.client.email}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell>{getFieldCount(form)}</TableCell>
                   <TableCell>{getSubmissionCount(form)}</TableCell>
                   <TableCell>{formatDistanceToNow(new Date(form.updatedAt), { addSuffix: true })}</TableCell>
