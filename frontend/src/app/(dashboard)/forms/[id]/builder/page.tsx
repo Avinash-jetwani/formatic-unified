@@ -67,6 +67,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import { fetchApi } from '@/services/api';
+import { fieldTypes, FieldTypeInfo } from '@/lib/fieldTypes';
 
 // Interfaces
 interface Form {
@@ -104,88 +105,6 @@ interface FormField {
     }[];
   };
 }
-
-interface FieldTypeInfo {
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-  hasOptions: boolean;
-  hasPlaceholder: boolean;
-}
-
-// Field type definitions
-const fieldTypes: Record<string, FieldTypeInfo> = {
-  TEXT: {
-    label: 'Text',
-    description: 'Short text input',
-    icon: <span className="text-sm">Aa</span>,
-    hasOptions: false,
-    hasPlaceholder: true,
-  },
-  LONG_TEXT: {
-    label: 'Long Text',
-    description: 'Multi-line text input',
-    icon: <span className="text-sm">¶</span>,
-    hasOptions: false,
-    hasPlaceholder: true,
-  },
-  EMAIL: {
-    label: 'Email',
-    description: 'Email address input',
-    icon: <span className="text-sm">@</span>,
-    hasOptions: false,
-    hasPlaceholder: true,
-  },
-  PHONE: {
-    label: 'Phone',
-    description: 'Phone number input',
-    icon: <span className="text-sm">☎</span>,
-    hasOptions: false,
-    hasPlaceholder: true,
-  },
-  NUMBER: {
-    label: 'Number',
-    description: 'Numeric input',
-    icon: <span className="text-sm">#</span>,
-    hasOptions: false,
-    hasPlaceholder: true,
-  },
-  DATE: {
-    label: 'Date',
-    description: 'Date selector',
-    icon: <span className="text-sm">📅</span>,
-    hasOptions: false,
-    hasPlaceholder: false,
-  },
-  CHECKBOX: {
-    label: 'Checkbox',
-    description: 'Multiple choice selection',
-    icon: <span className="text-sm">☑</span>,
-    hasOptions: true,
-    hasPlaceholder: false,
-  },
-  RADIO: {
-    label: 'Radio',
-    description: 'Single choice selection',
-    icon: <span className="text-sm">⚪</span>,
-    hasOptions: true,
-    hasPlaceholder: false,
-  },
-  DROPDOWN: {
-    label: 'Dropdown',
-    description: 'Dropdown selection',
-    icon: <span className="text-sm">▼</span>,
-    hasOptions: true,
-    hasPlaceholder: true,
-  },
-  RATING: {
-    label: 'Rating',
-    description: 'Star rating selection',
-    icon: <span className="text-sm">★</span>,
-    hasOptions: false,
-    hasPlaceholder: false,
-  },
-};
 
 // Sortable Field Component
 const SortableField = ({ field, onEdit, onDelete, onDuplicate }: { 
@@ -316,6 +235,15 @@ const SortableField = ({ field, onEdit, onDelete, onDuplicate }: {
                 <span key={rating} className="text-lg text-muted-foreground">★</span>
               ))}
             </div>
+          ) : field.type === 'SCALE' || field.type === 'SLIDER' ? (
+            <input
+              type="range"
+              disabled
+              min={field.config?.min || 1}
+              max={field.config?.max || 10}
+              step={field.config?.step || 1}
+              className="w-full bg-muted/40"
+            />
           ) : (
             <div className="text-sm text-muted-foreground italic">
               {fieldTypeInfo.description}
@@ -349,7 +277,7 @@ const FieldEditorDialog = ({
   useEffect(() => {
     if (field) {
       setEditedField({ ...field });
-      setShowConditions(!!field.conditions && field.conditions.rules && field.conditions.rules.length > 0);
+      setShowConditions(!!(field.conditions && field.conditions.rules && field.conditions.rules.length > 0));
     } else {
       setEditedField(null);
       setShowConditions(false);
@@ -469,7 +397,7 @@ const FieldEditorDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{field && field.id ? 'Edit Field' : 'Add Field'}</DialogTitle>
+          <DialogTitle>{field && !field.id.startsWith('temp-') ? 'Edit Field' : 'Add Field'}</DialogTitle>
           <DialogDescription>
             Configure the field properties below.
           </DialogDescription>
@@ -888,40 +816,42 @@ const FormBuilderPage = () => {
   const handleSaveField = async (updatedField: FormField) => {
     // Check if it's a new field (with a temporary ID)
     const isNewField = updatedField.id.startsWith('temp-');
-    
+
     try {
       let savedField: FormField;
-      
+
       if (isNewField) {
-        // Create a new field on the server
+        // Exclude id and formId from the POST body
+        const { id, formId, ...fieldData } = updatedField;
         savedField = await fetchApi<FormField>(`/forms/${formId}/fields`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           data: {
-            ...updatedField,
+            ...fieldData,
+            config: typeof fieldData.config === 'string' ? fieldData.config : JSON.stringify(fieldData.config ?? {}),
             order: fields.length, // Set order to the end
           },
         });
-        
+
         // Add the new field to the list
         setFields([...fields, savedField]);
-        
+
       } else {
         // For updating an existing field, only send allowed properties
         // to avoid validation errors
         const { label, type, placeholder, required, options, config } = updatedField;
-        const fieldUpdateData = { 
-          label, 
-          type, 
-          placeholder, 
-          required, 
-          options, 
-          config,
-          order: updatedField.order 
+        const fieldUpdateData = {
+          label,
+          type,
+          placeholder,
+          required,
+          options,
+          config: typeof config === 'string' ? config : JSON.stringify(config ?? {}),
+          order: updatedField.order
         };
-        
+
         // Update an existing field
         savedField = await fetchApi<FormField>(`/forms/${formId}/fields/${updatedField.id}`, {
           method: 'PATCH',
@@ -930,16 +860,16 @@ const FormBuilderPage = () => {
           },
           data: fieldUpdateData,
         });
-        
+
         // Update the field in the list
         setFields(fields.map(f => f.id === savedField.id ? savedField : f));
       }
-      
+
       toast({
         title: "Success",
         description: `Field ${isNewField ? 'added' : 'updated'} successfully`,
       });
-      
+
     } catch (error) {
       console.error('Failed to save field:', error);
       toast({
@@ -1038,37 +968,17 @@ const FormBuilderPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {form?.multiPageEnabled && (
-                <div className="mb-4 flex items-center justify-between border rounded-md p-3 bg-muted/20">
-                  <div>
-                    <h3 className="text-sm font-medium">Multi-page Form</h3>
-                    <p className="text-xs text-muted-foreground">This form has multiple pages. Assign fields to different pages.</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        // Get the max page number from fields
-                        const maxPage = fields.reduce((max, field) => Math.max(max, field.page || 1), 1);
-                        // Update all fields that are on maxPage to be on a new page
-                        setFields(fields.map(field => field.page === maxPage ? { ...field, page: maxPage + 1 } : field));
-                      }}
-                    >
-                      Add Page
-                    </Button>
-                  </div>
-                </div>
-              )}
-              
-              <div className="mb-4 flex flex-wrap gap-2">
-                <Button onClick={handleAddField}>
+              <div className="mb-4">
+                <Button onClick={handleAddField} className="w-full">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Add New Field
                 </Button>
-                
+              </div>
+              
+              <div className="mb-4">
                 <Button 
                   variant="outline"
+                  className="w-full"
                   onClick={() => {
                     setForm(prev => prev ? { ...prev, multiPageEnabled: !prev.multiPageEnabled } : null);
                     if (form?.multiPageEnabled) {
@@ -1080,6 +990,23 @@ const FormBuilderPage = () => {
                   {form?.multiPageEnabled ? 'Disable' : 'Enable'} Multi-page
                 </Button>
               </div>
+              
+              {form?.multiPageEnabled && (
+                <div className="mb-4">
+                  <Button 
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      // Get the max page number from fields
+                      const maxPage = fields.reduce((max, field) => Math.max(max, field.page || 1), 1);
+                      // Add a new page
+                      setFields(fields.map(field => field.page === maxPage ? { ...field, page: maxPage + 1 } : field));
+                    }}
+                  >
+                    Add New Page
+                  </Button>
+                </div>
+              )}
               
               {form?.multiPageEnabled && (
                 <div className="mb-4">
@@ -1134,13 +1061,6 @@ const FormBuilderPage = () => {
               
               {!form?.multiPageEnabled && (
                 <>
-                  <div className="mb-4">
-                    <Button onClick={handleAddField} className="w-full">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add New Field
-                    </Button>
-                  </div>
-                  
                   {loading ? (
                     <div className="space-y-3">
                       {Array(3).fill(null).map((_, i) => (

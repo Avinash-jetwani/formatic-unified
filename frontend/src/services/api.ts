@@ -28,6 +28,8 @@ export const fetchApi = async <T>(
   options: AxiosRequestConfig = {}
 ): Promise<T> => {
   try {
+    console.log('Making API request to:', url);
+    
     // Add timestamp to bust cache if not already provided
     if (options.params) {
       if (!options.params.t && !options.params.timestamp && !options.params.cacheBreaker) {
@@ -57,9 +59,13 @@ export const fetchApi = async <T>(
       delete options.params;
     }
 
+    console.log('Final URL:', url);
+
     const response = await api(url, options);
+    console.log('API response:', response.data);
     return response.data;
   } catch (error) {
+    console.error('API error:', error);
     if (axios.isAxiosError(error)) {
       // Handle 401 Unauthorized errors
       if (error.response?.status === 401) {

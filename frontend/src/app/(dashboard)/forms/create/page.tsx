@@ -35,11 +35,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { fetchApi } from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
 import slugify from 'slugify';
+import clsx from 'clsx';
 
 // Drag and drop libraries
 import { DndContext, DragEndEvent, DragStartEvent, closestCenter } from '@dnd-kit/core';
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+
+import { fieldTypes } from '@/lib/fieldTypes';
 
 // Form field types from the Prisma schema
 enum FieldType {
@@ -81,6 +84,12 @@ interface FieldTypeDefinition {
   description: string;
 }
 
+// Use the shared fieldTypes for the sidebar
+const fieldTypeList = Object.entries(fieldTypes).map(([type, def]) => ({
+  type,
+  ...def
+}));
+
 // Form create page component
 const FormCreatePage: React.FC = () => {
   const router = useRouter();
@@ -92,26 +101,6 @@ const FormCreatePage: React.FC = () => {
   const [editingField, setEditingField] = useState<FormField | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  // Field type definitions for the sidebar
-  const fieldTypes: FieldTypeDefinition[] = [
-    { type: FieldType.TEXT, label: 'Text', icon: <TextIcon />, description: 'Short text input' },
-    { type: FieldType.LONG_TEXT, label: 'Long Text', icon: <LongTextIcon />, description: 'Multi-line text area' },
-    { type: FieldType.EMAIL, label: 'Email', icon: <EmailIcon />, description: 'Email address input' },
-    { type: FieldType.PHONE, label: 'Phone', icon: <PhoneIcon />, description: 'Phone number input' },
-    { type: FieldType.URL, label: 'URL', icon: <UrlIcon />, description: 'Website URL input' },
-    { type: FieldType.NUMBER, label: 'Number', icon: <NumberIcon />, description: 'Numeric input' },
-    { type: FieldType.DATE, label: 'Date', icon: <DateIcon />, description: 'Date picker' },
-    { type: FieldType.TIME, label: 'Time', icon: <TimeIcon />, description: 'Time picker' },
-    { type: FieldType.DATETIME, label: 'Date & Time', icon: <DateTimeIcon />, description: 'Date and time picker' },
-    { type: FieldType.RATING, label: 'Rating', icon: <RatingIcon />, description: 'Star rating scale' },
-    { type: FieldType.SLIDER, label: 'Slider', icon: <SliderIcon />, description: 'Range slider' },
-    { type: FieldType.SCALE, label: 'Scale', icon: <ScaleIcon />, description: 'Numeric scale' },
-    { type: FieldType.DROPDOWN, label: 'Dropdown', icon: <DropdownIcon />, description: 'Select from options' },
-    { type: FieldType.CHECKBOX, label: 'Checkbox', icon: <CheckboxIcon />, description: 'Multiple selection' },
-    { type: FieldType.RADIO, label: 'Radio', icon: <RadioIcon />, description: 'Single selection' },
-    { type: FieldType.FILE, label: 'File Upload', icon: <FileIcon />, description: 'File upload field' },
-  ];
 
   // Handler for adding a field
   const handleAddField = (type: FieldType) => {
@@ -227,7 +216,7 @@ const FormCreatePage: React.FC = () => {
       
       // Then add all fields
       for (const field of fields) {
-        await fetchApi(`/forms/${form.id}/fields`, {
+        await fetchApi(`/forms/${(form as any).id}/fields`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -238,7 +227,7 @@ const FormCreatePage: React.FC = () => {
             placeholder: field.placeholder,
             required: field.required,
             options: field.options,
-            config: field.config,
+            config: typeof field.config === 'string' ? field.config : JSON.stringify(field.config ?? {}),
             order: field.order
           }
         });
@@ -343,19 +332,17 @@ const FormCreatePage: React.FC = () => {
               <CardContent>
                 <ScrollArea className="h-[calc(100vh-400px)]">
                   <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
-                    {fieldTypes.map(fieldType => (
+                    {fieldTypeList.map(fieldType => (
                       <div
                         key={fieldType.type}
-                        className="cursor-pointer p-2 border rounded-md hover:bg-accent flex flex-col items-center md:flex-row md:items-start"
-                        onClick={() => handleAddField(fieldType.type)}
+                        className={clsx(
+                          'flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted',
+                          activeDragId === fieldType.type && 'bg-muted'
+                        )}
+                        onClick={() => handleAddField(fieldType.type as FieldType)}
                       >
-                        <div className="flex-shrink-0 p-1.5 bg-primary/10 rounded-md mr-0 md:mr-2 mb-1 md:mb-0">
-                          {fieldType.icon}
-                        </div>
-                        <div className="text-center md:text-left">
-                          <p className="text-sm font-medium">{fieldType.label}</p>
-                          <p className="text-xs text-muted-foreground hidden md:block">{fieldType.description}</p>
-                        </div>
+                        {fieldType.icon}
+                        <span>{fieldType.label}</span>
                       </div>
                     ))}
                   </div>
@@ -457,7 +444,7 @@ const FormCreatePage: React.FC = () => {
           <Card className="w-full max-w-md">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Edit {getFieldTypeLabel(editingField.type)} Field</CardTitle>
+                <CardTitle>{editingField.id ? 'Edit Field' : 'Add Field'}</CardTitle>
                 <CardDescription>Configure the field properties</CardDescription>
               </div>
               <Button
@@ -887,23 +874,5 @@ const renderFieldPreview = (field: FormField) => {
       return <p className="text-muted-foreground">Unsupported field type</p>;
   }
 };
-
-// Field type icon components
-const TextIcon = () => <span className="text-primary">Aa</span>;
-const LongTextIcon = () => <span className="text-primary">Aaa</span>;
-const EmailIcon = () => <span className="text-primary">@</span>;
-const PhoneIcon = () => <span className="text-primary">📞</span>;
-const UrlIcon = () => <span className="text-primary">🔗</span>;
-const NumberIcon = () => <span className="text-primary">123</span>;
-const DateIcon = () => <span className="text-primary">📅</span>;
-const TimeIcon = () => <span className="text-primary">🕒</span>;
-const DateTimeIcon = () => <span className="text-primary">📅🕒</span>;
-const RatingIcon = () => <span className="text-primary">★★★</span>;
-const SliderIcon = () => <span className="text-primary">◎━</span>;
-const ScaleIcon = () => <span className="text-primary">1-10</span>;
-const DropdownIcon = () => <span className="text-primary">▼</span>;
-const CheckboxIcon = () => <span className="text-primary">☑</span>;
-const RadioIcon = () => <span className="text-primary">○</span>;
-const FileIcon = () => <span className="text-primary">📁</span>;
 
 export default FormCreatePage; 
