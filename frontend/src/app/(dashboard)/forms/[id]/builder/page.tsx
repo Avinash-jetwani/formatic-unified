@@ -1119,20 +1119,22 @@ const FieldEditorDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px]">
+      <DialogContent className="w-full max-w-[95vw] max-h-[90vh] overflow-y-auto md:max-w-[85vw] lg:max-w-[70vw] xl:max-w-[60vw]">
         <DialogHeader>
-          <DialogTitle>{field && !field.id.startsWith('temp-') ? 'Edit Field' : 'Add Field'}</DialogTitle>
+          <DialogTitle>
+            {field && field.id.startsWith('temp-') ? 'Add Field' : 'Edit Field'}
+          </DialogTitle>
           <DialogDescription>
-            Configure the field properties below.
+            Configure your form field settings
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Configuration panel */}
-          <div className="space-y-4 overflow-y-auto max-h-[70vh]">
+        <div className="flex flex-col gap-6 mt-4 md:flex-row">
+          {/* Field configuration panel */}
+          <div className="space-y-4 flex-1">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fieldType" className="text-right">
-                Type
+              <Label htmlFor="fieldType" className="text-right md:whitespace-nowrap">
+                Field Type
               </Label>
               <div className="col-span-3">
                 <Select 
@@ -1157,7 +1159,7 @@ const FieldEditorDialog = ({
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fieldLabel" className="text-right">
+              <Label htmlFor="fieldLabel" className="text-right md:whitespace-nowrap">
                 Label
               </Label>
               <div className="col-span-3">
@@ -1171,7 +1173,7 @@ const FieldEditorDialog = ({
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fieldPage" className="text-right">
+              <Label htmlFor="fieldPage" className="text-right md:whitespace-nowrap">
                 Page
               </Label>
               <div className="col-span-3">
@@ -1187,7 +1189,7 @@ const FieldEditorDialog = ({
             
             {fieldTypeInfo.hasPlaceholder && (
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="fieldPlaceholder" className="text-right">
+                <Label htmlFor="fieldPlaceholder" className="text-right md:whitespace-nowrap">
                   Placeholder
                 </Label>
                 <div className="col-span-3">
@@ -1202,7 +1204,7 @@ const FieldEditorDialog = ({
             )}
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fieldRequired" className="text-right">
+              <Label htmlFor="fieldRequired" className="text-right md:whitespace-nowrap">
                 Required
               </Label>
               <div className="col-span-3 flex items-center">
@@ -1220,7 +1222,7 @@ const FieldEditorDialog = ({
             
             {/* Conditional Logic Checkbox */}
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="useConditions" className="text-right">
+              <Label htmlFor="useConditions" className="text-right md:whitespace-nowrap">
                 Conditions
               </Label>
               <div className="col-span-3 flex items-center">
@@ -1236,11 +1238,11 @@ const FieldEditorDialog = ({
             {/* Conditional Logic Rules */}
             {showConditions && (
               <div className="grid grid-cols-4 gap-4">
-                <Label className="text-right self-start mt-2">
+                <Label className="text-right self-start mt-2 md:whitespace-nowrap">
                   Logic
                 </Label>
                 <div className="col-span-3 space-y-3">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Select 
                       value={editedField.conditions?.logicOperator || 'AND'} 
                       onValueChange={(value) => setEditedField({
@@ -1251,7 +1253,7 @@ const FieldEditorDialog = ({
                         }
                       })}
                     >
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-full sm:w-[180px]">
                         <SelectValue placeholder="Logic type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1273,7 +1275,7 @@ const FieldEditorDialog = ({
                   {editedField.conditions?.rules && editedField.conditions.rules.length > 0 ? (
                     <div className="space-y-2 border rounded-md p-3">
                       {editedField.conditions.rules.map((rule, index) => (
-                        <div key={index} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                        <div key={index} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
                           <Select 
                             value={rule.fieldId} 
                             onValueChange={(value) => updateConditionRule(index, 'fieldId', value)}
@@ -1319,7 +1321,7 @@ const FieldEditorDialog = ({
                             variant="ghost"
                             size="icon"
                             onClick={() => removeConditionRule(index)}
-                            className="h-8 w-8"
+                            className="h-8 w-8 sm:mt-0 mt-1"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -1337,17 +1339,18 @@ const FieldEditorDialog = ({
             
             {fieldTypeInfo.hasOptions && (
               <div className="grid grid-cols-4 gap-4">
-                <Label className="text-right self-start mt-2">
+                <Label className="text-right self-start mt-2 md:whitespace-nowrap">
                   Options
                 </Label>
                 <div className="col-span-3 space-y-2">
-                  <div className="flex space-x-2">
+                  <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
                     <Input
                       value={newOption}
                       onChange={(e) => setNewOption(e.target.value)}
                       placeholder="Add option"
+                      className="flex-1"
                     />
-                    <Button onClick={handleAddOption} type="button">
+                    <Button onClick={handleAddOption} type="button" className="sm:w-auto w-full">
                       Add
                     </Button>
                   </div>
@@ -1356,12 +1359,12 @@ const FieldEditorDialog = ({
                     <div className="space-y-1 mt-2">
                       {editedField.options.map((option, index) => (
                         <div key={index} className="flex items-center justify-between bg-muted/40 p-2 rounded">
-                          <span>{option}</span>
+                          <span className="truncate pr-2">{option}</span>
                           <Button
                             variant="ghost"
                             size="icon"
                             onClick={() => handleRemoveOption(option)}
-                            className="h-7 w-7"
+                            className="h-7 w-7 flex-shrink-0"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -1379,10 +1382,10 @@ const FieldEditorDialog = ({
           </div>
           
           {/* Preview panel */}
-          <div className="border rounded-md p-6 bg-muted/20">
+          <div className="border rounded-md p-4 md:p-6 bg-muted/20 md:w-[250px] lg:w-[300px] flex-shrink-0">
             <div className="mb-4">
               <h3 className="text-lg font-medium">Preview</h3>
-              <p className="text-sm text-muted-foreground">See how your field will appear to users</p>
+              <p className="text-sm text-muted-foreground">See how your field will appear</p>
             </div>
             
             <div className="space-y-2">
@@ -1396,10 +1399,18 @@ const FieldEditorDialog = ({
           </div>
         </div>
         
-        <DialogFooter className="mt-6">
+        <DialogFooter className="mt-6 sm:flex-row flex-col-reverse gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => onOpenChange(false)}
+            className="sm:w-auto w-full"
+          >
+            Cancel
+          </Button>
           <Button 
             onClick={handleSave}
             disabled={!editedField.label.trim() || (fieldTypeInfo.hasOptions && editedField.options.length === 0)}
+            className="sm:w-auto w-full"
           >
             Save Field
           </Button>
