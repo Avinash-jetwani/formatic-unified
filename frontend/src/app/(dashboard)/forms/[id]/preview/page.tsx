@@ -290,6 +290,31 @@ const FormPreviewPage = () => {
           </div>
         );
         
+      case 'SCALE':
+      case 'SLIDER':
+        const min = field.config?.min || 1;
+        const max = field.config?.max || 10;
+        const step = field.config?.step || 1;
+        return (
+          <div className="space-y-2">
+            <input
+              type="range"
+              id={field.id}
+              min={min}
+              max={max}
+              step={step}
+              value={formValues[field.id] || min}
+              onChange={(e) => handleInputChange(field.id, e.target.value)}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{min}</span>
+              <span>{Math.floor((min + max) / 2)}</span>
+              <span>{max}</span>
+            </div>
+          </div>
+        );
+        
       default:
         return <div>Unsupported field type: {field.type}</div>;
     }

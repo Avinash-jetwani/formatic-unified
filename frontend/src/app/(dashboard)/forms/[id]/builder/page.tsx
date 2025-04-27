@@ -96,6 +96,8 @@ interface FormField {
   config: any;
   order: number;
   page: number;
+  createdAt?: string;
+  updatedAt?: string;
   conditions?: {
     logicOperator?: 'AND' | 'OR';
     rules?: {
@@ -732,7 +734,11 @@ const FormBuilderPage = () => {
         data: { fields: updatedFields },
       });
       
-      setFields(updatedFields);
+      // Refresh form data from server to make sure everything is in sync
+      const updatedForm = await fetchApi<Form>(`/forms/${formId}`);
+      setForm(updatedForm);
+      setFields(updatedForm.fields || []);
+      
       toast({
         title: "Success",
         description: "Form fields saved successfully",
@@ -791,8 +797,37 @@ const FormBuilderPage = () => {
   };
   
   // Function to delete a field
-  const handleDeleteField = (field: FormField) => {
-    setFields(fields.filter(f => f.id !== field.id));
+  const handleDeleteField = async (field: FormField) => {
+    // If the field has a temporary ID, just remove it from local state
+    if (field.id.startsWith('temp-')) {
+      setFields(fields.filter(f => f.id !== field.id));
+      return;
+    }
+    
+    // For fields that exist in the database, call the API to delete
+    try {
+      await fetchApi(`/forms/${formId}/fields/${field.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      // Remove from local state after successful deletion
+      setFields(fields.filter(f => f.id !== field.id));
+      
+      toast({
+        title: "Success",
+        description: "Field deleted successfully",
+      });
+    } catch (error) {
+      console.error('Failed to delete field:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete field",
+        variant: "destructive"
+      });
+    }
   };
   
   // Function to duplicate a field
@@ -813,70 +848,63 @@ const FormBuilderPage = () => {
   };
   
   // Function to save field changes
-  const handleSaveField = async (updatedField: FormField) => {
-    // Check if it's a new field (with a temporary ID)
-    const isNewField = updatedField.id.startsWith('temp-');
-
+  const handleSaveField = async (field: FormField) => {
+    if (!formId) return;
+    
     try {
-      let savedField: FormField;
-
-      if (isNewField) {
-        // Exclude id and formId from the POST body
-        const { id, formId, ...fieldData } = updatedField;
-        savedField = await fetchApi<FormField>(`/forms/${formId}/fields`, {
+      console.log(`Saving field: ${JSON.stringify(field, null, 2)}`);
+      
+      // Remove properties that should not be sent for both create and update
+      const { id, formId: fieldFormId, createdAt, updatedAt, ...fieldToSave } = field;
+      
+      // Ensure config is properly formatted as a JSON string
+      fieldToSave.config = typeof fieldToSave.config === 'object' ? 
+        JSON.stringify(fieldToSave.config) : fieldToSave.config;
+      
+      let updatedField;
+      // Check if the field is new or existing
+      if (field.id.startsWith('temp-')) {
+        // Add new field - send to the correct formId from the page params
+        updatedField = await fetchApi<FormField>(`/forms/${formId}/fields`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          data: {
-            ...fieldData,
-            config: typeof fieldData.config === 'string' ? fieldData.config : JSON.stringify(fieldData.config ?? {}),
-            order: fields.length, // Set order to the end
-          },
+          data: fieldToSave,
         });
-
-        // Add the new field to the list
-        setFields([...fields, savedField]);
-
+        console.log(`Created new field with ID: ${updatedField.id}`);
       } else {
-        // For updating an existing field, only send allowed properties
-        // to avoid validation errors
-        const { label, type, placeholder, required, options, config } = updatedField;
-        const fieldUpdateData = {
-          label,
-          type,
-          placeholder,
-          required,
-          options,
-          config: typeof config === 'string' ? config : JSON.stringify(config ?? {}),
-          order: updatedField.order
-        };
-
-        // Update an existing field
-        savedField = await fetchApi<FormField>(`/forms/${formId}/fields/${updatedField.id}`, {
+        // Update existing field
+        updatedField = await fetchApi<FormField>(`/forms/${formId}/fields/${field.id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json'
           },
-          data: fieldUpdateData,
+          data: fieldToSave,
         });
-
-        // Update the field in the list
-        setFields(fields.map(f => f.id === savedField.id ? savedField : f));
+        console.log(`Updated field with ID: ${field.id}`);
       }
-
+      
+      // Refresh the entire form to ensure we have the latest data
+      const updatedForm = await fetchApi<Form>(`/forms/${formId}`);
+      setForm(updatedForm);
+      setFields(updatedForm.fields || []);
+      
       toast({
         title: "Success",
-        description: `Field ${isNewField ? 'added' : 'updated'} successfully`,
+        description: "Field saved successfully",
       });
-
+      
+      setFieldDialogOpen(false);
+      return true;
     } catch (error) {
       console.error('Failed to save field:', error);
       toast({
         title: "Error",
-        description: `Failed to ${isNewField ? 'add' : 'update'} field`,
+        description: "Failed to save field",
         variant: "destructive"
       });
+      return false;
     }
   };
   

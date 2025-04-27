@@ -23,9 +23,15 @@ interface FormField {
   required: boolean;
   placeholder?: string;
   description?: string;
-  options?: FormFieldOption[];
+  options?: string[] | FormFieldOption[];
   maxRating?: number;
   fileTypes?: string;
+  config?: {
+    min?: number;
+    max?: number;
+    step?: number;
+    [key: string]: any;
+  };
 }
 
 // Helper type guard
@@ -124,7 +130,6 @@ export function Form({ form }: FormProps) {
           </div>
         );
       case 'SLIDER':
-      case 'SCALE':
         return (
           <div className="pt-2 pb-4">
             <input
@@ -132,13 +137,33 @@ export function Form({ form }: FormProps) {
               min="1"
               max="10"
               step="1"
-              {...commonProps}
+              value={formData[field.id] || ''}
+              onChange={(e) => handleInputChange(field.id, e.target.value)}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
             <div className="flex justify-between mt-1 text-xs text-gray-500">
               <span>1</span>
               <span>5</span>
               <span>10</span>
+            </div>
+          </div>
+        );
+      case 'SCALE':
+        return (
+          <div className="pt-2 pb-4">
+            <input
+              type="range"
+              min={field.config?.min || 1}
+              max={field.config?.max || 10}
+              step={field.config?.step || 1}
+              value={formData[field.id] || field.config?.min || 1}
+              onChange={(e) => handleInputChange(field.id, e.target.value)}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+            />
+            <div className="flex justify-between mt-1 text-xs text-gray-500">
+              <span>{field.config?.min || 1}</span>
+              <span>{Math.floor(((field.config?.min || 1) + (field.config?.max || 10)) / 2)}</span>
+              <span>{field.config?.max || 10}</span>
             </div>
           </div>
         );
@@ -462,6 +487,25 @@ export function Form({ form }: FormProps) {
                     <span>1</span>
                     <span>5</span>
                     <span>10</span>
+                  </div>
+                </div>
+              )}
+
+              {field.type === 'SCALE' && (
+                <div className="pt-2 pb-4">
+                  <input
+                    type="range"
+                    min={field.config?.min || 1}
+                    max={field.config?.max || 10}
+                    step={field.config?.step || 1}
+                    value={formData[field.id] || field.config?.min || 1}
+                    onChange={(e) => handleInputChange(field.id, e.target.value)}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                  />
+                  <div className="flex justify-between mt-1 text-xs text-gray-500">
+                    <span>{field.config?.min || 1}</span>
+                    <span>{Math.floor(((field.config?.min || 1) + (field.config?.max || 10)) / 2)}</span>
+                    <span>{field.config?.max || 10}</span>
                   </div>
                 </div>
               )}
