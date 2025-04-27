@@ -592,150 +592,153 @@ const FormEmbedPage = () => {
   }
   
   return (
-    <div className="p-4">
+    <div className="min-h-screen bg-white dark:bg-gray-900 p-3 sm:p-6 md:p-8">
       {loading ? (
-        // Loading skeletons
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-8 w-3/4" />
-            <Skeleton className="h-4 w-1/2 mt-2" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {Array(4).fill(null).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-10 w-full" />
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardHeader className="animate-pulse">
+              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-2"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
               </div>
-            ))}
-          </CardContent>
-          <CardFooter>
-            <Skeleton className="h-10 w-32 ml-auto" />
-          </CardFooter>
-        </Card>
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
+                <div className="h-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+            </CardFooter>
+          </Card>
+        </div>
       ) : submitted ? (
-        // Success message after submission
-        <Card className="border-success/20">
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto mb-4 bg-success/20 w-20 h-20 rounded-full flex items-center justify-center">
-              <CheckCircle2 className="h-10 w-10 text-success" />
-            </div>
-            <CardTitle className="text-2xl text-success">Form Submitted Successfully</CardTitle>
-            <CardDescription className="text-base mt-2">
-              Thank you for your submission!
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-muted/50 rounded-lg p-6 my-4">
-              <p className="text-center text-base">
-                {form?.submissionMessage || "Your response has been recorded successfully."}
-              </p>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-center pt-2 pb-6">
-            <Button 
-              onClick={handleReset}
-              className="px-8 py-6 text-base"
-              size="lg"
-            >
-              <RefreshCw className="h-5 w-5 mr-2" />
-              Submit Another Response
-            </Button>
-          </CardFooter>
-        </Card>
-      ) : (
-        // Form display
-        <Card>
-          <CardHeader>
-            <CardTitle>{form?.title || 'Untitled Form'}</CardTitle>
-            {form?.description && <CardDescription>{form.description}</CardDescription>}
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {form?.multiPageEnabled && (
-                <div className="mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium">
-                      Page {currentPage} of {Math.max(...form.fields.map(f => f.page))}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {Math.round((currentPage / Math.max(...form.fields.map(f => f.page))) * 100)}% complete
-                    </span>
-                  </div>
-                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-primary h-full rounded-full transition-all duration-300 ease-in-out" 
-                      style={{ width: `${(currentPage / Math.max(...form.fields.map(f => f.page))) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
+        <div className="max-w-md mx-auto">
+          <Card className="border-none shadow-md">
+            <CardHeader>
+              <CardTitle className="text-center text-xl sm:text-2xl">Thank You!</CardTitle>
+              <CardDescription className="text-center">
+                {form?.submissionMessage || "Your response has been recorded."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center py-6">
+              <div className="rounded-full bg-green-100 dark:bg-green-900 p-3">
+                <CheckCircle2 className="h-8 w-8 sm:h-12 sm:w-12 text-green-600 dark:text-green-400" />
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-center">
+              {form?.successRedirectUrl ? (
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.href = form.successRedirectUrl || '/'}
+                  className="mx-auto"
+                >
+                  Continue
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  onClick={handleReset}
+                  className="mx-auto"
+                >
+                  Submit another response
+                </Button>
               )}
-              
-              {form?.fields
-                ?.filter(field => !form.multiPageEnabled || field.page === currentPage)
-                ?.filter(field => fieldsVisible[field.id])
-                ?.sort((a, b) => a.order - b.order)
-                .map((field) => (
-                  <div key={field.id} className="space-y-2">
-                    <Label htmlFor={field.id} className="flex items-start">
-                      {field.label}
-                      {field.required && <span className="text-destructive ml-1">*</span>}
-                    </Label>
-                    {renderField(field)}
-                    {errors[field.id] && (
-                      <p className="text-destructive text-sm mt-1">{errors[field.id]}</p>
-                    )}
-                  </div>
-                ))}
-              
-              {form?.multiPageEnabled ? (
+            </CardFooter>
+          </Card>
+        </div>
+      ) : (
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-none shadow-md">
+            <CardHeader>
+              <CardTitle className="text-xl sm:text-2xl md:text-3xl">{form?.title}</CardTitle>
+              {form?.description && (
+                <CardDescription className="text-sm sm:text-base">{form.description}</CardDescription>
+              )}
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                {form?.fields
+                  .filter(field => field.page === currentPage)
+                  .filter(field => evaluateCondition(field))
+                  .sort((a, b) => a.order - b.order)
+                  .map((field) => (
+                    <div key={field.id} className="space-y-2">
+                      <div className="flex items-start justify-between">
+                        <Label 
+                          htmlFor={field.id} 
+                          className="text-sm sm:text-base font-medium"
+                        >
+                          {field.label} 
+                          {field.required && <span className="text-red-500 ml-1">*</span>}
+                        </Label>
+                        {errors[field.id] && (
+                          <p className="text-xs sm:text-sm text-red-500">{errors[field.id]}</p>
+                        )}
+                      </div>
+                      
+                      {renderField(field)}
+                    </div>
+                  ))}
+               
                 <div className="flex justify-between pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline"
-                    onClick={handlePrevPage}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  
-                  {currentPage < Math.max(...form.fields.map(f => f.page)) ? (
+                  {form?.multiPageEnabled && currentPage > 1 && (
                     <Button 
-                      type="button"
-                      onClick={handleNextPage}
+                      type="button" 
+                      variant="outline" 
+                      onClick={handlePrevPage}
+                      className="flex items-center space-x-1"
                     >
-                      Next
-                    </Button>
-                  ) : (
-                    <Button 
-                      type="submit" 
-                      disabled={submitting}
-                    >
-                      {submitting ? 'Submitting...' : 'Submit Form'}
+                      <span>Previous</span>
                     </Button>
                   )}
+                  
+                  <div className="ml-auto">
+                    {form?.multiPageEnabled && 
+                     currentPage < Math.max(...form.fields.map(f => f.page || 1)) ? (
+                      <Button 
+                        type="button" 
+                        onClick={handleNextPage}
+                        className="flex items-center space-x-1"
+                      >
+                        <span>Next</span>
+                      </Button>
+                    ) : (
+                      <Button 
+                        type="submit" 
+                        disabled={submitting}
+                        className="flex items-center space-x-1"
+                      >
+                        {submitting ? (
+                          <>
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                            <span>Submitting...</span>
+                          </>
+                        ) : (
+                          <span>Submit</span>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <div className="pt-4">
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
-                    disabled={submitting}
-                  >
-                    {submitting ? 'Submitting...' : 'Submit Form'}
-                  </Button>
-                </div>
-              )}
-            </form>
-          </CardContent>
-        </Card>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       )}
       
-      {/* Toast notifications */}
       {toast && (
-        <Toast 
-          message={toast.message} 
-          variant={toast.variant} 
-          onClose={() => setToast(null)} 
+        <Toast
+          message={toast.message}
+          variant={toast.variant}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

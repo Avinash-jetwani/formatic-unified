@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Pencil, Copy, Trash2, GripVertical, PlusCircle } from 'lucide-react';
+import { ArrowLeft, Pencil, Copy, Trash2, GripVertical, PlusCircle, Eye } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -669,11 +669,11 @@ const FieldEditorDialog = ({
           <div className="space-y-4 border-t pt-4 mt-4">
             <h4 className="font-medium">Text Field Settings</h4>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="minLength" className="text-right">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="minLength" className="sm:text-right">
                 Min Length
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-1 sm:col-span-3">
                 <Input
                   id="minLength"
                   type="number"
@@ -685,11 +685,11 @@ const FieldEditorDialog = ({
               </div>
             </div>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="maxLength" className="text-right">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="maxLength" className="sm:text-right">
                 Max Length
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-1 sm:col-span-3">
                 <Input
                   id="maxLength"
                   type="number"
@@ -1132,11 +1132,11 @@ const FieldEditorDialog = ({
         <div className="flex flex-col gap-6 mt-4 md:flex-row">
           {/* Field configuration panel */}
           <div className="space-y-4 flex-1">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fieldType" className="text-right md:whitespace-nowrap">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="fieldType" className="sm:text-right md:whitespace-nowrap">
                 Field Type
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-1 sm:col-span-3">
                 <Select 
                   value={editedField.type} 
                   onValueChange={handleTypeChange}
@@ -1158,11 +1158,11 @@ const FieldEditorDialog = ({
               </div>
             </div>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fieldLabel" className="text-right md:whitespace-nowrap">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="fieldLabel" className="sm:text-right md:whitespace-nowrap">
                 Label
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-1 sm:col-span-3">
                 <Input
                   id="fieldLabel"
                   value={editedField.label}
@@ -1172,11 +1172,11 @@ const FieldEditorDialog = ({
               </div>
             </div>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fieldPage" className="text-right md:whitespace-nowrap">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="fieldPage" className="sm:text-right md:whitespace-nowrap">
                 Page
               </Label>
-              <div className="col-span-3">
+              <div className="col-span-1 sm:col-span-3">
                 <Input
                   id="fieldPage"
                   type="number"
@@ -1188,11 +1188,11 @@ const FieldEditorDialog = ({
             </div>
             
             {fieldTypeInfo.hasPlaceholder && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="fieldPlaceholder" className="text-right md:whitespace-nowrap">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+                <Label htmlFor="fieldPlaceholder" className="sm:text-right md:whitespace-nowrap">
                   Placeholder
                 </Label>
-                <div className="col-span-3">
+                <div className="col-span-1 sm:col-span-3">
                   <Input
                     id="fieldPlaceholder"
                     value={editedField.placeholder || ''}
@@ -1203,11 +1203,11 @@ const FieldEditorDialog = ({
               </div>
             )}
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fieldRequired" className="text-right md:whitespace-nowrap">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="fieldRequired" className="sm:text-right md:whitespace-nowrap">
                 Required
               </Label>
-              <div className="col-span-3 flex items-center">
+              <div className="col-span-1 sm:col-span-3 flex items-center">
                 <Switch
                   id="fieldRequired"
                   checked={editedField.required}
@@ -1221,11 +1221,11 @@ const FieldEditorDialog = ({
             {renderFieldConfig()}
             
             {/* Conditional Logic Checkbox */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="useConditions" className="text-right md:whitespace-nowrap">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="useConditions" className="sm:text-right md:whitespace-nowrap">
                 Conditions
               </Label>
-              <div className="col-span-3 flex items-center">
+              <div className="col-span-1 sm:col-span-3 flex items-center">
                 <Switch
                   id="useConditions"
                   checked={showConditions}
@@ -1388,7 +1388,7 @@ const FieldEditorDialog = ({
               <p className="text-sm text-muted-foreground">See how your field will appear</p>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 max-w-full overflow-hidden">
               <Label htmlFor="preview-field">
                 {editedField.label || 'Field Label'}
                 {editedField.required && <span className="text-destructive ml-1">*</span>}
@@ -1431,7 +1431,6 @@ const FormBuilderPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState<Form | null>(null);
   const [fields, setFields] = useState<FormField[]>([]);
-  const [submissionMessage, setSubmissionMessage] = useState<string>('');
   const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
   const [editingField, setEditingField] = useState<FormField | null>(null);
   const [activeTab, setActiveTab] = useState('fields');
@@ -1456,7 +1455,6 @@ const FormBuilderPage = () => {
       const data = await fetchApi<Form>(`/forms/${formId}`);
       setForm(data);
       setFields(data.fields || []);
-      setSubmissionMessage(data.submissionMessage || '');
     } catch (error) {
       console.error('Failed to load form:', error);
       toast({
@@ -1664,45 +1662,10 @@ const FormBuilderPage = () => {
     }
   };
   
-  // Function to save form settings
-  const saveFormSettings = async () => {
-    setIsSaving(true);
-    try {
-      await fetchApi(`/forms/${formId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        data: {
-          submissionMessage,
-          category: form?.category,
-          tags: form?.tags,
-          isTemplate: form?.isTemplate,
-          successRedirectUrl: form?.successRedirectUrl,
-          multiPageEnabled: form?.multiPageEnabled
-        }
-      });
-      
-      toast({
-        title: "Success",
-        description: "Form settings saved successfully",
-      });
-    } catch (error) {
-      console.error('Failed to save form settings:', error);
-      toast({
-        title: "Error",
-        description: "Failed to save form settings",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-  
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center">
           <Button
             variant="ghost"
@@ -1713,53 +1676,55 @@ const FormBuilderPage = () => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight line-clamp-1">
               {loading ? <Skeleton className="h-8 w-48" /> : `Form Builder: ${form?.title || 'Untitled Form'}`}
             </h1>
-            <div className="text-muted-foreground">
+            <div className="text-muted-foreground text-sm sm:text-base">
               {loading ? <Skeleton className="h-4 w-64 mt-1" /> : 'Customize your form fields'}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           <Button
             variant="outline"
             onClick={() => router.push(`/forms/${formId}/preview`)}
+            size="sm"
+            className="sm:size-default"
           >
+            <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
           <Button
             onClick={saveFormFields}
             disabled={isSaving}
+            size="sm"
+            className="sm:size-default"
           >
             {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full grid grid-cols-1 mb-4">
           <TabsTrigger value="fields">Fields</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="fields" className="space-y-4">
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle>Form Fields</CardTitle>
-              <CardDescription>
+            <CardHeader className="pb-3 space-y-2">
+              <CardTitle className="text-lg sm:text-xl">Form Fields</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
                 Add, remove, and reorder fields. Drag fields to change their order.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="mb-4">
+            <CardContent className="px-3 sm:px-6">
+              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 <Button onClick={handleAddField} className="w-full">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Add New Field
                 </Button>
-              </div>
-              
-              <div className="mb-4">
+                
                 <Button 
                   variant="outline"
                   className="w-full"
@@ -1779,7 +1744,7 @@ const FormBuilderPage = () => {
                 <div className="mb-4">
                   <Button 
                     variant="outline"
-                    className="w-full"
+                    className="w-full mb-4"
                     onClick={() => {
                       // Get the max page number from fields
                       const maxPage = fields.reduce((max, field) => Math.max(max, field.page || 1), 1);
@@ -1789,15 +1754,11 @@ const FormBuilderPage = () => {
                   >
                     Add New Page
                   </Button>
-                </div>
-              )}
-              
-              {form?.multiPageEnabled && (
-                <div className="mb-4">
+                  
                   <Tabs defaultValue="1" className="w-full">
-                    <TabsList className="mb-4 flex-wrap">
+                    <TabsList className="mb-4 flex-wrap justify-start h-auto">
                       {Array.from(new Set(fields.map(f => f.page))).sort((a, b) => a - b).map(page => (
-                        <TabsTrigger key={page} value={page.toString()}>
+                        <TabsTrigger key={page} value={page.toString()} className="mb-1">
                           Page {page}
                         </TabsTrigger>
                       ))}
@@ -1880,10 +1841,11 @@ const FormBuilderPage = () => {
                 </>
               )}
             </CardContent>
-            <CardFooter className="flex justify-between border-t pt-4">
+            <CardFooter className="flex flex-col sm:flex-row justify-between border-t pt-4 gap-2">
               <Button
                 variant="outline"
                 onClick={() => router.push(`/forms/${formId}`)}
+                className="w-full sm:w-auto"
               >
                 Back to Form
               </Button>
@@ -1891,129 +1853,9 @@ const FormBuilderPage = () => {
               <Button
                 onClick={saveFormFields}
                 disabled={isSaving}
+                className="w-full sm:w-auto"
               >
                 {isSaving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="settings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Form Settings</CardTitle>
-              <CardDescription>
-                Configure additional settings for your form.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <Label htmlFor="formCategory">Category</Label>
-                  <Input
-                    id="formCategory"
-                    placeholder="Enter category (e.g., Contact, Survey)"
-                    className="mt-1"
-                    value={form?.category || ''}
-                    onChange={(e) => setForm(prev => prev ? { ...prev, category: e.target.value } : null)}
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Categorize your form for easier organization.
-                  </p>
-                </div>
-                
-                <div>
-                  <Label htmlFor="formTags">Tags</Label>
-                  <Input
-                    id="formTags"
-                    placeholder="Enter tags separated by commas"
-                    className="mt-1"
-                    value={form?.tags?.join(', ') || ''}
-                    onChange={(e) => setForm(prev => prev ? { 
-                      ...prev, 
-                      tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean) 
-                    } : null)}
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Add tags to help with searching and filtering forms.
-                  </p>
-                </div>
-                
-                <div>
-                  <Label htmlFor="formSubmissionMsg">Submission Message</Label>
-                  <Textarea
-                    id="formSubmissionMsg"
-                    placeholder="Thank you for your submission!"
-                    className="mt-1"
-                    value={submissionMessage}
-                    onChange={(e) => setSubmissionMessage(e.target.value)}
-                  />
-                  <p className="text-sm text-muted-foreground mt-1">
-                    This message will be shown to users after they submit the form.
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Switch 
-                      id="formRedirect" 
-                      checked={!!form?.successRedirectUrl}
-                      onCheckedChange={(checked) => {
-                        if (!checked) {
-                          setForm(prev => prev ? { ...prev, successRedirectUrl: undefined } : null);
-                        } else {
-                          setForm(prev => prev ? { ...prev, successRedirectUrl: 'https://' } : null);
-                        }
-                      }}
-                    />
-                    <Label htmlFor="formRedirect">Custom success redirect</Label>
-                  </div>
-                  
-                  {form?.successRedirectUrl && (
-                    <div className="pl-6">
-                      <Input
-                        id="formSuccessUrl"
-                        placeholder="https://example.com/thank-you"
-                        value={form.successRedirectUrl}
-                        onChange={(e) => setForm(prev => prev ? { ...prev, successRedirectUrl: e.target.value } : null)}
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Redirect users to a custom URL after form submission.
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Switch 
-                      id="formIsTemplate" 
-                      checked={!!form?.isTemplate}
-                      onCheckedChange={(checked) => {
-                        setForm(prev => prev ? { ...prev, isTemplate: checked } : null);
-                      }}
-                    />
-                    <Label htmlFor="formIsTemplate">Save as template</Label>
-                  </div>
-                  <p className="text-sm text-muted-foreground ml-6">
-                    Make this form available as a template for future forms.
-                  </p>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch id="formRecaptcha" />
-                  <Label htmlFor="formRecaptcha">Enable reCAPTCHA</Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch id="formNotifications" />
-                  <Label htmlFor="formNotifications">Email notifications</Label>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="ml-auto" onClick={saveFormSettings} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save Settings'}
               </Button>
             </CardFooter>
           </Card>

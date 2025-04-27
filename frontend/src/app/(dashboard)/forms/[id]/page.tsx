@@ -48,6 +48,12 @@ interface Form {
   createdAt: string;
   updatedAt: string;
   fields: FormField[];
+  submissionMessage?: string;
+  tags?: string[];
+  category?: string;
+  isTemplate?: boolean;
+  successRedirectUrl?: string;
+  multiPageEnabled?: boolean;
 }
 
 interface FormField {
@@ -77,6 +83,11 @@ const FormEditPage = () => {
   const [activeTab, setActiveTab] = useState('edit');
   const [baseUrl, setBaseUrl] = useState('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [submissionMessage, setSubmissionMessage] = useState('');
+  const [category, setCategory] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [isTemplate, setIsTemplate] = useState(false);
+  const [successRedirectUrl, setSuccessRedirectUrl] = useState<string | undefined>(undefined);
   
   // Set baseUrl only on client side to avoid hydration mismatch
   useEffect(() => {
@@ -99,6 +110,11 @@ const FormEditPage = () => {
       setTitle(data.title);
       setDescription(data.description || '');
       setPublished(data.published);
+      setSubmissionMessage(data.submissionMessage || '');
+      setCategory(data.category || '');
+      setTags(data.tags || []);
+      setIsTemplate(data.isTemplate || false);
+      setSuccessRedirectUrl(data.successRedirectUrl);
     } catch (error) {
       console.error('Failed to load form:', error);
       toast({
@@ -242,6 +258,43 @@ const FormEditPage = () => {
     }
   };
   
+  // Function to save form settings
+  const saveFormSettings = async () => {
+    setSaving(true);
+    try {
+      await fetchApi(`/forms/${formId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: {
+          submissionMessage,
+          category,
+          tags,
+          isTemplate,
+          successRedirectUrl
+        }
+      });
+      
+      toast({
+        title: "Success",
+        description: "Form settings saved successfully",
+      });
+      
+      // Reload the form to get the latest data
+      loadForm();
+    } catch (error) {
+      console.error('Failed to update form settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update form settings",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+  
   return (
     <div className="space-y-6">
       {/* Page header */}
@@ -381,6 +434,7 @@ const FormEditPage = () => {
               <TabsTrigger value="edit">General</TabsTrigger>
               <TabsTrigger value="fields">Fields</TabsTrigger>
               <TabsTrigger value="share">Share</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
             
             <TabsContent value="edit" className="mt-4 space-y-4">
@@ -420,7 +474,7 @@ const FormEditPage = () => {
             
             <TabsContent value="fields" className="mt-4">
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <h3 className="text-lg font-medium">Form Fields</h3>
                     <p className="text-sm text-muted-foreground">
@@ -436,7 +490,7 @@ const FormEditPage = () => {
                 </div>
                 
                 {form?.fields?.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center p-8 text-center border rounded-lg">
+                  <div className="flex flex-col items-center justify-center p-4 sm:p-8 text-center border rounded-lg">
                     <div className="rounded-full bg-primary/10 p-3 mb-3">
                       <Plus className="h-6 w-6 text-primary" />
                     </div>
@@ -450,7 +504,7 @@ const FormEditPage = () => {
                   </div>
                 ) : (
                   <div className="border rounded-lg overflow-hidden">
-                    <div className="border-b p-3 bg-muted/30 grid grid-cols-12 text-sm font-medium">
+                    <div className="border-b p-3 bg-muted/30 hidden sm:grid sm:grid-cols-12 text-sm font-medium">
                       <div className="col-span-1 text-center">#</div>
                       <div className="col-span-3">Label</div>
                       <div className="col-span-2">Type</div>
@@ -461,27 +515,51 @@ const FormEditPage = () => {
                       {form?.fields
                         .sort((a, b) => a.order - b.order)
                         .map((field, index) => (
-                          <div key={field.id} className="p-3 grid grid-cols-12 items-center text-sm">
-                            <div className="col-span-1 text-center text-muted-foreground">{index + 1}</div>
-                            <div className="col-span-3 font-medium truncate" title={field.label}>{field.label}</div>
-                            <div className="col-span-2">{field.type.replace('_', ' ')}</div>
-                            <div className="col-span-2">
-                              {field.required ? (
-                                <span className="inline-flex items-center text-green-600">
-                                  <Check className="h-4 w-4 mr-1" /> Yes
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center text-muted-foreground">
-                                  <X className="h-4 w-4 mr-1" /> No
-                                </span>
+                          <div key={field.id} className="p-3">
+                            {/* Mobile view (card style) */}
+                            <div className="sm:hidden space-y-2">
+                              <div className="flex justify-between items-center">
+                                <div className="font-medium">{field.label}</div>
+                                <Badge variant={field.required ? "default" : "outline"}>
+                                  {field.required ? "Required" : "Optional"}
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Type: {field.type.replace('_', ' ')}
+                              </div>
+                              {(field.options?.length > 0 || Object.keys(field.config || {}).length > 0) && (
+                                <div className="text-xs text-muted-foreground bg-muted/20 p-2 rounded">
+                                  {field.options?.length > 0 
+                                    ? field.options.join(', ') 
+                                    : Object.entries(field.config || {})
+                                        .map(([key, value]) => `${key}: ${value}`)
+                                        .join(', ')}
+                                </div>
                               )}
                             </div>
-                            <div className="col-span-4 text-muted-foreground truncate">
-                              {field.options?.length > 0 
-                                ? field.options.join(', ') 
-                                : Object.entries(field.config || {})
-                                    .map(([key, value]) => `${key}: ${value}`)
-                                    .join(', ') || 'None'}
+                            {/* Desktop view (table row) */}
+                            <div className="hidden sm:grid sm:grid-cols-12 sm:items-center text-sm">
+                              <div className="col-span-1 text-center text-muted-foreground">{index + 1}</div>
+                              <div className="col-span-3 font-medium truncate" title={field.label}>{field.label}</div>
+                              <div className="col-span-2">{field.type.replace('_', ' ')}</div>
+                              <div className="col-span-2">
+                                {field.required ? (
+                                  <span className="inline-flex items-center text-green-600">
+                                    <Check className="h-4 w-4 mr-1" /> Yes
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center text-muted-foreground">
+                                    <X className="h-4 w-4 mr-1" /> No
+                                  </span>
+                                )}
+                              </div>
+                              <div className="col-span-4 text-muted-foreground truncate">
+                                {field.options?.length > 0 
+                                  ? field.options.join(', ') 
+                                  : Object.entries(field.config || {})
+                                      .map(([key, value]) => `${key}: ${value}`)
+                                      .join(', ') || 'None'}
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -581,11 +659,35 @@ const FormEditPage = () => {
                     
                     <div className="p-4 border rounded-lg">
                       <h4 className="font-medium mb-2">Embed Code</h4>
-                      <div className="bg-muted p-3 rounded-md">
-                        <code className="text-xs font-mono">
+                      <div className="bg-muted p-3 rounded-md overflow-x-auto">
+                        <code className="text-xs font-mono whitespace-pre-wrap break-all">
                           {baseUrl ? `<iframe src="${baseUrl}/forms/embed/${form?.slug}" width="100%" height="600" frameborder="0"></iframe>` : ''}
                         </code>
                       </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2" 
+                        onClick={() => {
+                          if (!form || !baseUrl) return;
+                          const embedCode = `<iframe src="${baseUrl}/forms/embed/${form.slug}" width="100%" height="600" frameborder="0"></iframe>`;
+                          navigator.clipboard.writeText(embedCode).then(() => {
+                            toast({
+                              title: "Success",
+                              description: "Embed code copied to clipboard",
+                            });
+                          }).catch(err => {
+                            console.error('Failed to copy embed code:', err);
+                            toast({
+                              title: "Error",
+                              description: "Failed to copy embed code",
+                              variant: "destructive"
+                            });
+                          });
+                        }}
+                      >
+                        Copy Embed Code
+                      </Button>
                       <p className="text-xs text-muted-foreground mt-2">
                         Use this code to embed the form on your website
                       </p>
@@ -607,6 +709,115 @@ const FormEditPage = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="settings" className="mt-4">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium">Form Settings</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Configure additional settings for your form
+                  </p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="formCategory" className="text-sm sm:text-base">Category</Label>
+                    <Input
+                      id="formCategory"
+                      placeholder="Enter category (e.g., Contact, Survey)"
+                      className="mt-1"
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                    />
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                      Categorize your form for easier organization.
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="formTags" className="text-sm sm:text-base">Tags</Label>
+                    <Input
+                      id="formTags"
+                      placeholder="Enter tags separated by commas"
+                      className="mt-1"
+                      value={tags.join(', ')}
+                      onChange={(e) => setTags(e.target.value.split(',').map(tag => tag.trim()).filter(Boolean))}
+                    />
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                      Add tags to help with searching and filtering forms.
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="formSubmissionMsg" className="text-sm sm:text-base">Submission Message</Label>
+                    <Textarea
+                      id="formSubmissionMsg"
+                      placeholder="Thank you for your submission!"
+                      className="mt-1"
+                      value={submissionMessage}
+                      onChange={(e) => setSubmissionMessage(e.target.value)}
+                    />
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                      This message will be shown to users after they submit the form.
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Switch 
+                        id="formRedirect" 
+                        checked={!!successRedirectUrl}
+                        onCheckedChange={(checked) => {
+                          if (!checked) {
+                            setSuccessRedirectUrl(undefined);
+                          } else {
+                            setSuccessRedirectUrl('https://');
+                          }
+                        }}
+                      />
+                      <Label htmlFor="formRedirect" className="text-sm sm:text-base">Custom success redirect</Label>
+                    </div>
+                    
+                    {successRedirectUrl && (
+                      <div className="pl-2 sm:pl-6">
+                        <Input
+                          id="formSuccessUrl"
+                          placeholder="https://example.com/thank-you"
+                          value={successRedirectUrl}
+                          onChange={(e) => setSuccessRedirectUrl(e.target.value)}
+                        />
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                          Redirect users to a custom URL after form submission.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Switch 
+                        id="formIsTemplate" 
+                        checked={isTemplate}
+                        onCheckedChange={setIsTemplate}
+                      />
+                      <Label htmlFor="formIsTemplate" className="text-sm sm:text-base">Save as template</Label>
+                    </div>
+                    <p className="text-xs sm:text-sm text-muted-foreground ml-6">
+                      Make this form available as a template for future forms.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="pt-4 flex justify-end">
+                  <Button
+                    onClick={saveFormSettings}
+                    disabled={saving}
+                  >
+                    {saving ? 'Saving...' : 'Save Settings'}
+                  </Button>
+                </div>
               </div>
             </TabsContent>
           </Tabs>

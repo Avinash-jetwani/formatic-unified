@@ -30,8 +30,10 @@ export default async function FormPage({ params }: Props) {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <Form form={form} />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-6 sm:py-8 md:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="w-full max-w-4xl">
+        <Form form={form} />
+      </div>
     </div>
   );
 } 

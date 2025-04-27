@@ -23,7 +23,7 @@ interface FormField {
   required: boolean;
   placeholder?: string;
   description?: string;
-  options?: string[] | FormFieldOption[];
+  options?: (string | FormFieldOption)[];
   maxRating?: number;
   fileTypes?: string;
   config?: {
@@ -35,7 +35,7 @@ interface FormField {
 }
 
 // Helper type guard
-function isOptionObject(option: any): option is { value: string; label: string } {
+function isOptionObject(option: any): option is FormFieldOption {
   return option && typeof option === 'object' && 'value' in option && 'label' in option;
 }
 
@@ -103,11 +103,32 @@ export function Form({ form }: FormProps) {
       case 'NUMBER':
         return <input type="number" {...commonProps} />;
       case 'DATE':
-        return <input type="date" {...commonProps} />;
+        return <input
+          id={field.id}
+          type="date"
+          value={formData[field.id] || ''}
+          onChange={(e) => handleInputChange(field.id, e.target.value)}
+          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all text-xs sm:text-sm md:text-base"
+          required={field.required}
+        />;
       case 'TIME':
-        return <input type="time" {...commonProps} />;
+        return <input
+          id={field.id}
+          type="time"
+          value={formData[field.id] || ''}
+          onChange={(e) => handleInputChange(field.id, e.target.value)}
+          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all text-xs sm:text-sm md:text-base"
+          required={field.required}
+        />;
       case 'DATETIME':
-        return <input type="datetime-local" {...commonProps} />;
+        return <input
+          id={field.id}
+          type="datetime-local"
+          value={formData[field.id] || ''}
+          onChange={(e) => handleInputChange(field.id, e.target.value)}
+          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all text-xs sm:text-sm md:text-base"
+          required={field.required}
+        />;
       case 'RATING':
         return (
           <div className="flex space-x-2 items-center">
@@ -169,12 +190,12 @@ export function Form({ form }: FormProps) {
         );
       case 'DROPDOWN':
         return (
-          <div className="relative">
+          <div className="relative z-10">
             <select
               id={field.id}
               value={formData[field.id] || ''}
               onChange={(e) => handleInputChange(field.id, e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200 appearance-none pl-3 pr-10 py-2 cursor-pointer text-gray-900 dark:text-gray-100 dark:bg-gray-800"
+              className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200 appearance-none pl-3 pr-10 py-2 cursor-pointer text-gray-900 dark:text-gray-100 dark:bg-gray-800"
               style={{ minHeight: 48 }}
             >
               <option value="" disabled style={{ color: '#888' }}>{field.placeholder || 'Select an option'}</option>
@@ -307,44 +328,51 @@ export function Form({ form }: FormProps) {
 
   if (success) {
     return (
-      <div className="bg-white shadow-lg rounded-2xl p-10 text-center py-12 max-w-md mx-auto">
-        <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-5">
-          <svg className="h-10 w-10 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
+      <div className="w-full max-w-xl mx-auto bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 sm:p-8 md:p-10 transition-all">
+        <div className="text-center">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 dark:bg-green-900 mb-4">
+            <svg className="h-10 w-10 text-green-500 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl mb-2">Thank you!</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">Your form has been submitted successfully.</p>
+          <button
+            onClick={() => {
+              setSuccess(false);
+              setFormData({});
+            }}
+            className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
+          >
+            Submit another response
+          </button>
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-3">Thank you!</h2>
-        <p className="text-gray-600 mb-6">Your submission has been received. We'll get back to you soon!</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Submit another response
-        </button>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg p-8 bg-gray-800 text-white shadow-lg w-full max-w-4xl mx-auto">
-      <h2 className="text-2xl font-bold mb-2 text-white">{form.title}</h2>
-      {form.description && (
-        <p className="mb-6 text-gray-200 text-lg">{form.description}</p>
-      )}
-      <form onSubmit={handleSubmit}>
+    <div className="w-full max-w-xl mx-auto">
+      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-6 sm:px-6 sm:py-8 md:p-10 transition-all">
+        <div className="space-y-2 mb-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{form.title}</h1>
+          {form.description && (
+            <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">{form.description}</p>
+          )}
+        </div>
+
         <div className="space-y-6">
-          {form.fields.map(field => (
-            <div key={field.id} className="form-field">
-              <label
-                htmlFor={field.id}
-                className="block text-lg font-medium text-gray-200 mb-2"
-              >
-                {field.label}
-                {field.required && <span className="text-red-400 ml-1">*</span>}
-              </label>
-              {('description' in field && field.description) && (
-                <p className="text-gray-300 mb-2 text-sm">{String((field as any).description)}</p>
-              )}
+          {form.fields?.map((field) => (
+            <div key={field.id} className="space-y-2">
+              <div className="flex justify-between items-start">
+                <label htmlFor={field.id} className="block text-sm sm:text-base font-medium text-gray-900 dark:text-white mb-1">
+                  {field.label}
+                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                </label>
+                {field.description && (
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 ml-2 italic">{field.description}</span>
+                )}
+              </div>
 
               {field.type === 'TEXT' && (
                 <input
@@ -352,7 +380,7 @@ export function Form({ form }: FormProps) {
                   type="text"
                   value={formData[field.id] || ''}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
-                  className="w-full px-4 py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder={field.placeholder}
                   required={field.required}
                 />
@@ -363,10 +391,10 @@ export function Form({ form }: FormProps) {
                   id={field.id}
                   value={formData[field.id] || ''}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
-                  className="w-full px-4 py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder={field.placeholder}
-                  rows={5}
                   required={field.required}
+                  rows={4}
                 />
               )}
 
@@ -376,7 +404,7 @@ export function Form({ form }: FormProps) {
                   type="email"
                   value={formData[field.id] || ''}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
-                  className="w-full px-4 py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder={field.placeholder}
                   required={field.required}
                 />
@@ -388,7 +416,7 @@ export function Form({ form }: FormProps) {
                   type="tel"
                   value={formData[field.id] || ''}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
-                  className="w-full px-4 py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder={field.placeholder}
                   required={field.required}
                 />
@@ -400,7 +428,7 @@ export function Form({ form }: FormProps) {
                   type="url"
                   value={formData[field.id] || ''}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
-                  className="w-full px-4 py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder={field.placeholder}
                   required={field.required}
                 />
@@ -412,7 +440,7 @@ export function Form({ form }: FormProps) {
                   type="number"
                   value={formData[field.id] || ''}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
-                  className="w-full px-4 py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
                   placeholder={field.placeholder}
                   required={field.required}
                 />
@@ -424,7 +452,7 @@ export function Form({ form }: FormProps) {
                   type="date"
                   value={formData[field.id] || ''}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
-                  className="w-full px-4 py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all text-xs sm:text-sm md:text-base"
                   required={field.required}
                 />
               )}
@@ -435,7 +463,7 @@ export function Form({ form }: FormProps) {
                   type="time"
                   value={formData[field.id] || ''}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
-                  className="w-full px-4 py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all text-xs sm:text-sm md:text-base"
                   required={field.required}
                 />
               )}
@@ -446,20 +474,20 @@ export function Form({ form }: FormProps) {
                   type="datetime-local"
                   value={formData[field.id] || ''}
                   onChange={(e) => handleInputChange(field.id, e.target.value)}
-                  className="w-full px-4 py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition-all text-xs sm:text-sm md:text-base"
                   required={field.required}
                 />
               )}
 
               {field.type === 'RATING' && (
-                <div className="flex space-x-2 items-center">
+                <div className="flex flex-wrap gap-1 sm:gap-2 items-center">
                   {Array.from({ length: (typeof (field as any).maxRating === 'number' ? (field as any).maxRating : 5) }).map((_, index) => (
                     <button
                       key={index}
                       type="button"
                       onClick={() => handleInputChange(field.id, index + 1)}
                       className={classNames(
-                        "w-10 h-10 flex items-center justify-center text-2xl transition-all",
+                        "w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center text-xl sm:text-2xl transition-all",
                         formData[field.id] === index + 1
                           ? "text-yellow-400 scale-110"
                           : "text-gray-400 hover:text-yellow-300 hover:scale-105"
@@ -511,12 +539,12 @@ export function Form({ form }: FormProps) {
               )}
 
               {field.type === 'DROPDOWN' && (
-                <div className="relative">
+                <div className="relative z-10">
                   <select
                     id={field.id}
                     value={formData[field.id] || ''}
                     onChange={(e) => handleInputChange(field.id, e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200 appearance-none pl-3 pr-10 py-2 cursor-pointer text-gray-900 dark:text-gray-100 dark:bg-gray-800"
+                    className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all duration-200 appearance-none pl-3 pr-10 py-2 cursor-pointer text-gray-900 dark:text-gray-100 dark:bg-gray-800"
                     style={{ minHeight: 48 }}
                   >
                     <option value="" disabled style={{ color: '#888' }}>{field.placeholder || 'Select an option'}</option>
@@ -559,7 +587,7 @@ export function Form({ form }: FormProps) {
                     return (
                       <label
                         key={value}
-                        className="flex items-center space-x-3 text-gray-200 hover:text-white"
+                        className="flex items-center space-x-2 sm:space-x-3 text-gray-200 hover:text-white cursor-pointer"
                       >
                         <input
                           type="checkbox"
@@ -571,9 +599,9 @@ export function Form({ form }: FormProps) {
                               : currentValues.filter((v: string) => v !== value);
                             handleInputChange(field.id, newValues);
                           }}
-                          className="h-5 w-5 rounded border-gray-500 bg-gray-700 text-blue-500 focus:ring-blue-500"
+                          className="h-4 w-4 sm:h-5 sm:w-5 rounded border-gray-500 bg-gray-700 text-blue-500 focus:ring-blue-500"
                         />
-                        <span>{label}</span>
+                        <span className="text-sm sm:text-base">{label}</span>
                       </label>
                     );
                   })}
@@ -596,16 +624,16 @@ export function Form({ form }: FormProps) {
                     return (
                       <label
                         key={value}
-                        className="flex items-center space-x-3 text-gray-200 hover:text-white"
+                        className="flex items-center space-x-2 sm:space-x-3 text-gray-200 hover:text-white cursor-pointer"
                       >
                         <input
                           type="radio"
                           value={value}
                           checked={formData[field.id] === value}
                           onChange={(e) => handleInputChange(field.id, e.target.value)}
-                          className="h-5 w-5 border-gray-500 bg-gray-700 text-blue-500 focus:ring-blue-500"
+                          className="h-4 w-4 sm:h-5 sm:w-5 border-gray-500 bg-gray-700 text-blue-500 focus:ring-blue-500"
                         />
-                        <span>{label}</span>
+                        <span className="text-sm sm:text-base">{label}</span>
                       </label>
                     );
                   })}
@@ -613,10 +641,10 @@ export function Form({ form }: FormProps) {
               )}
 
               {field.type === 'FILE' && (
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-gray-600 rounded-md hover:border-gray-500 transition-all bg-gray-700/50">
+                <div className="mt-1 flex justify-center px-3 sm:px-6 pt-3 sm:pt-5 pb-4 sm:pb-6 border-2 border-dashed border-gray-600 rounded-md hover:border-gray-500 transition-all bg-gray-700/50">
                   <div className="space-y-1 text-center">
                     <svg
-                      className="mx-auto h-12 w-12 text-gray-300"
+                      className="mx-auto h-8 w-8 sm:h-12 sm:w-12 text-gray-300"
                       stroke="currentColor"
                       fill="none"
                       viewBox="0 0 48 48"
@@ -629,7 +657,7 @@ export function Form({ form }: FormProps) {
                         strokeLinejoin="round"
                       />
                     </svg>
-                    <div className="flex text-sm text-gray-300">
+                    <div className="flex text-xs sm:text-sm text-gray-300 justify-center">
                       <label
                         htmlFor={`file-upload-${field.id}`}
                         className="relative cursor-pointer rounded-md font-medium text-blue-400 hover:text-blue-300 focus-within:outline-none"
@@ -654,7 +682,7 @@ export function Form({ form }: FormProps) {
                       {('fileTypes' in field && (field as any).fileTypes) || 'PNG, JPG, GIF up to 10MB'}
                     </p>
                     {formData[field.id] && (
-                      <p className="text-sm text-gray-200 mt-2">
+                      <p className="text-xs sm:text-sm text-gray-200 mt-2 truncate max-w-full">
                         Selected: {formData[field.id].name}
                       </p>
                     )}
@@ -666,7 +694,7 @@ export function Form({ form }: FormProps) {
         </div>
 
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded mt-8">
+          <div className="bg-red-50 border-l-4 border-red-500 p-3 sm:p-4 rounded mt-6 sm:mt-8">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -674,21 +702,21 @@ export function Form({ form }: FormProps) {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-xs sm:text-sm text-red-700">{error}</p>
               </div>
             </div>
           </div>
         )}
 
-        <div className="mt-8">
+        <div className="mt-6 sm:mt-8">
           <button
             type="submit"
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex justify-center py-2 sm:py-3 px-3 sm:px-4 border border-transparent rounded-md shadow-sm text-base sm:text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 sm:h-5 sm:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
