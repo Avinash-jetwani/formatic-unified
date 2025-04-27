@@ -397,7 +397,7 @@ const FieldEditorDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{field && field.id ? 'Edit Field' : 'Add Field'}</DialogTitle>
+          <DialogTitle>{field && !field.id.startsWith('temp-') ? 'Edit Field' : 'Add Field'}</DialogTitle>
           <DialogDescription>
             Configure the field properties below.
           </DialogDescription>
@@ -968,37 +968,17 @@ const FormBuilderPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {form?.multiPageEnabled && (
-                <div className="mb-4 flex items-center justify-between border rounded-md p-3 bg-muted/20">
-                  <div>
-                    <h3 className="text-sm font-medium">Multi-page Form</h3>
-                    <p className="text-xs text-muted-foreground">This form has multiple pages. Assign fields to different pages.</p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        // Get the max page number from fields
-                        const maxPage = fields.reduce((max, field) => Math.max(max, field.page || 1), 1);
-                        // Update all fields that are on maxPage to be on a new page
-                        setFields(fields.map(field => field.page === maxPage ? { ...field, page: maxPage + 1 } : field));
-                      }}
-                    >
-                      Add Page
-                    </Button>
-                  </div>
-                </div>
-              )}
-              
-              <div className="mb-4 flex flex-wrap gap-2">
-                <Button onClick={handleAddField}>
+              <div className="mb-4">
+                <Button onClick={handleAddField} className="w-full">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Add New Field
                 </Button>
-                
+              </div>
+              
+              <div className="mb-4">
                 <Button 
                   variant="outline"
+                  className="w-full"
                   onClick={() => {
                     setForm(prev => prev ? { ...prev, multiPageEnabled: !prev.multiPageEnabled } : null);
                     if (form?.multiPageEnabled) {
@@ -1010,6 +990,23 @@ const FormBuilderPage = () => {
                   {form?.multiPageEnabled ? 'Disable' : 'Enable'} Multi-page
                 </Button>
               </div>
+              
+              {form?.multiPageEnabled && (
+                <div className="mb-4">
+                  <Button 
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      // Get the max page number from fields
+                      const maxPage = fields.reduce((max, field) => Math.max(max, field.page || 1), 1);
+                      // Add a new page
+                      setFields(fields.map(field => field.page === maxPage ? { ...field, page: maxPage + 1 } : field));
+                    }}
+                  >
+                    Add New Page
+                  </Button>
+                </div>
+              )}
               
               {form?.multiPageEnabled && (
                 <div className="mb-4">
@@ -1064,13 +1061,6 @@ const FormBuilderPage = () => {
               
               {!form?.multiPageEnabled && (
                 <>
-                  <div className="mb-4">
-                    <Button onClick={handleAddField} className="w-full">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add New Field
-                    </Button>
-                  </div>
-                  
                   {loading ? (
                     <div className="space-y-3">
                       {Array(3).fill(null).map((_, i) => (
