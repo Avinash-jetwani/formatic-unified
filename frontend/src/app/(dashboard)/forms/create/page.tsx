@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, 
@@ -43,6 +43,8 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 
 import { fieldTypes } from '@/lib/fieldTypes';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Form field types from the Prisma schema
 enum FieldType {
@@ -98,9 +100,11 @@ const FormCreatePage: React.FC = () => {
   const [description, setDescription] = useState('');
   const [fields, setFields] = useState<FormField[]>([]);
   const [activeTab, setActiveTab] = useState('build');
+  const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
   const [editingField, setEditingField] = useState<FormField | null>(null);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [newOptionValue, setNewOptionValue] = useState('');
 
   // Handler for adding a field
   const handleAddField = (type: FieldType) => {
@@ -117,8 +121,8 @@ const FormCreatePage: React.FC = () => {
       order: fields.length
     };
     
-    setFields([...fields, newField]);
     setEditingField(newField);
+    setFieldDialogOpen(true);
   };
 
   // Get default configuration based on field type
@@ -140,6 +144,7 @@ const FormCreatePage: React.FC = () => {
   // Handler for updating a field
   const handleUpdateField = (updatedField: FormField) => {
     setFields(fields.map(field => field.id === updatedField.id ? updatedField : field));
+    setFieldDialogOpen(false);
     setEditingField(null);
   };
 
@@ -439,242 +444,13 @@ const FormCreatePage: React.FC = () => {
       </Tabs>
       
       {/* Field editor */}
-      {editingField && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>{editingField.id ? 'Edit Field' : 'Add Field'}</CardTitle>
-                <CardDescription>Configure the field properties</CardDescription>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setEditingField(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="field-label">Label</Label>
-                <Input
-                  id="field-label"
-                  value={editingField.label}
-                  onChange={e => setEditingField({...editingField, label: e.target.value})}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="field-placeholder">Placeholder</Label>
-                <Input
-                  id="field-placeholder"
-                  value={editingField.placeholder || ''}
-                  onChange={e => setEditingField({...editingField, placeholder: e.target.value})}
-                  className="mt-1"
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="field-required"
-                  checked={editingField.required}
-                  onCheckedChange={checked => setEditingField({...editingField, required: checked})}
-                />
-                <Label htmlFor="field-required">Required field</Label>
-              </div>
-              
-              {/* Options for dropdown, radio, checkbox */}
-              {(editingField.type === FieldType.DROPDOWN || 
-                editingField.type === FieldType.RADIO || 
-                editingField.type === FieldType.CHECKBOX) && (
-                <div>
-                  <Label>Options</Label>
-                  <div className="space-y-2 mt-1">
-                    {editingField.options.map((option, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <Input
-                          value={option}
-                          onChange={e => {
-                            const newOptions = [...editingField.options];
-                            newOptions[index] = e.target.value;
-                            setEditingField({...editingField, options: newOptions});
-                          }}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            const newOptions = editingField.options.filter((_, i) => i !== index);
-                            setEditingField({...editingField, options: newOptions});
-                          }}
-                          disabled={editingField.options.length <= 1}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full"
-                      onClick={() => {
-                        setEditingField({
-                          ...editingField,
-                          options: [...editingField.options, `Option ${editingField.options.length + 1}`]
-                        });
-                      }}
-                    >
-                      <Plus className="h-3.5 w-3.5 mr-1" /> Add Option
-                    </Button>
-                  </div>
-                </div>
-              )}
-              
-              {/* Config for numeric fields */}
-              {(editingField.type === FieldType.NUMBER || 
-                editingField.type === FieldType.SLIDER) && (
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <Label htmlFor="field-min">Min</Label>
-                    <Input
-                      id="field-min"
-                      type="number"
-                      value={editingField.config.min !== null ? editingField.config.min : ''}
-                      onChange={e => {
-                        const min = e.target.value === '' ? null : Number(e.target.value);
-                        setEditingField({
-                          ...editingField,
-                          config: {...editingField.config, min}
-                        });
-                      }}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="field-max">Max</Label>
-                    <Input
-                      id="field-max"
-                      type="number"
-                      value={editingField.config.max !== null ? editingField.config.max : ''}
-                      onChange={e => {
-                        const max = e.target.value === '' ? null : Number(e.target.value);
-                        setEditingField({
-                          ...editingField,
-                          config: {...editingField.config, max}
-                        });
-                      }}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="field-step">Step</Label>
-                    <Input
-                      id="field-step"
-                      type="number"
-                      min="0.001"
-                      step="0.001"
-                      value={editingField.config.step || 1}
-                      onChange={e => {
-                        const step = Number(e.target.value) || 1;
-                        setEditingField({
-                          ...editingField,
-                          config: {...editingField.config, step}
-                        });
-                      }}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {/* Config for rating */}
-              {editingField.type === FieldType.RATING && (
-                <div>
-                  <Label htmlFor="field-max-rating">Maximum Rating</Label>
-                  <Input
-                    id="field-max-rating"
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={editingField.config.max || 5}
-                    onChange={e => {
-                      const max = Number(e.target.value) || 5;
-                      setEditingField({
-                        ...editingField,
-                        config: {...editingField.config, max: Math.min(Math.max(max, 1), 10)}
-                      });
-                    }}
-                    className="mt-1"
-                  />
-                </div>
-              )}
-              
-              {/* Config for scale */}
-              {editingField.type === FieldType.SCALE && (
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label htmlFor="field-min-scale">Min Value</Label>
-                    <Input
-                      id="field-min-scale"
-                      type="number"
-                      min="0"
-                      max="9"
-                      value={editingField.config.min || 1}
-                      onChange={e => {
-                        const min = Number(e.target.value) || 1;
-                        setEditingField({
-                          ...editingField,
-                          config: {
-                            ...editingField.config, 
-                            min: Math.min(Math.max(min, 0), 9)
-                          }
-                        });
-                      }}
-                      className="mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="field-max-scale">Max Value</Label>
-                    <Input
-                      id="field-max-scale"
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={editingField.config.max || 10}
-                      onChange={e => {
-                        const max = Number(e.target.value) || 10;
-                        setEditingField({
-                          ...editingField,
-                          config: {
-                            ...editingField.config, 
-                            max: Math.min(Math.max(max, (editingField.config.min || 1) + 1), 10)
-                          }
-                        });
-                      }}
-                      className="mt-1"
-                    />
-                  </div>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={() => setEditingField(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => handleUpdateField(editingField)}
-              >
-                Save Changes
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      )}
+      <FieldEditorDialog
+        open={fieldDialogOpen}
+        onOpenChange={setFieldDialogOpen}
+        field={editingField}
+        onSave={handleUpdateField}
+        availableFields={fields}
+      />
     </div>
   );
 };
@@ -873,6 +649,613 @@ const renderFieldPreview = (field: FormField) => {
     default:
       return <p className="text-muted-foreground">Unsupported field type</p>;
   }
+};
+
+// Field Editor Dialog Component
+const FieldEditorDialog = ({ 
+  open, 
+  onOpenChange, 
+  field, 
+  onSave,
+  availableFields
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  field: FormField | null;
+  onSave: (field: FormField) => void;
+  availableFields: FormField[];
+}) => {
+  const [editedField, setEditedField] = useState<FormField | null>(null);
+  const [newOption, setNewOption] = useState('');
+  
+  // Update edited field when the input field changes
+  useEffect(() => {
+    if (field) {
+      setEditedField({ ...field });
+    } else {
+      setEditedField(null);
+    }
+  }, [field]);
+  
+  // Initialize config if needed when changing field types
+  useEffect(() => {
+    if (editedField && !editedField.config) {
+      setEditedField({
+        ...editedField,
+        config: {}
+      });
+    }
+  }, [editedField?.type]);
+  
+  if (!editedField) return null;
+  
+  const fieldTypeInfo = fieldTypes[editedField.type] || {
+    label: 'Unknown',
+    hasOptions: false,
+    hasPlaceholder: false,
+  };
+  
+  // Add option to the field
+  const handleAddOption = () => {
+    if (newOption.trim() && !editedField.options.includes(newOption.trim())) {
+      setEditedField({
+        ...editedField,
+        options: [...editedField.options, newOption.trim()],
+      });
+      setNewOption('');
+    }
+  };
+  
+  // Remove option from the field
+  const handleRemoveOption = (option: string) => {
+    setEditedField({
+      ...editedField,
+      options: editedField.options.filter(o => o !== option),
+    });
+  };
+  
+  // Update field type
+  const handleTypeChange = (type: string) => {
+    setEditedField({
+      ...editedField,
+      type: type as FieldType,
+      // Reset options if new type doesn't have options
+      options: fieldTypes[type].hasOptions ? editedField.options : [],
+      config: getDefaultConfig(type as FieldType)
+    });
+  };
+  
+  // Reuse the getDefaultConfig function for field type changes
+  function getDefaultConfig(type: FieldType) {
+    switch (type) {
+      case FieldType.RATING:
+        return { max: 5 };
+      case FieldType.SLIDER:
+        return { min: 0, max: 100, step: 1 };
+      case FieldType.SCALE:
+        return { min: 1, max: 10 };
+      case FieldType.NUMBER:
+        return { min: null, max: null, step: 1 };
+      default:
+        return {};
+    }
+  }
+  
+  // Function to update configuration values
+  const updateConfig = (key: string, value: any) => {
+    setEditedField({
+      ...editedField,
+      config: {
+        ...(editedField.config || {}),
+        [key]: value
+      }
+    });
+  };
+  
+  // Handler for saving the field
+  const handleSave = () => {
+    if (editedField && editedField.label.trim()) {
+      onSave(editedField);
+    }
+  };
+  
+  // Render field configuration based on type
+  const renderFieldConfig = () => {
+    if (!editedField) return null;
+
+    switch (editedField.type) {
+      case FieldType.TEXT:
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">Text Field Settings</h4>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="minLength" className="sm:text-right">
+                Min Length
+              </Label>
+              <div className="col-span-1 sm:col-span-3">
+                <Input
+                  id="minLength"
+                  type="number"
+                  min="0"
+                  value={editedField.config?.minLength || ''}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? '' : Number(e.target.value);
+                    updateConfig('minLength', value);
+                  }}
+                  placeholder="Minimum character length"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="maxLength" className="sm:text-right">
+                Max Length
+              </Label>
+              <div className="col-span-1 sm:col-span-3">
+                <Input
+                  id="maxLength"
+                  type="number"
+                  min="0"
+                  value={editedField.config?.maxLength || ''}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? '' : Number(e.target.value);
+                    updateConfig('maxLength', value);
+                  }}
+                  placeholder="Maximum character length"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      
+      case FieldType.LONG_TEXT:
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">Long Text Field Settings</h4>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="minLength" className="text-right">
+                Min Length
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="minLength"
+                  type="number"
+                  min="0"
+                  value={editedField.config?.minLength || ''}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? '' : Number(e.target.value);
+                    updateConfig('minLength', value);
+                  }}
+                  placeholder="Minimum character length"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="maxLength" className="text-right">
+                Max Length
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="maxLength"
+                  type="number"
+                  min="0"
+                  value={editedField.config?.maxLength || ''}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? '' : Number(e.target.value);
+                    updateConfig('maxLength', value);
+                  }}
+                  placeholder="Maximum character length"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="rows" className="text-right">
+                Rows
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="rows"
+                  type="number"
+                  min="2"
+                  max="20"
+                  value={editedField.config?.rows || '4'}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 4 : Number(e.target.value);
+                    updateConfig('rows', value);
+                  }}
+                  placeholder="Number of visible rows"
+                />
+              </div>
+            </div>
+          </div>
+        );
+        
+      case FieldType.NUMBER:
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">Number Field Settings</h4>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="min" className="text-right">
+                Min Value
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="min"
+                  type="number"
+                  value={editedField.config?.min ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? null : Number(e.target.value);
+                    updateConfig('min', value);
+                  }}
+                  placeholder="Minimum value"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="max" className="text-right">
+                Max Value
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="max"
+                  type="number"
+                  value={editedField.config?.max ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? null : Number(e.target.value);
+                    updateConfig('max', value);
+                  }}
+                  placeholder="Maximum value"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="step" className="text-right">
+                Step
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="step"
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  value={editedField.config?.step || '1'}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 1 : Number(e.target.value);
+                    updateConfig('step', value);
+                  }}
+                  placeholder="Step size"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      
+      case FieldType.RATING:
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">Rating Field Settings</h4>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="max" className="text-right">
+                Max Rating
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="max"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={editedField.config?.max || '5'}
+                  onChange={(e) => {
+                    const max = Number(e.target.value) || 5;
+                    updateConfig('max', Math.min(Math.max(max, 1), 10));
+                  }}
+                  placeholder="Maximum rating value"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      
+      case FieldType.SCALE:
+      case FieldType.SLIDER:
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">{editedField.type === FieldType.SCALE ? 'Scale' : 'Slider'} Field Settings</h4>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="min" className="text-right">
+                Min Value
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="min"
+                  type="number"
+                  value={editedField.config?.min ?? '1'}
+                  onChange={(e) => {
+                    const min = e.target.value === '' ? 1 : Number(e.target.value);
+                    updateConfig('min', min);
+                  }}
+                  placeholder="Minimum value"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="max" className="text-right">
+                Max Value
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="max"
+                  type="number"
+                  value={editedField.config?.max ?? '10'}
+                  onChange={(e) => {
+                    const max = e.target.value === '' ? 10 : Number(e.target.value);
+                    updateConfig('max', max);
+                  }}
+                  placeholder="Maximum value"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="step" className="text-right">
+                Step
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="step"
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  value={editedField.config?.step || '1'}
+                  onChange={(e) => {
+                    const step = e.target.value === '' ? 1 : Number(e.target.value);
+                    updateConfig('step', step);
+                  }}
+                  placeholder="Step size"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      
+      case FieldType.CHECKBOX:
+      case FieldType.RADIO:
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">{editedField.type === FieldType.CHECKBOX ? 'Checkbox' : 'Radio'} Field Settings</h4>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="layout" className="text-right">
+                Layout
+              </Label>
+              <div className="col-span-3">
+                <Select 
+                  value={editedField.config?.layout || 'vertical'}
+                  onValueChange={(value) => {
+                    updateConfig('layout', value);
+                  }}
+                >
+                  <SelectTrigger id="layout">
+                    <SelectValue placeholder="Select layout" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vertical">Vertical</SelectItem>
+                    <SelectItem value="horizontal">Horizontal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case FieldType.DROPDOWN:
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">Dropdown Field Settings</h4>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="allowSearch" className="text-right">
+                Searchable
+              </Label>
+              <div className="col-span-3 flex items-center">
+                <Switch
+                  id="allowSearch"
+                  checked={editedField.config?.allowSearch === true}
+                  onCheckedChange={(checked) => {
+                    updateConfig('allowSearch', checked);
+                  }}
+                />
+                <span className="ml-2 text-sm">Allow searching in dropdown</span>
+              </div>
+            </div>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
+  
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{field?.id ? 'Edit Field' : 'Add Field'}</DialogTitle>
+          <DialogDescription>Configure the field properties</DialogDescription>
+        </DialogHeader>
+        
+        <div className="flex flex-col gap-6 md:flex-row">
+          {/* Field configuration panel */}
+          <div className="space-y-4 flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="fieldType" className="sm:text-right md:whitespace-nowrap">
+                Field Type
+              </Label>
+              <div className="col-span-1 sm:col-span-3">
+                <Select 
+                  value={editedField.type} 
+                  onValueChange={handleTypeChange}
+                >
+                  <SelectTrigger id="fieldType">
+                    <SelectValue placeholder="Select field type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(fieldTypes).map(([key, { label, description }]) => (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex flex-col">
+                          <span>{label}</span>
+                          <span className="text-xs text-muted-foreground">{description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="fieldLabel" className="sm:text-right md:whitespace-nowrap">
+                Label
+              </Label>
+              <div className="col-span-1 sm:col-span-3">
+                <Input
+                  id="fieldLabel"
+                  value={editedField.label}
+                  onChange={(e) => setEditedField({...editedField, label: e.target.value})}
+                  placeholder="Field label"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="fieldPlaceholder" className="sm:text-right md:whitespace-nowrap">
+                Placeholder
+              </Label>
+              <div className="col-span-1 sm:col-span-3">
+                <Input
+                  id="fieldPlaceholder"
+                  value={editedField.placeholder || ''}
+                  onChange={(e) => setEditedField({...editedField, placeholder: e.target.value})}
+                  placeholder="Field placeholder text"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="fieldRequired" className="sm:text-right md:whitespace-nowrap">
+                Required
+              </Label>
+              <div className="col-span-1 sm:col-span-3 flex items-center">
+                <Switch
+                  id="fieldRequired"
+                  checked={editedField.required}
+                  onCheckedChange={(checked) => setEditedField({...editedField, required: checked})}
+                />
+                <span className="ml-2 text-sm">Make this field required</span>
+              </div>
+            </div>
+            
+            {/* Field type specific settings */}
+            {renderFieldConfig()}
+            
+            {/* Options for dropdown, radio, checkbox */}
+            {(editedField.type === FieldType.DROPDOWN || 
+              editedField.type === FieldType.RADIO || 
+              editedField.type === FieldType.CHECKBOX) && (
+              <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t">
+                <Label className="text-right self-start mt-2 md:whitespace-nowrap">
+                  Options
+                </Label>
+                <div className="col-span-3 space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                    <Input
+                      value={newOption || ''}
+                      onChange={(e) => setNewOption(e.target.value)}
+                      placeholder="Add option"
+                      className="flex-1"
+                    />
+                    <Button 
+                      onClick={handleAddOption} 
+                      type="button"
+                      className="sm:w-auto w-full"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  
+                  {editedField.options.length > 0 ? (
+                    <div className="space-y-1 mt-2">
+                      {editedField.options.map((option, index) => (
+                        <div key={index} className="flex items-center justify-between bg-muted/40 p-2 rounded">
+                          <span className="truncate pr-2">{option}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveOption(option)}
+                            className="h-7 w-7 flex-shrink-0"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground italic">
+                      No options added yet. Add at least one option.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Preview panel */}
+          <div className="border rounded-md p-4 md:p-6 bg-muted/20 md:w-[250px] lg:w-[300px] flex-shrink-0">
+            <div className="mb-4">
+              <h3 className="text-lg font-medium">Preview</h3>
+              <p className="text-sm text-muted-foreground">See how your field will appear</p>
+            </div>
+            
+            <div className="space-y-2 max-w-full overflow-hidden">
+              <Label htmlFor="preview-field">
+                {editedField.label || 'Field Label'}
+                {editedField.required && <span className="text-destructive ml-1">*</span>}
+              </Label>
+              
+              {renderFieldPreview(editedField)}
+            </div>
+          </div>
+        </div>
+        
+        <DialogFooter className="mt-6">
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={!editedField.label.trim() || ((editedField.type === FieldType.DROPDOWN || 
+              editedField.type === FieldType.RADIO || 
+              editedField.type === FieldType.CHECKBOX) && editedField.options.length === 0)}
+          >
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
 export default FormCreatePage; 
