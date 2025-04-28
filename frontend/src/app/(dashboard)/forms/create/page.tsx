@@ -143,7 +143,17 @@ const FormCreatePage: React.FC = () => {
 
   // Handler for updating a field
   const handleUpdateField = (updatedField: FormField) => {
-    setFields(fields.map(field => field.id === updatedField.id ? updatedField : field));
+    // Check if the field is new (not in the fields array yet)
+    const fieldExists = fields.some(field => field.id === updatedField.id);
+    
+    if (fieldExists) {
+      // Update existing field
+      setFields(fields.map(field => field.id === updatedField.id ? updatedField : field));
+    } else {
+      // Add new field
+      setFields([...fields, updatedField]);
+    }
+    
     setFieldDialogOpen(false);
     setEditingField(null);
   };
