@@ -1,14 +1,20 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import classNames from 'classnames';
 import { v4 as uuidv4 } from 'uuid';
-import { FaChevronDown, FaPlus, FaTrash, FaStar, FaUpload } from 'react-icons/fa';
+import { FaChevronDown, FaPlus, FaTrash, FaStar, FaUpload, FaArrowRight, FaArrowLeft } from 'react-icons/fa';
 import { Form as FormType } from '@/lib/forms';
 import { fetchApi } from '@/services/api';
 
 interface FormProps {
-  form: FormType;
+  form: {
+    id: string;
+    title: string;
+    description?: string;
+    fields: FormField[];
+    multiPageEnabled?: boolean;
+  };
 }
 
 interface FormFieldOption {
@@ -26,6 +32,7 @@ interface FormField {
   options?: (string | FormFieldOption)[];
   maxRating?: number;
   fileTypes?: string;
+  page?: number;
   config?: {
     min?: number;
     max?: number;
@@ -47,6 +54,16 @@ export function Form({ form }: FormProps) {
   const fileInputRefs = useRef({});
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [maxPage, setMaxPage] = useState(1);
+
+  // Get the maximum page number from form fields
+  useEffect(() => {
+    if (form?.fields?.length) {
+      const maxPageNum = Math.max(...form.fields.map(field => field.page || 1));
+      setMaxPage(maxPageNum);
+    }
+  }, [form]);
 
   const handleInputChange = (fieldId: string, value: any) => {
     setFormData(prev => ({
@@ -55,8 +72,61 @@ export function Form({ form }: FormProps) {
     }));
   };
 
+  const handleNextPage = () => {
+    if (currentPage < maxPage) {
+      setCurrentPage(currentPage + 1);
+      // Scroll to top when changing pages
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+      // Scroll to top when changing pages
+      window.scrollTo(0, 0);
+    }
+  };
+
+  const validateCurrentPage = () => {
+    const currentPageFields = form.fields.filter(field => (field.page || 1) === currentPage);
+    
+    for (const field of currentPageFields) {
+      if (field.required) {
+        const value = formData[field.id];
+        
+        if (!value || (typeof value === 'string' && value.trim() === '')) {
+          setError(`Please fill in the required field: ${field.label}`);
+          return false;
+        }
+        
+        if (field.type === 'CHECKBOX' && Array.isArray(value) && value.length === 0) {
+          setError(`Please select at least one option for: ${field.label}`);
+          return false;
+        }
+      }
+    }
+    
+    setError(null);
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If we're not on the last page, proceed to next page
+    if (form.multiPageEnabled && currentPage < maxPage) {
+      if (validateCurrentPage()) {
+        handleNextPage();
+      }
+      return;
+    }
+    
+    // Final validation before submission
+    if (!validateCurrentPage()) {
+      return;
+    }
+    
     setIsSubmitting(true);
     setError(null);
 
@@ -341,6 +411,7 @@ export function Form({ form }: FormProps) {
             onClick={() => {
               setSuccess(false);
               setFormData({});
+              setCurrentPage(1); // Reset to first page
             }}
             className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
           >
@@ -351,18 +422,53 @@ export function Form({ form }: FormProps) {
     );
   }
 
+  // Filter fields by current page
+  const currentPageFields = form.fields?.filter(field => (field.page || 1) === currentPage) || [];
+
   return (
     <div className="w-full max-w-xl mx-auto">
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-6 sm:px-6 sm:py-8 md:p-10 transition-all">
+      <form 
+        onSubmit={(e) => {
+          // Always prevent default form submission
+          e.preventDefault();
+          // Only proceed with submission on the last page
+          if (!form.multiPageEnabled || currentPage === maxPage) {
+            handleSubmit(e);
+          }
+        }} 
+        className="space-y-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg px-4 py-6 sm:px-6 sm:py-8 md:p-10 transition-all"
+      >
         <div className="space-y-2 mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{form.title}</h1>
           {form.description && (
             <p className="text-gray-600 dark:text-gray-300 text-sm sm:text-base">{form.description}</p>
           )}
+          
+          {/* Page indicator for multi-page forms */}
+          {form.multiPageEnabled && maxPage > 1 && (
+            <div className="flex items-center justify-between mt-4 text-sm text-gray-500 dark:text-gray-400">
+              <div className="flex items-center space-x-2">
+                <span>Page {currentPage} of {maxPage}</span>
+              </div>
+              <div className="flex space-x-1">
+                {Array.from({ length: maxPage }).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={classNames(
+                      "w-2 h-2 rounded-full",
+                      currentPage === i + 1 
+                        ? "bg-blue-500" 
+                        : "bg-gray-300 dark:bg-gray-600"
+                    )} 
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
-          {form.fields?.map((field) => (
+          {currentPageFields.map((field) => (
             <div key={field.id} className="space-y-2">
               <div className="flex justify-between items-start">
                 <label htmlFor={field.id} className="block text-sm sm:text-base font-medium text-gray-900 dark:text-white mb-1">
@@ -708,10 +814,37 @@ export function Form({ form }: FormProps) {
           </div>
         )}
 
-        <div className="mt-6 sm:mt-8">
+        <div className="mt-6 sm:mt-8 flex justify-between">
+          {/* Previous page button (only show on pages after the first) */}
+          {form.multiPageEnabled && currentPage > 1 && (
+            <button
+              type="button"
+              onClick={handlePrevPage}
+              className="py-2 sm:py-3 px-3 sm:px-4 border border-gray-300 rounded-md shadow-sm text-base sm:text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all flex items-center"
+            >
+              <FaArrowLeft className="mr-2" /> Previous
+            </button>
+          )}
+
+          {/* Submit or Next button */}
           <button
-            type="submit"
-            className="w-full flex justify-center py-2 sm:py-3 px-3 sm:px-4 border border-transparent rounded-md shadow-sm text-base sm:text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            type="button"
+            onClick={(e) => {
+              if (form.multiPageEnabled && currentPage < maxPage) {
+                // Prevent form submission
+                e.preventDefault();
+                if (validateCurrentPage()) {
+                  handleNextPage();
+                }
+              } else {
+                // For the last page or non-multipage form, handle submission via form's onSubmit
+                handleSubmit(e);
+              }
+            }}
+            className={classNames(
+              "py-2 sm:py-3 px-3 sm:px-4 border border-transparent rounded-md shadow-sm text-base sm:text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center",
+              form.multiPageEnabled && currentPage < maxPage ? "ml-auto" : "w-full justify-center"
+            )}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
@@ -721,6 +854,10 @@ export function Form({ form }: FormProps) {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 Submitting...
+              </>
+            ) : form.multiPageEnabled && currentPage < maxPage ? (
+              <>
+                Next <FaArrowRight className="ml-2" />
               </>
             ) : 'Submit'}
           </button>

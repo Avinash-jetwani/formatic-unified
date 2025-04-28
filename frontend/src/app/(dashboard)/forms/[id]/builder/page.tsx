@@ -169,6 +169,9 @@ const SortableField = ({ field, onEdit, onDelete, onDuplicate }: {
                   Required
                 </Badge>
               )}
+              <Badge variant="secondary" className="text-xs font-normal ml-2">
+                Page {field.page || 1}
+              </Badge>
             </div>
             
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1177,31 +1180,38 @@ const FieldEditorDialog = ({
                 Page
               </Label>
               <div className="col-span-1 sm:col-span-3">
-                <Input
-                  id="fieldPage"
-                  type="number"
-                  min={1}
-                  value={editedField.page || 1}
-                  onChange={(e) => setEditedField({...editedField, page: parseInt(e.target.value) || 1})}
-                />
+                <Select 
+                  value={String(editedField.page || 1)} 
+                  onValueChange={(value) => setEditedField({...editedField, page: parseInt(value, 10)})}
+                >
+                  <SelectTrigger id="fieldPage">
+                    <SelectValue placeholder="Select page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {/* Generate options for existing pages plus one more */}
+                    {Array.from({ length: Math.max(...availableFields.map(f => f.page || 1), 1) + 1 }).map((_, i) => (
+                      <SelectItem key={i + 1} value={(i + 1).toString()}>
+                        Page {i + 1}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             
-            {fieldTypeInfo.hasPlaceholder && (
-              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
-                <Label htmlFor="fieldPlaceholder" className="sm:text-right md:whitespace-nowrap">
-                  Placeholder
-                </Label>
-                <div className="col-span-1 sm:col-span-3">
-                  <Input
-                    id="fieldPlaceholder"
-                    value={editedField.placeholder || ''}
-                    onChange={(e) => setEditedField({...editedField, placeholder: e.target.value})}
-                    placeholder="Field placeholder text"
-                  />
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <Label htmlFor="fieldPlaceholder" className="sm:text-right md:whitespace-nowrap">
+                Placeholder
+              </Label>
+              <div className="col-span-1 sm:col-span-3">
+                <Input
+                  id="fieldPlaceholder"
+                  value={editedField.placeholder || ''}
+                  onChange={(e) => setEditedField({...editedField, placeholder: e.target.value})}
+                  placeholder="Field placeholder text"
+                />
               </div>
-            )}
+            </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
               <Label htmlFor="fieldRequired" className="sm:text-right md:whitespace-nowrap">
@@ -1434,6 +1444,7 @@ const FormBuilderPage = () => {
   const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
   const [editingField, setEditingField] = useState<FormField | null>(null);
   const [activeTab, setActiveTab] = useState('fields');
+  const [disableMultiPageDialogOpen, setDisableMultiPageDialogOpen] = useState(false);
   
   // Setup drag sensors
   const sensors = useSensors(
@@ -1467,43 +1478,47 @@ const FormBuilderPage = () => {
     }
   };
   
-  // Function to save form fields
+  // Function to save the order of fields
   const saveFormFields = async () => {
     if (!formId) return;
     
-    setIsSaving(true);
     try {
-      // Update order of fields
-      const updatedFields = fields.map((field, index) => ({
-        ...field,
-        order: index,
-      }));
+      setIsSaving(true);
+      console.log("Saving fields with page numbers:", fields.map(f => ({ id: f.id, order: f.order, page: f.page || 1 })));
       
-      // Send updated fields to the server
       await fetchApi(`/forms/${formId}/fields`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        data: { fields: updatedFields },
+        data: {
+          fields: fields.map((field, index) => ({
+            id: field.id,
+            type: field.type,
+            label: field.label,
+            placeholder: field.placeholder,
+            required: field.required,
+            options: field.options || [],
+            config: field.config,
+            order: index,
+            page: field.page || 1, // Ensure page number is preserved
+          })),
+        },
       });
-      
-      // Refresh form data from server to make sure everything is in sync
-      const updatedForm = await fetchApi<Form>(`/forms/${formId}`);
-      setForm(updatedForm);
-      setFields(updatedForm.fields || []);
+
+      // Refresh form data to ensure we have the latest
+      loadForm();
       
       toast({
-        title: "Success",
-        description: "Form fields saved successfully",
+        title: 'Success',
+        description: 'Form changes saved successfully',
       });
-      
     } catch (error) {
-      console.error('Failed to save form fields:', error);
+      console.error('Error saving field order:', error);
       toast({
-        title: "Error",
-        description: "Failed to save form fields",
-        variant: "destructive"
+        title: 'Error',
+        description: 'Failed to save form changes',
+        variant: 'destructive',
       });
     } finally {
       setIsSaving(false);
@@ -1526,6 +1541,22 @@ const FormBuilderPage = () => {
   
   // Function to add a new field
   const handleAddField = () => {
+    // Find currently active page if multi-page is enabled
+    let currentPage = 1;
+    
+    if (form?.multiPageEnabled) {
+      // Get the active tab element from the DOM (this assumes the tabs are using data-state="active" attribute)
+      const activeTabElement = document.querySelector('[role="tab"][data-state="active"]');
+      if (activeTabElement) {
+        // Extract the page number from the tab text (assumes format "Page X")
+        const tabText = activeTabElement.textContent || '';
+        const pageMatch = tabText.match(/Page (\d+)/);
+        if (pageMatch && pageMatch[1]) {
+          currentPage = parseInt(pageMatch[1], 10);
+        }
+      }
+    }
+    
     // Create a new empty field
     const newField: FormField = {
       id: `temp-${Date.now()}`, // Temporary ID, will be replaced by server
@@ -1537,7 +1568,7 @@ const FormBuilderPage = () => {
       options: [],
       config: {},
       order: fields.length,
-      page: 1,
+      page: currentPage,
     };
     
     setEditingField(newField);
@@ -1642,7 +1673,28 @@ const FormBuilderPage = () => {
       // Refresh the entire form to ensure we have the latest data
       const updatedForm = await fetchApi<Form>(`/forms/${formId}`);
       setForm(updatedForm);
-      setFields(updatedForm.fields || []);
+      
+      // If there are fields on page > 1, ensure multiPageEnabled is true
+      const hasMultiplePages = updatedForm.fields.some(f => f.page > 1);
+      if (hasMultiplePages && !updatedForm.multiPageEnabled) {
+        // Update the form to enable multi-page if it's not already enabled
+        await fetchApi(`/forms/${formId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          data: {
+            multiPageEnabled: true
+          }
+        });
+        
+        // Get the updated form again with the multi-page enabled
+        const reUpdatedForm = await fetchApi<Form>(`/forms/${formId}`);
+        setForm(reUpdatedForm);
+        setFields(reUpdatedForm.fields || []);
+      } else {
+        setFields(updatedForm.fields || []);
+      }
       
       toast({
         title: "Success",
@@ -1729,10 +1781,19 @@ const FormBuilderPage = () => {
                   variant="outline"
                   className="w-full"
                   onClick={() => {
-                    setForm(prev => prev ? { ...prev, multiPageEnabled: !prev.multiPageEnabled } : null);
                     if (form?.multiPageEnabled) {
-                      // If turning off multi-page, set all fields to page 1
-                      setFields(fields.map(field => ({ ...field, page: 1 })));
+                      // Check if there are fields on pages other than page 1
+                      const hasFieldsOnOtherPages = fields.some(field => field.page > 1);
+                      if (hasFieldsOnOtherPages) {
+                        // Show confirmation dialog
+                        setDisableMultiPageDialogOpen(true);
+                      } else {
+                        // Just disable multi-page
+                        setForm(prev => prev ? { ...prev, multiPageEnabled: false } : null);
+                      }
+                    } else {
+                      // Enable multi-page
+                      setForm(prev => prev ? { ...prev, multiPageEnabled: true } : null);
                     }
                   }}
                 >
@@ -1747,7 +1808,7 @@ const FormBuilderPage = () => {
                     className="w-full mb-4"
                     onClick={() => {
                       // Get the max page number from fields
-                      const maxPage = fields.reduce((max, field) => Math.max(max, field.page || 1), 1);
+                      const maxPage = Math.max(...fields.map(field => field.page || 1), 1);
                       // Add a new page
                       setFields(fields.map(field => field.page === maxPage ? { ...field, page: maxPage + 1 } : field));
                     }}
@@ -1757,14 +1818,20 @@ const FormBuilderPage = () => {
                   
                   <Tabs defaultValue="1" className="w-full">
                     <TabsList className="mb-4 flex-wrap justify-start h-auto">
-                      {Array.from(new Set(fields.map(f => f.page))).sort((a, b) => a - b).map(page => (
+                      {/* Generate page tabs based on existing fields */}
+                      {Array.from(
+                        new Set(fields.map(f => f.page || 1))
+                      ).sort((a, b) => a - b).map(page => (
                         <TabsTrigger key={page} value={page.toString()} className="mb-1">
                           Page {page}
                         </TabsTrigger>
                       ))}
                     </TabsList>
                     
-                    {Array.from(new Set(fields.map(f => f.page))).sort((a, b) => a - b).map(pageNum => (
+                    {/* Render content for each page */}
+                    {Array.from(
+                      new Set(fields.map(f => f.page || 1))
+                    ).sort((a, b) => a - b).map(pageNum => (
                       <TabsContent key={pageNum} value={pageNum.toString()}>
                         {loading ? (
                           <div className="space-y-3">
@@ -1870,6 +1937,35 @@ const FormBuilderPage = () => {
         onSave={handleSaveField}
         availableFields={fields}
       />
+      
+      {/* Disable Multi-page Confirmation Dialog */}
+      <AlertDialog open={disableMultiPageDialogOpen} onOpenChange={setDisableMultiPageDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disable Multi-page</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have fields on pages other than page 1. Disabling multi-page will move all fields to page 1.
+              This action cannot be undone. Are you sure you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              // Disable multi-page and move all fields to page 1
+              setForm(prev => prev ? { ...prev, multiPageEnabled: false } : null);
+              setFields(fields.map(field => ({ ...field, page: 1 })));
+              setDisableMultiPageDialogOpen(false);
+              
+              toast({
+                title: "Multi-page Disabled",
+                description: "All fields have been moved to page 1.",
+              });
+            }}>
+              Disable Multi-page
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -224,7 +224,7 @@ export class FormsService {
     id: string,
     userId: string,
     userRole: string,
-    fields: Prisma.FormFieldCreateInput[]
+    fields: any[]
   ): Promise<Form> {
     const form = await this.prisma.form.findUnique({
       where: { id },
@@ -252,29 +252,23 @@ export class FormsService {
       
       // Then create all fields with their new order values
       const createdFields = await Promise.all(
-        fields.map((field, index) => {
-          // Extract only allowed properties for each field
-          // to prevent validation errors with extra properties
-          const {
-            label,
-            type,
-            placeholder,
-            required,
-            options,
-            config
-          } = field;
+        fields.map(async (field) => {
+          // Prepare data for create operation
+          const fieldData = {
+            formId: id,
+            type: field.type,
+            label: field.label || '',
+            placeholder: field.placeholder || null,
+            required: field.required || false,
+            options: field.options || [],
+            config: field.config ? (typeof field.config === 'string' ? field.config : JSON.stringify(field.config)) : null,
+            order: field.order,
+            page: field.page || 1,
+            conditions: field.conditions || null
+          };
           
           return prisma.formField.create({
-            data: {
-              label,
-              type,
-              placeholder,
-              required,
-              options,
-              config,
-              order: index, // Set explicit order based on array position
-              formId: id, // Using direct foreign key instead of relation
-            },
+            data: fieldData
           });
         })
       );
