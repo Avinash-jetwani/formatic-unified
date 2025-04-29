@@ -94,11 +94,28 @@ export default function SubmissionsDashboard() {
       const data = await fetchApi('/submissions') as Submission[];
       // Enhance submissions with a status field
       const enhancedData = data.map((submission: Submission) => {
-        const random = Math.random();
+        // If submission already has a status, keep it
+        if (submission.status) {
+          return submission;
+        }
+        
+        // Get timestamp for submission
+        const submissionDate = new Date(submission.createdAt);
+        const now = new Date();
+        const minutesAgo = Math.floor((now.getTime() - submissionDate.getTime()) / (1000 * 60));
+        
+        // Assign status based on age:
+        // New: less than 30 minutes old
+        // Viewed: between 30 minutes and 24 hours
+        // Archived: older than 24 hours
         let status: 'new' | 'viewed' | 'archived';
-        if (random > 0.7) status = 'new';
-        else if (random > 0.5) status = 'viewed';
-        else status = 'archived';
+        if (minutesAgo < 30) {
+          status = 'new';
+        } else if (minutesAgo < 24 * 60) {
+          status = 'viewed';
+        } else {
+          status = 'archived';
+        }
         
         return {
           ...submission,
