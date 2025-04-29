@@ -34,6 +34,9 @@ export const authService = {
    * Login a user
    */
   async login(email: string, password: string, rememberMe: boolean = false): Promise<AuthResponse> {
+    console.log('Login attempt with URL path: /api/auth/login');
+    console.log('Remember me:', rememberMe);
+    
     const response = await fetchApi<AuthResponse>('/api/auth/login', {
       method: 'POST',
       data: { email, password },

@@ -88,12 +88,15 @@ export default function SubmissionsDashboard() {
 
   // Detect mobile screens on client side
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const checkIfMobile = () => setIsMobile(window.innerWidth < 640);
-      checkIfMobile();
-      window.addEventListener('resize', checkIfMobile);
-      return () => window.removeEventListener('resize', checkIfMobile);
-    }
+    const checkIfMobile = () => {
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth < 640);
+      }
+    };
+    
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
   }, []);
 
   useEffect(() => {
@@ -361,12 +364,12 @@ export default function SubmissionsDashboard() {
 
   const updateSubmissionStatus = async (id: string, newStatus: 'new' | 'viewed' | 'archived') => {
     try {
-      // In a real app, this would call the API to update the status
-      // await fetchApi(`/submissions/${id}/status`, {
-      //   method: 'PATCH',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   data: JSON.stringify({ status: newStatus })
-      // });
+      // Call the API to update the status
+      await fetchApi(`/submissions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        data: JSON.stringify({ status: newStatus })
+      });
       
       // Update in local state
       setSubmissions(prevSubmissions => 
@@ -380,17 +383,17 @@ export default function SubmissionsDashboard() {
       // Save to localStorage for persistence
       const updatedStatusMap = { ...savedStatusMap, [id]: newStatus };
       setSavedStatusMap(updatedStatusMap);
-      localStorage.setItem('submissionStatuses', JSON.stringify(updatedStatusMap));
+      localStorage.setItem('submissionStatusMap', JSON.stringify(updatedStatusMap));
       
       toast({
-        title: 'Status Updated',
+        title: "Status Updated",
         description: `Submission marked as ${newStatus}`,
       });
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to update submission status',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to update submission status",
+        variant: "destructive",
       });
     }
   };

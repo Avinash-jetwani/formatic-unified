@@ -591,81 +591,81 @@ export default function DashboardPage() {
       {/* Custom date range picker */}
       {showDatePicker && (
         <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium">Select Date Range</h2>
-            <button onClick={() => setShowDatePicker(false)}>
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Start Date</label>
-                <input 
-                  type="date"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={format(startDate, 'yyyy-MM-dd')}
-                  onChange={e => setStartDate(new Date(e.target.value))}
-                  max={format(endDate, 'yyyy-MM-dd')}
-                />
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium">Select Date Range</h2>
+              <button onClick={() => setShowDatePicker(false)}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Start Date</label>
+                  <input 
+                    type="date"
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                    value={format(startDate, 'yyyy-MM-dd')}
+                    onChange={e => setStartDate(new Date(e.target.value))}
+                    max={format(endDate, 'yyyy-MM-dd')}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">End Date</label>
+                  <input 
+                    type="date"
+                    className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                    value={format(endDate, 'yyyy-MM-dd')}
+                    onChange={e => setEndDate(new Date(e.target.value))}
+                    min={format(startDate, 'yyyy-MM-dd')}
+                    max={format(new Date(), 'yyyy-MM-dd')}
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">End Date</label>
-                <input 
-                  type="date"
-                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
-                  value={format(endDate, 'yyyy-MM-dd')}
-                  onChange={e => setEndDate(new Date(e.target.value))}
-                  min={format(startDate, 'yyyy-MM-dd')}
-                  max={format(new Date(), 'yyyy-MM-dd')}
-                />
+              
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDatePresetSelect('thisMonth')}
+                >
+                  This Month
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDatePresetSelect('lastMonth')}
+                >
+                  Last Month
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDatePresetSelect('thisYear')}
+                >
+                  This Year
+                </Button>
               </div>
-            </div>
-            
-            <div className="flex gap-2 flex-wrap">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDatePresetSelect('thisMonth')}
-              >
-                This Month
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDatePresetSelect('lastMonth')}
-              >
-                Last Month
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleDatePresetSelect('thisYear')}
-              >
-                This Year
-              </Button>
-            </div>
-            
-            <div className="mt-2 text-sm text-muted-foreground">
-              <span>Selected range: </span>
-              <span className="font-medium">
-                {format(startDate, 'dd MMM yyyy')} - {format(endDate, 'dd MMM yyyy')}
-              </span>
-            </div>
-            
-            <div className="flex justify-end gap-3 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowDatePicker(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={applyCustomDateRange}
-              >
-                Apply & Update Dashboard
-              </Button>
+              
+              <div className="mt-2 text-sm text-muted-foreground">
+                <span>Selected range: </span>
+                <span className="font-medium">
+                  {format(startDate, 'dd MMM yyyy')} - {format(endDate, 'dd MMM yyyy')}
+                </span>
+              </div>
+              
+              <div className="flex justify-end gap-3 mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDatePicker(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={applyCustomDateRange}
+                >
+                  Apply & Update Dashboard
+                </Button>
             </div>
           </div>
         </div>
@@ -690,14 +690,14 @@ export default function DashboardPage() {
           loading={loading}
         />
         {isAdmin && (
-          <StatCard
-            title="Total Users"
+        <StatCard
+          title="Total Users"
             value={loading ? "—" : formatNumber(stats?.totals.users || 0)}
-            icon={<Users className="h-5 w-5" />}
-            trend="up"
+          icon={<Users className="h-5 w-5" />}
+          trend="up"
             trendValue={`${stats?.trends.users || 0}%`}
-            loading={loading}
-          />
+          loading={loading}
+        />
         )}
         <StatCard
           title="System Uptime"
@@ -724,14 +724,14 @@ export default function DashboardPage() {
               >
                 <Download className="h-4 w-4" />
               </Button>
-            </div>
+          </div>
             
             <div className="p-5">
-              {loading ? (
+          {loading ? (
                 <div className="h-[300px] w-full bg-muted/50 rounded-md flex items-center justify-center animate-pulse">
-                  <BarChart3 className="h-8 w-8 text-muted-foreground/50" />
-                </div>
-              ) : stats?.charts.submissions && stats.charts.submissions.length > 0 ? (
+              <BarChart3 className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+          ) : stats?.charts.submissions && stats.charts.submissions.length > 0 ? (
                 <div className="h-[300px] w-full">
                   {/* Render actual chart with submission data */}
                   <div className="h-full w-full">
@@ -897,28 +897,28 @@ export default function DashboardPage() {
                         );
                       })()}
                     </svg>
-                  </div>
-                </div>
-              ) : (
+              </div>
+            </div>
+          ) : (
                 <div className="h-[300px] w-full flex items-center justify-center">
                   <div className="text-center">
                     <BarChart3 className="mx-auto h-10 w-10 text-muted-foreground/50 mb-3" />
                     <p className="text-sm text-muted-foreground">No submission data available for the selected period.</p>
                   </div>
-                </div>
-              )}
             </div>
-          </div>
-          
+          )}
+            </div>
+        </div>
+
           {isAdmin && (
             <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
               <div className="flex items-center justify-between p-5 border-b border-border">
                 <h3 className="font-medium">Recent Users</h3>
                 <Link href="/admin/users" className="text-xs text-primary hover:underline">View all</Link>
-              </div>
+          </div>
               
               <div className="divide-y divide-border">
-                {loading ? (
+          {loading ? (
                   // Loading skeleton
                   Array(5).fill(null).map((_, i) => (
                     <div key={i} className="flex items-center gap-3 p-4">
@@ -926,7 +926,7 @@ export default function DashboardPage() {
                       <div className="space-y-2 flex-1">
                         <div className="h-4 w-1/3 bg-muted rounded animate-pulse"></div>
                         <div className="h-3 w-1/2 bg-muted rounded animate-pulse"></div>
-                      </div>
+            </div>
                     </div>
                   ))
                 ) : stats?.recentUsers && stats.recentUsers.length > 0 ? (
@@ -934,26 +934,26 @@ export default function DashboardPage() {
                     <div key={user.id} className="flex items-center gap-3 p-4 hover:bg-muted/50">
                       <div className="flex-shrink-0 rounded-full bg-primary/10 h-8 w-8 flex items-center justify-center">
                         <User className="h-4 w-4 text-primary" />
-                      </div>
+                    </div>
                       <div>
                         <p className="text-sm font-medium">{user.name}</p>
                         <p className="text-xs text-muted-foreground">{user.email}</p>
-                      </div>
+                    </div>
                       <div className="ml-auto text-xs text-muted-foreground">
                         {new Date(user.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
+                  </div>
+              </div>
                   ))
-                ) : (
+          ) : (
                   <div className="p-6 text-center">
                     <p className="text-sm text-muted-foreground">No users found.</p>
-                  </div>
-                )}
-              </div>
             </div>
           )}
         </div>
-        
+            </div>
+          )}
+      </div>
+      
         {/* Right column */}
         <div className="space-y-6">
           <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
@@ -975,7 +975,7 @@ export default function DashboardPage() {
                 >
                   <Download className="h-4 w-4" />
                 </Button>
-              </div>
+                </div>
             </div>
             
             <div className="divide-y divide-border">
@@ -986,7 +986,7 @@ export default function DashboardPage() {
                     <div className="space-y-2 flex-1">
                       <div className="h-4 w-1/3 bg-muted rounded animate-pulse"></div>
                       <div className="h-3 w-1/2 bg-muted rounded animate-pulse"></div>
-                    </div>
+              </div>
                     <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
                   </div>
                 ))
@@ -997,29 +997,29 @@ export default function DashboardPage() {
                       <p className="text-sm font-medium">{form.formName}</p>
                       <span className="text-xs font-semibold rounded-full px-2 py-0.5 bg-primary/10 text-primary">
                         {form.completionRate}%
-                      </span>
-                    </div>
+                    </span>
+                  </div>
                     <div className="flex items-center mt-2">
                       <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className="h-full bg-primary"
                           style={{ width: `${form.completionRate}%` }}
                         />
-                      </div>
+                </div>
                       <span className="ml-2 text-xs text-muted-foreground">
                         {form.submissions} submissions
                       </span>
-                    </div>
+            </div>
                   </div>
                 ))
-              ) : (
+          ) : (
                 <div className="p-6 text-center">
                   <p className="text-sm text-muted-foreground">No form performance data available.</p>
-                </div>
-              )}
             </div>
-          </div>
-          
+          )}
+            </div>
+        </div>
+
           <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
             <div className="flex items-center justify-between p-5 border-b border-border">
               <h3 className="font-medium">Recent Submissions</h3>
@@ -1027,7 +1027,7 @@ export default function DashboardPage() {
             </div>
             
             <div className="divide-y divide-border">
-              {loading ? (
+          {loading ? (
                 // Loading skeleton
                 Array(5).fill(null).map((_, i) => (
                   <div key={i} className="flex items-center gap-3 p-4">
@@ -1035,21 +1035,21 @@ export default function DashboardPage() {
                     <div className="space-y-2 flex-1">
                       <div className="h-4 w-1/3 bg-muted rounded animate-pulse"></div>
                       <div className="h-3 w-1/2 bg-muted rounded animate-pulse"></div>
-                    </div>
-                  </div>
+                </div>
+            </div>
                 ))
               ) : stats?.recentSubmissions && stats.recentSubmissions.length > 0 ? (
                 stats.recentSubmissions.slice(0, 5).map((submission) => (
                   <div key={submission.id} className="flex items-center gap-3 p-4 hover:bg-muted/50">
                     <div className="flex-shrink-0 rounded-full bg-primary/10 h-8 w-8 flex items-center justify-center">
                       <FileText className="h-4 w-4 text-primary" />
-                    </div>
+              </div>
                     <div>
                       <p className="text-sm font-medium">{submission.formName}</p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(submission.submittedAt).toLocaleString()}
                       </p>
-                    </div>
+                  </div>
                     <div className="ml-auto">
                       <span className={cn(
                         "rounded-full px-2 py-0.5 text-xs font-medium",
@@ -1059,18 +1059,18 @@ export default function DashboardPage() {
                       )}>
                         {submission.status}
                       </span>
-                    </div>
-                  </div>
+                </div>
+            </div>
                 ))
-              ) : (
+          ) : (
                 <div className="p-6 text-center">
                   <p className="text-sm text-muted-foreground">No submissions found.</p>
-                </div>
-              )}
             </div>
-          </div>
+          )}
         </div>
       </div>
+                </div>
+                </div>
     </div>
   );
 } 

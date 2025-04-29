@@ -475,4 +475,33 @@ export class FormsService {
 
     return slug;
   }
+
+  async createSubmission(formId: string, submissionData: any) {
+    // Validate the form exists and is published
+    const form = await this.prisma.form.findUnique({
+      where: { id: formId },
+    });
+
+    if (!form) {
+      throw new NotFoundException(`Form with ID ${formId} not found`);
+    }
+
+    if (!form.published) {
+      throw new BadRequestException(`This form is not published and cannot accept submissions`);
+    }
+
+    // Extract formData from the submission data
+    const { data, ...analyticsData } = submissionData;
+
+    // Create the submission
+    return this.prisma.submission.create({
+      data: {
+        formId,
+        data,
+        status: 'new',
+        // Include analytics data
+        ...analyticsData
+      },
+    });
+  }
 }

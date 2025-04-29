@@ -36,7 +36,7 @@ async function handleRequest(
   request: NextRequest,
   path: string
 ) {
-  const API_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+  const API_URL = process.env.BACKEND_URL || 'http://localhost:3001';
   const url = new URL(request.url);
   const targetUrl = `${API_URL}/${path}${url.search}`;
 

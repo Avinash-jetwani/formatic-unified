@@ -1,6 +1,7 @@
 // /backend/src/submissions/submissions.service.ts
 import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
+import { UpdateSubmissionDto } from './dto/update-submission.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { Role } from '@prisma/client';
 import * as PDFDocument from 'pdfkit';
@@ -23,6 +24,14 @@ export class SubmissionsService {
       data: {
         formId: createSubmissionDto.formId,
         data: createSubmissionDto.data,
+        status: 'new',
+        // Store analytics data
+        ipAddress: createSubmissionDto.ipAddress,
+        userAgent: createSubmissionDto.userAgent,
+        referrer: createSubmissionDto.referrer,
+        browser: createSubmissionDto.browser,
+        device: createSubmissionDto.device,
+        location: createSubmissionDto.location,
       },
     });
   }
@@ -123,6 +132,33 @@ async findAll(userId: string, userRole: Role) {
     }
     
     return submission;
+  }
+
+  async update(id: string, updateSubmissionDto: UpdateSubmissionDto, userId: string, userRole: Role) {
+    // Check if submission exists and user has permission
+    await this.findOne(id, userId, userRole);
+    
+    const updateData: any = {};
+    
+    // Only update fields that are provided
+    if (updateSubmissionDto.status !== undefined) {
+      updateData.status = updateSubmissionDto.status;
+      updateData.statusUpdatedAt = new Date();
+    }
+    
+    if (updateSubmissionDto.notes !== undefined) {
+      updateData.notes = updateSubmissionDto.notes;
+      updateData.notesUpdatedAt = new Date();
+    }
+    
+    if (updateSubmissionDto.tags !== undefined) {
+      updateData.tags = updateSubmissionDto.tags;
+    }
+    
+    return this.prisma.submission.update({
+      where: { id },
+      data: updateData,
+    });
   }
 
   async findSiblings(id: string, formId: string, userId: string, userRole: Role) {

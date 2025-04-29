@@ -549,26 +549,35 @@ export default function RegisterPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-start">
+                  <div className="flex items-start space-x-2 mt-6">
                     <Checkbox
                       id="terms"
                       name="terms"
                       checked={agreeToTerms}
-                      onChange={(e) => setAgreeToTerms(e.target.checked)}
+                      onCheckedChange={(checked) => setAgreeToTerms(checked as boolean)}
                       required
-                      label={
-                        <>
-                          I agree to the{' '}
-                          <Link href="/terms" className="text-primary hover:text-primary/90">
-                            Terms of Service
-                          </Link>{' '}
-                          and{' '}
-                          <Link href="/privacy" className="text-primary hover:text-primary/90">
-                            Privacy Policy
-                          </Link>
-                        </>
-                      }
                     />
+                    <label 
+                      htmlFor="terms" 
+                      className="text-sm cursor-pointer mt-1"
+                    >
+                      I agree to the{' '}
+                      <Link
+                        href="/terms"
+                        className="font-medium text-primary hover:text-primary/90"
+                        target="_blank"
+                      >
+                        Terms of Service
+                      </Link>{' '}
+                      and{' '}
+                      <Link
+                        href="/privacy"
+                        className="font-medium text-primary hover:text-primary/90"
+                        target="_blank"
+                      >
+                        Privacy Policy
+                      </Link>
+                    </label>
                   </div>
                   
                   <div className="flex space-x-4">

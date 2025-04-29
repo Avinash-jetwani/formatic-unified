@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +31,7 @@ interface Form {
   description: string;
   slug: string;
   published: boolean;
+  multiPageEnabled: boolean;
   fields: FormField[];
 }
 
@@ -44,6 +45,7 @@ interface FormField {
   options: string[];
   config: any;
   order: number;
+  page: number;
 }
 
 const FormPreviewPage = () => {
@@ -55,6 +57,8 @@ const FormPreviewPage = () => {
   const [form, setForm] = useState<Form | null>(null);
   const [loading, setLoading] = useState(true);
   const [formValues, setFormValues] = useState<Record<string, any>>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [maxPage, setMaxPage] = useState(1);
   
   // Load form data on component mount
   useEffect(() => {
@@ -80,6 +84,12 @@ const FormPreviewPage = () => {
         }
       });
       setFormValues(initialValues);
+      
+      // Set max page
+      if (data.fields && data.fields.length > 0) {
+        const maxPageNum = Math.max(...data.fields.map(f => f.page || 1));
+        setMaxPage(maxPageNum);
+      }
       
     } catch (error) {
       console.error('Failed to load form:', error);
@@ -120,6 +130,20 @@ const FormPreviewPage = () => {
         [fieldId]: currentValues
       };
     });
+  };
+  
+  // Handle next page
+  const handleNextPage = () => {
+    if (currentPage < maxPage) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
+  
+  // Handle previous page
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
   };
   
   // Function to render field based on type
@@ -320,13 +344,68 @@ const FormPreviewPage = () => {
     }
   };
   
+  // Function to validate current page fields
+  const validateCurrentPage = () => {
+    if (!form?.fields) return true;
+    
+    const currentPageFields = getCurrentPageFields();
+    
+    for (const field of currentPageFields) {
+      if (field.required) {
+        const value = formValues[field.id];
+        
+        if (!value || (typeof value === 'string' && value.trim() === '')) {
+          toast({
+            title: "Validation Error",
+            description: `Please fill in the required field: ${field.label}`,
+            variant: "destructive"
+          });
+          return false;
+        }
+        
+        if (field.type === 'CHECKBOX' && Array.isArray(value) && value.length === 0) {
+          toast({
+            title: "Validation Error",
+            description: `Please select at least one option for: ${field.label}`,
+            variant: "destructive"
+          });
+          return false;
+        }
+      }
+    }
+    
+    return true;
+  };
+  
   // Function to handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If multi-page form and not on last page, validate and go to next page
+    if (form?.multiPageEnabled && currentPage < maxPage) {
+      if (validateCurrentPage()) {
+        handleNextPage();
+      }
+      return;
+    }
+    
+    // Final validation before "submission"
+    if (!validateCurrentPage()) {
+      return;
+    }
+    
     toast({
       title: "Preview Only",
       description: "This is a preview mode. Form submissions are not processed in preview mode.",
     });
+  };
+  
+  // Get fields for current page
+  const getCurrentPageFields = () => {
+    if (!form?.fields) return [];
+    return form.fields
+      .filter(field => (field.page || 1) === currentPage)
+      .sort((a, b) => a.order - b.order);
   };
   
   return (
@@ -391,25 +470,66 @@ const FormPreviewPage = () => {
           <CardHeader>
             <CardTitle>{form?.title || 'Untitled Form'}</CardTitle>
             {form?.description && <CardDescription>{form.description}</CardDescription>}
+            
+            {/* Page indicator for multi-page forms */}
+            {form?.multiPageEnabled && maxPage > 1 && (
+              <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+                <div className="flex items-center space-x-2">
+                  <span>Page {currentPage} of {maxPage}</span>
+                </div>
+                <div className="flex space-x-1">
+                  {Array.from({ length: maxPage }).map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`w-2 h-2 rounded-full ${
+                        currentPage === i + 1 
+                          ? "bg-primary" 
+                          : "bg-muted"
+                      }`} 
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {form?.fields
-                ?.sort((a, b) => a.order - b.order)
-                .map((field) => (
-                  <div key={field.id} className="space-y-2">
-                    <Label htmlFor={field.id}>
-                      {field.label}
-                      {field.required && <span className="text-destructive ml-1">*</span>}
-                    </Label>
-                    {renderField(field)}
-                  </div>
-                ))}
+              {getCurrentPageFields().map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <Label htmlFor={field.id}>
+                    {field.label}
+                    {field.required && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  {renderField(field)}
+                </div>
+              ))}
             </form>
           </CardContent>
-          <CardFooter>
-            <Button type="submit" className="ml-auto">
-              Submit (Preview Only)
+          <CardFooter className="flex justify-between">
+            {/* Previous page button (for multi-page forms) */}
+            {form?.multiPageEnabled && currentPage > 1 && (
+              <Button 
+                type="button" 
+                variant="outline"
+                onClick={handlePrevPage}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+              </Button>
+            )}
+            
+            {/* Next/Submit button */}
+            <Button 
+              type="submit" 
+              onClick={handleSubmit}
+              className={form?.multiPageEnabled && currentPage > 1 ? "" : "ml-auto"}
+            >
+              {form?.multiPageEnabled && currentPage < maxPage ? (
+                <>
+                  Next <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              ) : (
+                "Submit (Preview Only)"
+              )}
             </Button>
           </CardFooter>
         </Card>

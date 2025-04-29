@@ -8,18 +8,12 @@ async function bootstrap() {
   // Enable CORS
   app.enableCors();
   
-  // Enable validation
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
-  
+  // Enable validation pipes
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+
   // Set global prefix (optional)
   app.setGlobalPrefix('api');
   
-  await app.listen(4000);
+  await app.listen(process.env.PORT || 4000);
 }
 bootstrap();

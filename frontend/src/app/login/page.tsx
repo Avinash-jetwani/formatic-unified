@@ -189,17 +189,20 @@ export default function LoginPage() {
               </div>
               
               <div className="flex items-center justify-between">
-                <Checkbox
-                  id="remember-me"
-                  name="remember-me"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  label={
-                    <span className="text-sm">
-                      Keep me signed in<span className="hidden md:inline"> on this device</span>
-                    </span>
-                  }
-                />
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember-me"
+                    name="remember-me"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  />
+                  <label 
+                    htmlFor="remember-me" 
+                    className="text-sm cursor-pointer"
+                  >
+                    Keep me signed in<span className="hidden md:inline"> on this device</span>
+                  </label>
+                </div>
                 
                 <div className="text-sm">
                   <Link href="/forgot-password" className="font-medium text-primary hover:text-primary/90">

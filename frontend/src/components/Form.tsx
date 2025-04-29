@@ -131,11 +131,44 @@ export function Form({ form }: FormProps) {
     setError(null);
 
     try {
+      // Collect analytics data
+      const getBrowser = () => {
+        const userAgent = navigator.userAgent;
+        if (userAgent.indexOf("Firefox") > -1) return "Firefox";
+        if (userAgent.indexOf("Chrome") > -1) return "Chrome";
+        if (userAgent.indexOf("Safari") > -1) return "Safari";
+        if (userAgent.indexOf("Edge") > -1) return "Edge";
+        if (userAgent.indexOf("MSIE") > -1 || userAgent.indexOf("Trident") > -1) return "Internet Explorer";
+        return "Unknown";
+      };
+      
+      const getDeviceType = () => {
+        const userAgent = navigator.userAgent;
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)) {
+          return "Mobile";
+        }
+        if (/iPad|Tablet|PlayBook|Silk|Android(?!.*Mobile)/i.test(userAgent)) {
+          return "Tablet";
+        }
+        return "Desktop";
+      };
+      
+      // Collect analytics data
+      const analyticsData = {
+        ipAddress: null, // We'll get this from the server side
+        userAgent: navigator.userAgent,
+        referrer: document.referrer || window.location.href,
+        browser: getBrowser(),
+        device: getDeviceType(),
+        location: null // We'll get this from the server side
+      };
+      
       await fetchApi(`/submissions`, {
         method: 'POST',
         data: {
           formId: form.id,
-          data: formData
+          data: formData,
+          ...analyticsData  // Include analytics data
         }
       });
       setSuccess(true);

@@ -11,10 +11,12 @@ import {
     Res,
     NotFoundException,
     ForbiddenException,
-    InternalServerErrorException
+    InternalServerErrorException,
+    Patch
   } from '@nestjs/common';
 import { SubmissionsService } from './submissions.service';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
+import { UpdateSubmissionDto } from './dto/update-submission.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -46,6 +48,16 @@ export class SubmissionsController {
   @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string, @Request() req) {
     return this.submissionsService.findOne(id, req.user.id, req.user.role);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  update(
+    @Param('id') id: string, 
+    @Body() updateSubmissionDto: UpdateSubmissionDto,
+    @Request() req
+  ) {
+    return this.submissionsService.update(id, updateSubmissionDto, req.user.id, req.user.role);
   }
 
   @Get(':id/siblings')
