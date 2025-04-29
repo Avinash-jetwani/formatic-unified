@@ -77,6 +77,7 @@ export default function SubmissionsDashboard() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentTab, setCurrentTab] = useState('all');
   const [savedStatusMap, setSavedStatusMap] = useState<Record<string, 'new' | 'viewed' | 'archived'>>({});
+  const [isMobile, setIsMobile] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     today: 0,
@@ -84,6 +85,16 @@ export default function SubmissionsDashboard() {
     thisMonth: 0,
     byForm: [] as {formId: string, formTitle: string, count: number}[]
   });
+
+  // Detect mobile screens on client side
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const checkIfMobile = () => setIsMobile(window.innerWidth < 640);
+      checkIfMobile();
+      window.addEventListener('resize', checkIfMobile);
+      return () => window.removeEventListener('resize', checkIfMobile);
+    }
+  }, []);
 
   useEffect(() => {
     // First load saved statuses from localStorage
@@ -385,23 +396,23 @@ export default function SubmissionsDashboard() {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Submissions</h1>
-          <p className="text-muted-foreground">Manage and analyze form submissions</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Submissions</h1>
+          <p className="text-sm text-muted-foreground">Manage and analyze form submissions</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => loadSubmissions(savedStatusMap)}>
-            <RefreshCcw className="w-4 h-4 mr-2" />
-            Refresh
+        <div className="flex w-full sm:w-auto justify-between sm:justify-start gap-2">
+          <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => loadSubmissions(savedStatusMap)}>
+            <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+            <span className="hidden xs:inline">Refresh</span>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button>
-                <Download className="w-4 h-4 mr-2" />
-                Export
-                <ChevronDown className="w-4 h-4 ml-2" />
+              <Button size="sm" className="text-xs sm:text-sm">
+                <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Export</span>
+                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -419,85 +430,85 @@ export default function SubmissionsDashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="pb-2 px-3 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
               Total Submissions
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">All time</p>
+          <CardContent className="px-3 sm:px-6 pt-0 pb-3 sm:pb-4">
+            <div className="text-xl sm:text-2xl font-bold">{stats.total}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">All time</p>
           </CardContent>
         </Card>
         <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="pb-2 px-3 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
               Today
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.today}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+          <CardContent className="px-3 sm:px-6 pt-0 pb-3 sm:pb-4">
+            <div className="text-xl sm:text-2xl font-bold">{stats.today}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
               {stats.today > 0 ? 
-                <span className="text-green-500 flex items-center"><TrendingUp className="h-3 w-3 mr-1" /> Active today</span> : 
+                <span className="text-green-500 flex items-center"><TrendingUp className="h-2 w-2 sm:h-3 sm:w-3 mr-1" /> Active today</span> : 
                 "No submissions today"}
             </p>
           </CardContent>
         </Card>
         <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="pb-2 px-3 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
               This Week
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.thisWeek}</div>
-            <p className="text-xs text-muted-foreground mt-1">Last 7 days</p>
+          <CardContent className="px-3 sm:px-6 pt-0 pb-3 sm:pb-4">
+            <div className="text-xl sm:text-2xl font-bold">{stats.thisWeek}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Last 7 days</p>
           </CardContent>
         </Card>
         <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+          <CardHeader className="pb-2 px-3 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
               This Month
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.thisMonth}</div>
-            <p className="text-xs text-muted-foreground mt-1">Since {format(new Date(new Date().setDate(1)), 'MMM d')}</p>
+          <CardContent className="px-3 sm:px-6 pt-0 pb-3 sm:pb-4">
+            <div className="text-xl sm:text-2xl font-bold">{stats.thisMonth}</div>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Since {format(new Date(new Date().setDate(1)), 'MMM d')}</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Submissions Overview</CardTitle>
-            <CardDescription>View and manage all form submissions</CardDescription>
+          <CardHeader className="px-3 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-lg sm:text-xl">Submissions Overview</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">View and manage all form submissions</CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
-            <Tabs defaultValue="all" className="mb-6" onValueChange={setCurrentTab}>
-              <TabsList className="grid grid-cols-4 mb-4">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="new">New</TabsTrigger>
-                <TabsTrigger value="viewed">Viewed</TabsTrigger>
-                <TabsTrigger value="archived">Archived</TabsTrigger>
+          <CardContent className="p-3 sm:p-6">
+            <Tabs defaultValue="all" className="mb-4 sm:mb-6" onValueChange={setCurrentTab}>
+              <TabsList className="grid grid-cols-4 mb-3 sm:mb-4 w-full h-8 sm:h-10">
+                <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
+                <TabsTrigger value="new" className="text-xs sm:text-sm">New</TabsTrigger>
+                <TabsTrigger value="viewed" className="text-xs sm:text-sm">Viewed</TabsTrigger>
+                <TabsTrigger value="archived" className="text-xs sm:text-sm">Archived</TabsTrigger>
               </TabsList>
               
-              <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="flex flex-col gap-3 mb-4 sm:gap-4 sm:mb-6">
                 <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search submissions by form title or content..."
+                    placeholder="Search submissions..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
+                    className="pl-8 sm:pl-9 h-8 sm:h-10 text-xs sm:text-sm"
                   />
                 </div>
-                <div className="flex gap-4 flex-wrap">
+                <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-4 flex-wrap">
                   <Select value={formFilter} onValueChange={setFormFilter}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-full sm:w-[180px] h-8 sm:h-10 text-xs sm:text-sm">
                       <SelectValue placeholder="Filter by form" />
                     </SelectTrigger>
                     <SelectContent>
@@ -510,7 +521,7 @@ export default function SubmissionsDashboard() {
                     </SelectContent>
                   </Select>
                   <Select value={dateFilter} onValueChange={setDateFilter}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-full sm:w-[180px] h-8 sm:h-10 text-xs sm:text-sm">
                       <SelectValue placeholder="Filter by date" />
                     </SelectTrigger>
                     <SelectContent>
@@ -539,23 +550,23 @@ export default function SubmissionsDashboard() {
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Submissions by Form</CardTitle>
-            <CardDescription>Distribution of submissions across your forms</CardDescription>
+        <Card className="hidden md:block">
+          <CardHeader className="px-3 py-3 sm:px-6 sm:py-4">
+            <CardTitle className="text-lg sm:text-xl">Submissions by Form</CardTitle>
+            <CardDescription className="text-xs sm:text-sm">Distribution of submissions across your forms</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-80">
-              <div className="space-y-4">
+          <CardContent className="px-3 sm:px-6 pb-3 sm:pb-4">
+            <ScrollArea className="h-60 sm:h-80">
+              <div className="space-y-3 sm:space-y-4">
                 {stats.byForm.map((formStat, index) => (
-                  <div key={formStat.formId} className="space-y-2">
+                  <div key={formStat.formId} className="space-y-1 sm:space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm font-medium truncate max-w-[200px]" title={formStat.formTitle}>
+                      <span className="text-xs sm:text-sm font-medium truncate max-w-[150px] sm:max-w-[200px]" title={formStat.formTitle}>
                         {formStat.formTitle}
                       </span>
-                      <span className="text-sm text-muted-foreground">{formStat.count}</span>
+                      <span className="text-xs sm:text-sm text-muted-foreground">{formStat.count}</span>
                     </div>
-                    <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 sm:h-2 bg-secondary rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-primary rounded-full" 
                         style={{ width: `${(formStat.count / stats.total) * 100}%` }} 
@@ -566,7 +577,7 @@ export default function SubmissionsDashboard() {
                 ))}
                 
                 {stats.byForm.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-center py-8 text-xs sm:text-sm text-muted-foreground">
                     No submissions data available
                   </div>
                 )}
@@ -581,13 +592,13 @@ export default function SubmissionsDashboard() {
   function renderSubmissionsTable(submissions: Submission[]) {
     if (loading) {
       return (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center space-x-4">
-              <Skeleton className="h-12 w-12" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-[250px]" />
-                <Skeleton className="h-4 w-[200px]" />
+            <div key={i} className="flex items-center space-x-2 sm:space-x-4">
+              <Skeleton className="h-8 w-8 sm:h-12 sm:w-12" />
+              <div className="space-y-1 sm:space-y-2">
+                <Skeleton className="h-3 w-[150px] sm:h-4 sm:w-[250px]" />
+                <Skeleton className="h-3 w-[120px] sm:h-4 sm:w-[200px]" />
               </div>
             </div>
           ))}
@@ -597,9 +608,9 @@ export default function SubmissionsDashboard() {
     
     if (submissions.length === 0) {
       return (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">No submissions match your filters</p>
-          <Button variant="outline" className="mt-4" onClick={() => {
+        <div className="text-center py-4 sm:py-8">
+          <p className="text-xs sm:text-sm text-muted-foreground">No submissions match your filters</p>
+          <Button variant="outline" size="sm" className="mt-3 sm:mt-4 text-xs sm:text-sm" onClick={() => {
             setSearchTerm('');
             setFormFilter('all');
             setDateFilter('all');
@@ -611,47 +622,156 @@ export default function SubmissionsDashboard() {
       );
     }
     
+    // For mobile screens, use a card layout instead of a table
+    if (isMobile) {
+      return (
+        <div className="space-y-3">
+          {submissions.map((submission) => (
+            <Card 
+              key={submission.id}
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => router.push(`/submissions/${submission.id}`)}
+            >
+              <CardContent className="p-3">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <h4 className="font-medium text-xs truncate max-w-[150px]">
+                      {submission.form.title}
+                    </h4>
+                    <p className="text-[10px] text-muted-foreground">
+                      {formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {getStatusBadge(submission.status || 'viewed')}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" className="h-6 w-6 p-0">
+                          <MoreHorizontal className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-[160px]">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/submissions/${submission.id}`);
+                          }}
+                          className="text-xs"
+                        >
+                          <Eye className="h-3 w-3 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toast({
+                              title: "Email Feature",
+                              description: "Email functionality will be implemented soon",
+                            });
+                          }}
+                          className="text-xs"
+                        >
+                          <Mail className="h-3 w-3 mr-2" />
+                          Email Response
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateSubmissionStatus(submission.id, 'new');
+                          }} 
+                          disabled={submission.status === 'new'}
+                          className="text-xs"
+                        >
+                          <Badge className="bg-blue-500 h-3 w-3 mr-2 p-0" />
+                          Mark as New
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateSubmissionStatus(submission.id, 'viewed');
+                          }} 
+                          disabled={submission.status === 'viewed'}
+                          className="text-xs"
+                        >
+                          <Badge variant="outline" className="border-green-500 h-3 w-3 mr-2 p-0" />
+                          Mark as Viewed
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateSubmissionStatus(submission.id, 'archived');
+                          }} 
+                          disabled={submission.status === 'archived'}
+                          className="text-xs"
+                        >
+                          <Badge variant="secondary" className="h-3 w-3 sm:h-4 sm:w-4 mr-2 p-0" />
+                          Archive
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-red-600 text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(submission.id);
+                          }}
+                        >
+                          <Trash className="h-3 w-3 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+    
+    // For larger screens, use the table layout
     return (
       <div className="overflow-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="cursor-pointer" onClick={() => handleSort('form')}>
+              <TableHead className="cursor-pointer text-xs sm:text-sm" onClick={() => handleSort('form')}>
                 Form
                 {sortField === 'form' && (
-                  <ArrowUpDown className={`ml-2 h-4 w-4 inline ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
+                  <ArrowUpDown className={`ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4 inline ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
                 )}
               </TableHead>
-              <TableHead className="cursor-pointer" onClick={() => handleSort('createdAt')}>
+              <TableHead className="cursor-pointer text-xs sm:text-sm" onClick={() => handleSort('createdAt')}>
                 Submitted
                 {sortField === 'createdAt' && (
-                  <ArrowUpDown className={`ml-2 h-4 w-4 inline ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
+                  <ArrowUpDown className={`ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4 inline ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
                 )}
               </TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead className="text-xs sm:text-sm">Status</TableHead>
+              <TableHead className="text-right text-xs sm:text-sm">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {submissions.map((submission) => (
               <TableRow key={submission.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/submissions/${submission.id}`)}>
-                <TableCell className="font-medium">
+                <TableCell className="font-medium py-2 sm:py-4 text-xs sm:text-sm">
                   {submission.form.title}
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-2 sm:py-4 text-xs sm:text-sm">
                   <div className="flex flex-col">
                     <span>{formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}</span>
-                    <span className="text-xs text-muted-foreground">{format(new Date(submission.createdAt), 'MMM d, yyyy HH:mm')}</span>
+                    <span className="text-[10px] sm:text-xs text-muted-foreground">{format(new Date(submission.createdAt), 'MMM d, yyyy HH:mm')}</span>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-2 sm:py-4">
                   {getStatusBadge(submission.status || 'viewed')}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right py-2 sm:py-4">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
+                      <Button variant="ghost" className="h-7 w-7 sm:h-8 sm:w-8 p-0">
+                        <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
@@ -660,8 +780,9 @@ export default function SubmissionsDashboard() {
                           e.stopPropagation();
                           router.push(`/submissions/${submission.id}`);
                         }}
+                        className="text-xs sm:text-sm"
                       >
-                        <Eye className="h-4 w-4 mr-2" />
+                        <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                         View Details
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={(e) => {
@@ -671,41 +792,41 @@ export default function SubmissionsDashboard() {
                           title: "Email Feature",
                           description: "Email functionality will be implemented soon",
                         });
-                      }}>
-                        <Mail className="h-4 w-4 mr-2" />
+                      }} className="text-xs sm:text-sm">
+                        <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                         Email Response
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={(e) => {
                         e.stopPropagation();
                         updateSubmissionStatus(submission.id, 'new');
-                      }} disabled={submission.status === 'new'}>
-                        <Badge className="bg-blue-500 h-4 w-4 mr-2 p-0" />
+                      }} disabled={submission.status === 'new'} className="text-xs sm:text-sm">
+                        <Badge className="bg-blue-500 h-3 w-3 sm:h-4 sm:w-4 mr-2 p-0" />
                         Mark as New
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={(e) => {
                         e.stopPropagation();
                         updateSubmissionStatus(submission.id, 'viewed');
-                      }} disabled={submission.status === 'viewed'}>
-                        <Badge variant="outline" className="border-green-500 h-4 w-4 mr-2 p-0" />
+                      }} disabled={submission.status === 'viewed'} className="text-xs sm:text-sm">
+                        <Badge variant="outline" className="border-green-500 h-3 w-3 sm:h-4 sm:w-4 mr-2 p-0" />
                         Mark as Viewed
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={(e) => {
                         e.stopPropagation();
                         updateSubmissionStatus(submission.id, 'archived');
-                      }} disabled={submission.status === 'archived'}>
-                        <Badge variant="secondary" className="h-4 w-4 mr-2 p-0" />
+                      }} disabled={submission.status === 'archived'} className="text-xs sm:text-sm">
+                        <Badge variant="secondary" className="h-3 w-3 sm:h-4 sm:w-4 mr-2 p-0" />
                         Archive
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        className="text-red-600"
+                        className="text-red-600 text-xs sm:text-sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDelete(submission.id);
                         }}
                       >
-                        <Trash className="h-4 w-4 mr-2" />
+                        <Trash className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
