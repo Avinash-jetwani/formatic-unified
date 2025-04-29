@@ -76,6 +76,7 @@ export default function SubmissionsDashboard() {
   const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [currentTab, setCurrentTab] = useState('all');
+  const [savedStatusMap, setSavedStatusMap] = useState<Record<string, 'new' | 'viewed' | 'archived'>>({});
   const [stats, setStats] = useState({
     total: 0,
     today: 0,
@@ -85,15 +86,37 @@ export default function SubmissionsDashboard() {
   });
 
   useEffect(() => {
-    loadSubmissions();
+    // First load saved statuses from localStorage
+    const savedStatuses = localStorage.getItem('submissionStatuses');
+    if (savedStatuses) {
+      try {
+        const parsedStatuses = JSON.parse(savedStatuses);
+        setSavedStatusMap(parsedStatuses);
+        // Then load submissions with the parsed statuses
+        loadSubmissions(parsedStatuses);
+      } catch (error) {
+        console.error('Failed to parse saved statuses', error);
+        loadSubmissions({});
+      }
+    } else {
+      loadSubmissions({});
+    }
   }, []);
 
-  const loadSubmissions = async () => {
+  const loadSubmissions = async (statusMap = savedStatusMap) => {
     try {
       setLoading(true);
       const data = await fetchApi('/submissions') as Submission[];
       // Enhance submissions with a status field
       const enhancedData = data.map((submission: Submission) => {
+        // First check if we have a manually saved status for this submission
+        if (statusMap[submission.id]) {
+          return {
+            ...submission,
+            status: statusMap[submission.id]
+          };
+        }
+        
         // If submission already has a status, keep it
         if (submission.status) {
           return submission;
@@ -334,7 +357,7 @@ export default function SubmissionsDashboard() {
       //   data: JSON.stringify({ status: newStatus })
       // });
       
-      // For now, just update it locally
+      // Update in local state
       setSubmissions(prevSubmissions => 
         prevSubmissions.map(submission => 
           submission.id === id 
@@ -342,6 +365,11 @@ export default function SubmissionsDashboard() {
             : submission
         )
       );
+      
+      // Save to localStorage for persistence
+      const updatedStatusMap = { ...savedStatusMap, [id]: newStatus };
+      setSavedStatusMap(updatedStatusMap);
+      localStorage.setItem('submissionStatuses', JSON.stringify(updatedStatusMap));
       
       toast({
         title: 'Status Updated',
@@ -364,7 +392,7 @@ export default function SubmissionsDashboard() {
           <p className="text-muted-foreground">Manage and analyze form submissions</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => loadSubmissions()}>
+          <Button variant="outline" onClick={() => loadSubmissions(savedStatusMap)}>
             <RefreshCcw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
