@@ -125,10 +125,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Logout function
   const logout = () => {
-    localStorage.removeItem('token');
-    sessionStorage.removeItem('token');
+    authService.logout();
     setUser(null);
-    router.push('/login');
   };
 
   // Check authentication status

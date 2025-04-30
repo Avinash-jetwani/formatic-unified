@@ -46,7 +46,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Select,
   SelectContent,
@@ -178,37 +178,24 @@ export default function SubmissionDetailPage() {
     }
   };
 
-  const handleExport = async (format: 'pdf' | 'csv' | 'json' = 'pdf') => {
+  const handleExport = async (format: 'pdf' | 'csv' | 'json' = 'csv') => {
     try {
-      const response = await fetchApi(`/submissions/${params.id}/export`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        data: JSON.stringify({ format }),
-        responseType: 'blob'
-      });
+      // Skip PDF exports for now since there's a backend issue
+      if (format === 'pdf') {
+        toast({
+          title: 'PDF Export Unavailable',
+          description: 'PDF export is currently unavailable. Please use CSV or JSON format instead.',
+          variant: 'destructive',
+        });
+        return;
+      }
       
-      // Create and download file
-      const mimeType = format === 'pdf' 
-        ? 'application/pdf' 
-        : format === 'csv' 
-        ? 'text/csv' 
-        : 'application/json';
-      
-      const blob = new Blob([response as BlobPart], { type: mimeType });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `submission-${params.id}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      // Use window.open to directly download the file
+      window.open(`/api/submissions/${params.id}/export?format=${format}`, '_blank');
       
       toast({
         title: 'Success',
-        description: `Submission exported as ${format.toUpperCase()} successfully`,
+        description: `Exporting submission as ${format.toUpperCase()}`,
       });
     } catch (error) {
       toast({
@@ -269,9 +256,12 @@ export default function SubmissionDetailPage() {
         data: JSON.stringify({ notes }),
       });
       
-      // Update local state - API will set the timestamp
-      const updatedSubmission = await fetchApi(`/submissions/${params.id}`) as Submission;
-      setSubmission(updatedSubmission);
+      // Update local state
+      setSubmission({
+        ...submission,
+        notes,
+        notesUpdatedAt: new Date().toISOString()
+      });
       
       setIsEditingNotes(false);
       
@@ -603,6 +593,16 @@ export default function SubmissionDetailPage() {
             <Printer className="mr-2 h-4 w-4" />
             Print
           </Button>
+          <Select onValueChange={(value) => handleExport(value as 'pdf' | 'csv' | 'json')}>
+            <SelectTrigger className="w-[140px]">
+              <Download className="mr-2 h-4 w-4" />
+              Export As
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="csv">CSV File</SelectItem>
+              <SelectItem value="json">JSON Data</SelectItem>
+            </SelectContent>
+          </Select>
           <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="destructive" size="sm" className="h-9">
@@ -989,54 +989,14 @@ export default function SubmissionDetailPage() {
                 </p>
               </div>
               <div>
-                <h4 className="text-sm font-medium">Submitted</h4>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(submission.createdAt), 'PPpp')}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Actions Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Select onValueChange={(value) => handleExport(value as 'pdf' | 'csv' | 'json')}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Export options" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pdf">Export as PDF</SelectItem>
-                  <SelectItem value="csv">Export as CSV</SelectItem>
-                  <SelectItem value="json">Export as JSON</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  className="w-full"
+                  size="sm"
                   onClick={handlePrint}
+                  className="flex items-center gap-2"
                 >
-                  <Printer className="mr-2 h-4 w-4" />
+                  <Printer className="h-4 w-4" />
                   Print
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => {
-                    const url = `${window.location.origin}/submissions/${submission.id}`;
-                    navigator.clipboard.writeText(url);
-                    toast({
-                      title: "Copied!",
-                      description: "Share link copied to clipboard",
-                    });
-                  }}
-                >
-                  <Share2 className="mr-2 h-4 w-4" />
-                  Share
                 </Button>
               </div>
             </CardContent>

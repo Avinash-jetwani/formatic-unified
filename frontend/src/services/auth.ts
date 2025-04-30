@@ -35,23 +35,33 @@ export const authService = {
    */
   async login(email: string, password: string, rememberMe: boolean = false): Promise<AuthResponse> {
     console.log('Login attempt with URL path: /api/auth/login');
-    console.log('Remember me:', rememberMe);
     
-    const response = await fetchApi<AuthResponse>('/api/auth/login', {
+    // Use our new login API route that handles cookie setting
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
-      data: { email, password },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
     });
     
-    // Store token in localStorage or sessionStorage based on rememberMe
-    if (response.access_token) {
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Login failed');
+    }
+    
+    const data = await response.json();
+    
+    // Still store token in localStorage/sessionStorage for client-side checking
+    if (data.access_token) {
       if (rememberMe) {
-        localStorage.setItem('token', response.access_token);
+        localStorage.setItem('token', data.access_token);
       } else {
-        sessionStorage.setItem('token', response.access_token);
+        sessionStorage.setItem('token', data.access_token);
       }
     }
     
-    return response;
+    return data;
   },
   
   /**
