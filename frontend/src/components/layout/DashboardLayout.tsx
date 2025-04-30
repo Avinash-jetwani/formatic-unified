@@ -41,7 +41,8 @@ const DashboardLayout = ({
         />
         
         <div className="flex-grow overflow-y-auto">
-          <div className="max-w-7xl mx-auto px-4 py-4">
+          {/* Main content area with consistent padding */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
             {/* Page header with title and actions */}
             {(title || breadcrumbs || actions) && (
               <div className="mb-6">
@@ -90,7 +91,7 @@ const DashboardLayout = ({
             )}
             
             {/* Main content */}
-            <div>
+            <div className="w-full">
               {children}
             </div>
           </div>

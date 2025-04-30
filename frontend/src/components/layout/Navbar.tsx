@@ -81,11 +81,11 @@ export function Navbar({ sidebarCollapsed, onToggleSidebar }: NavbarProps) {
     window.location.href = '/login';
   };
 
-  if (!mounted) return null;
+  if (!mounted) return <div className="h-16 w-full border-b border-border"></div>;
 
   return (
     <header className="sticky top-0 z-30 h-16 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-full items-center px-4 md:px-6">
+      <div className="flex h-16 items-center px-4 md:px-6">
         {/* Mobile menu button - only visible on mobile */}
         <button
           onClick={onToggleSidebar}

@@ -35,9 +35,9 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isAdmin, user } = useAuth();
+  const [mounted, setMounted] = useState(false);
 
   // Detect if we're on the server or client side
-  const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -104,7 +104,7 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
       className={cn(
         "group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
         "hover:bg-accent",
-        pathname.startsWith(item.href)
+        pathname && pathname.startsWith(item.href)
           ? "bg-primary/10 text-primary"
           : "text-foreground/70 hover:text-foreground"
       )}
@@ -126,20 +126,24 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
             {!collapsed && <span className="ml-2 text-xl font-semibold">Formatic</span>}
           </Link>
         </div>
-        <button 
-          onClick={toggleSidebar}
-          className="hidden md:flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent text-muted-foreground"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </button>
-        <button 
-          onClick={toggleMobileSidebar}
-          className="md:hidden flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent"
-          aria-label="Close sidebar"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        {mounted && (
+          <button 
+            onClick={toggleSidebar}
+            className="hidden md:flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent text-muted-foreground"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
+        )}
+        {mounted && (
+          <button 
+            onClick={toggleMobileSidebar}
+            className="md:hidden flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent"
+            aria-label="Close sidebar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       <div className="px-3 py-2">
@@ -148,20 +152,20 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
             <NavItem key={item.name} item={item} />
           ))}
 
-          {isAdmin && (
-            <>
-              <div className="my-4 border-t border-border pt-4">
-                {!collapsed && (
-                  <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Admin
-                  </h3>
-                )}
-                {adminMenuItems.map((item) => (
-                  <NavItem key={item.name} item={item} />
-                ))}
+          {/* Always render admin section structure, conditionally show items */}
+          <div className="my-4 border-t border-border pt-4">
+            {!collapsed && (
+              <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Admin
+              </h3>
+            )}
+            {adminMenuItems.map((item) => (
+              // Show admin links regardless of isAdmin state to maintain structure
+              <div key={item.name} className={!isAdmin && !mounted ? "opacity-0" : ""}>
+                <NavItem item={item} />
               </div>
-            </>
-          )}
+            ))}
+          </div>
         </nav>
       </div>
 
@@ -174,16 +178,18 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
           {!collapsed && <span className="text-sm text-muted-foreground">Theme</span>}
         </div>
         
-        <button
-          onClick={handleLogout}
-          className={cn(
-            "w-full flex items-center rounded-md px-3 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-accent transition-colors",
-            collapsed && "justify-center"
-          )}
-        >
-          <LogOut className="h-5 w-5" />
-          {!collapsed && <span className="ml-3">Logout</span>}
-        </button>
+        {mounted && (
+          <button
+            onClick={handleLogout}
+            className={cn(
+              "w-full flex items-center rounded-md px-3 py-2 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-accent transition-colors",
+              collapsed && "justify-center"
+            )}
+          >
+            <LogOut className="h-5 w-5" />
+            {!collapsed && <span className="ml-3">Logout</span>}
+          </button>
+        )}
       </div>
 
       <div className="p-3 border-t border-border">
@@ -201,31 +207,31 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
     </>
   );
 
-  // Don't show sidebar toggle on client-side render (avoids hydration mismatch)
-  if (!mounted) return null;
-
+  // Return the sidebar structure even when not mounted to prevent layout shift
   return (
     <>
-      {/* Mobile menu button */}
-      <div className="fixed top-4 left-4 z-40 md:hidden">
-        <button
-          onClick={toggleMobileSidebar}
-          className="bg-background p-2 rounded-md shadow-md border border-border"
-          aria-label="Open sidebar"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-      </div>
+      {/* Mobile menu button - only interactive when mounted */}
+      {mounted && (
+        <div className="fixed top-4 left-4 z-40 md:hidden">
+          <button
+            onClick={toggleMobileSidebar}
+            className="bg-background p-2 rounded-md shadow-md border border-border"
+            aria-label="Open sidebar"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
+      )}
 
-      {/* Mobile sidebar overlay */}
-      {mobileOpen && (
+      {/* Mobile sidebar overlay - only appears when mounted and open */}
+      {mounted && mobileOpen && (
         <div 
           className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
           onClick={toggleMobileSidebar}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - always render the structure */}
       <aside
         className={cn(
           "flex h-screen flex-col border-r border-border bg-background",
@@ -233,7 +239,7 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
           "md:relative md:flex", 
           "fixed inset-y-0 left-0",
           { "md:w-16": collapsed, "md:w-64": !collapsed },
-          { "-translate-x-full md:translate-x-0": !mobileOpen, "translate-x-0": mobileOpen },
+          { "-translate-x-full md:translate-x-0": !mobileOpen && mounted, "translate-x-0": mobileOpen || !mounted },
           "absolute"
         )}
       >
