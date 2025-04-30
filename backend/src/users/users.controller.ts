@@ -43,4 +43,17 @@ export class UsersController {
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
+
+  @Post(':id/reset-password')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  resetPassword(@Param('id') id: string, @Body() resetPasswordDto: { password: string }) {
+    return this.usersService.resetPassword(id, resetPasswordDto.password);
+  }
+
+  @Get(':id/stats')
+  @UseGuards(JwtAuthGuard)
+  getUserStats(@Param('id') id: string) {
+    return this.usersService.getUserDetailedStats(id);
+  }
 }

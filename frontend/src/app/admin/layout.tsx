@@ -13,13 +13,49 @@ export default function AdminLayout({
   const router = useRouter();
   const { isAdmin, loading } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   
   // Only redirect on client-side after mount
   useEffect(() => {
     setIsMounted(true);
     
-    // Only redirect if definitely not an admin (and not during loading)
-    if (!loading && isAdmin === false) {
+    // Check admin status from context and local storage
+    const checkAdminStatus = () => {
+      // First check context
+      if (isAdmin) {
+        setIsAdminUser(true);
+        return true;
+      }
+      
+      // Then check local storage
+      try {
+        const localUser = localStorage.getItem('user');
+        const sessionUser = sessionStorage.getItem('user');
+        
+        if (localUser) {
+          const userData = JSON.parse(localUser);
+          if (userData?.role === 'SUPER_ADMIN') {
+            setIsAdminUser(true);
+            return true;
+          }
+        }
+        
+        if (sessionUser) {
+          const userData = JSON.parse(sessionUser);
+          if (userData?.role === 'SUPER_ADMIN') {
+            setIsAdminUser(true);
+            return true;
+          }
+        }
+      } catch (e) {
+        console.error('Error checking admin status:', e);
+      }
+      
+      return false;
+    };
+    
+    // If definitely not an admin after checking all sources, redirect
+    if (!loading && !checkAdminStatus()) {
       router.push('/dashboard');
     }
   }, [isAdmin, loading, router]);

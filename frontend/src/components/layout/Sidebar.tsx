@@ -36,11 +36,38 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isAdmin, user } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [showAdminSection, setShowAdminSection] = useState(false);
 
   // Detect if we're on the server or client side
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    // Check if user is admin from context or localStorage/sessionStorage
+    const checkAdminStatus = () => {
+      if (isAdmin) {
+        setShowAdminSection(true);
+        return;
+      }
+      
+      // If not admin in context, check storage
+      try {
+        const localUser = localStorage.getItem('user');
+        const sessionUser = sessionStorage.getItem('user');
+        
+        if (localUser) {
+          const userData = JSON.parse(localUser);
+          setShowAdminSection(userData?.role === 'SUPER_ADMIN');
+        } else if (sessionUser) {
+          const userData = JSON.parse(sessionUser);
+          setShowAdminSection(userData?.role === 'SUPER_ADMIN');
+        }
+      } catch (e) {
+        console.error('Error checking admin status from storage:', e);
+      }
+    };
+    
+    checkAdminStatus();
+  }, [isAdmin]);
 
   // Notify parent component when collapsed state changes
   useEffect(() => {
@@ -94,6 +121,8 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
     window.location.href = '/login';
   };
 
@@ -152,20 +181,19 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
             <NavItem key={item.name} item={item} />
           ))}
 
-          {/* Always render admin section structure, conditionally show items */}
-          <div className="my-4 border-t border-border pt-4">
-            {!collapsed && (
-              <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Admin
-              </h3>
-            )}
-            {adminMenuItems.map((item) => (
-              // Show admin links regardless of isAdmin state to maintain structure
-              <div key={item.name} className={!isAdmin && !mounted ? "opacity-0" : ""}>
-                <NavItem item={item} />
-              </div>
-            ))}
-          </div>
+          {/* Only render admin section if user is admin, using the local state for stability */}
+          {showAdminSection && (
+            <div className="my-4 border-t border-border pt-4">
+              {!collapsed && (
+                <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Admin
+                </h3>
+              )}
+              {adminMenuItems.map((item) => (
+                <NavItem key={item.name} item={item} />
+              ))}
+            </div>
+          )}
         </nav>
       </div>
 

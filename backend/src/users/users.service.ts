@@ -163,6 +163,92 @@ export class UsersService {
     };
   }
 
+  async resetPassword(id: string, password: string) {
+    // Check if user exists
+    await this.findOne(id);
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Update the user's password
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+    
+    const { password: _, ...result } = updatedUser;
+    return result;
+  }
+
+  async getUserDetailedStats(userId: string) {
+    // Check if user exists
+    await this.findOne(userId);
+    
+    // Get forms created by this user
+    const forms = await this.prisma.form.findMany({
+      where: { clientId: userId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        createdAt: true,
+        updatedAt: true,
+        published: true
+      }
+    });
+    
+    // Get submissions for all forms by this user
+    const formIds = forms.map(form => form.id);
+    const submissions = formIds.length > 0 ? await this.prisma.submission.findMany({
+      where: { formId: { in: formIds } },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        formId: true,
+        createdAt: true,
+        updatedAt: true,
+        form: {
+          select: {
+            title: true
+          }
+        }
+      }
+    }) : [];
+    
+    // Create activity log from forms and submissions activities
+    const activityLog = [
+      ...forms.map(form => ({
+        id: `form-${form.id}`,
+        type: form.published ? 'form_published' : 'form_created',
+        date: form.createdAt,
+        details: `Created form: ${form.title}`
+      })),
+      ...submissions.map(sub => ({
+        id: `sub-${sub.id}`,
+        type: 'submission_received',
+        date: sub.createdAt,
+        details: `New submission received for: ${sub.form.title || 'Unknown form'}`
+      }))
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    // Create form list for UI display
+    const formsList = forms.map(form => ({
+      id: form.id,
+      title: form.title
+    }));
+    
+    // Get count stats
+    const formsCount = forms.length;
+    const submissionsCount = submissions.length;
+    
+    return {
+      formsCount,
+      submissionsCount,
+      formsList,
+      activityLog
+    };
+  }
+
   async updateLastLogin(userId: string) {
     return this.prisma.user.update({
       where: { id: userId },

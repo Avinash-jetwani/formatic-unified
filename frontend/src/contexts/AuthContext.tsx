@@ -36,6 +36,30 @@ const AuthContext = createContext<AuthContextType>({
   checkAuth: async () => false,
 });
 
+// Helper to save user to storage
+const saveUserToStorage = (user: User, useLocalStorage: boolean = true) => {
+  const storage = useLocalStorage ? localStorage : sessionStorage;
+  storage.setItem('user', JSON.stringify(user));
+};
+
+// Helper to get user from storage
+const getUserFromStorage = () => {
+  let user = null;
+  try {
+    const localUser = localStorage.getItem('user');
+    const sessionUser = sessionStorage.getItem('user');
+    
+    if (localUser) {
+      user = JSON.parse(localUser);
+    } else if (sessionUser) {
+      user = JSON.parse(sessionUser);
+    }
+  } catch (e) {
+    console.error('Error getting user from storage:', e);
+  }
+  return user;
+};
+
 // Auth Provider component
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -46,7 +70,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // Try to get token from storage
+        // First try to get user directly from storage
+        const storedUser = getUserFromStorage();
+        if (storedUser) {
+          setUser(storedUser);
+          setLoading(false);
+          return;
+        }
+        
+        // If no stored user, try to get token from storage
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         
         if (token) {
@@ -54,16 +86,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             // Decode token to get user data
             const payload = JSON.parse(atob(token.split('.')[1]));
             
-            setUser({
+            const userData = {
               id: payload.sub || payload.id,
               name: payload.name || 'User',
               email: payload.email || '',
               role: payload.role || 'CLIENT',
-            });
+            };
+            
+            setUser(userData);
+            
+            // Save user to storage for persistence
+            const useLocalStorage = !!localStorage.getItem('token');
+            saveUserToStorage(userData, useLocalStorage);
+            
           } catch (e) {
             console.error('Error parsing token:', e);
             localStorage.removeItem('token');
             sessionStorage.removeItem('token');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('user');
           }
         }
       } catch (error) {
@@ -89,12 +130,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
           const payload = JSON.parse(atob(token.split('.')[1]));
           
-          setUser({
+          const userData = {
             id: payload.sub || payload.id,
             name: payload.name || 'User',
             email: payload.email || '',
             role: payload.role || 'CLIENT',
-          });
+          };
+          
+          setUser(userData);
+          
+          // Save user to storage
+          saveUserToStorage(userData, rememberMe);
           
           router.push('/dashboard');
         } catch (e) {
@@ -127,16 +173,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = () => {
     authService.logout();
     setUser(null);
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
   };
 
   // Check authentication status
   const checkAuth = async (): Promise<boolean> => {
     try {
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      if (!token) return false;
+      // First check if we have the user in state
+      if (user) return true;
       
-      // Verify token validity (optional - you can add API validation here)
-      return true;
+      // Then check storage
+      const storedUser = getUserFromStorage();
+      if (storedUser) {
+        setUser(storedUser);
+        return true;
+      }
+      
+      // Finally check token
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      return !!token;
     } catch (error) {
       console.error('Auth check error:', error);
       return false;
