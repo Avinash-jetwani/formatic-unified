@@ -1,0 +1,188 @@
+<?php
+/**
+ * Database checker tool for webhooks
+ * 
+ * This script checks if:
+ * 1. The database connection works
+ * 2. The formatic_submissions table exists
+ * 3. Any webhook data has been saved
+ */
+
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Database connection settings - CHANGE THESE TO YOUR ACTUAL SETTINGS
+$dbSettings = [
+    'host' => 'localhost',
+    'dbname' => 'testlink_glassshop',  // Your database name
+    'user' => 'root',                  // Your database username
+    'pass' => ''                       // Your database password
+];
+
+// Output HTML header
+echo '<!DOCTYPE html>
+<html>
+<head>
+    <title>Webhook Database Checker</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        h1 { color: #333; }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow: auto; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <h1>Webhook Database Checker</h1>';
+
+try {
+    // Step 1: Try connecting to the database
+    echo '<h2>1. Database Connection Check</h2>';
+    
+    try {
+        $dsn = "mysql:host={$dbSettings['host']};dbname={$dbSettings['dbname']};charset=utf8mb4";
+        $pdo = new PDO($dsn, $dbSettings['user'], $dbSettings['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
+        echo '<p class="success">✅ Database connection successful!</p>';
+        echo '<p>Connected to database: ' . htmlspecialchars($dbSettings['dbname']) . ' on ' . htmlspecialchars($dbSettings['host']) . '</p>';
+    } catch (PDOException $e) {
+        echo '<p class="error">❌ Database connection failed!</p>';
+        echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
+        echo '<p>Please check your database connection settings.</p>';
+        throw $e; // Re-throw to stop further execution
+    }
+    
+    // Step 2: Check if the table exists
+    echo '<h2>2. Table Check</h2>';
+    
+    $stmt = $pdo->prepare("SHOW TABLES LIKE 'formatic_submissions'");
+    $stmt->execute();
+    $tableExists = $stmt->fetchColumn();
+    
+    if ($tableExists) {
+        echo '<p class="success">✅ Table \'formatic_submissions\' exists!</p>';
+        
+        // Check table structure
+        $stmt = $pdo->prepare("DESCRIBE formatic_submissions");
+        $stmt->execute();
+        $columns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo '<h3>Table Structure:</h3>';
+        echo '<table>';
+        echo '<tr><th>Field</th><th>Type</th><th>Null</th><th>Key</th><th>Default</th><th>Extra</th></tr>';
+        
+        foreach ($columns as $column) {
+            echo '<tr>';
+            foreach ($column as $key => $value) {
+                echo '<td>' . htmlspecialchars($value ?? 'NULL') . '</td>';
+            }
+            echo '</tr>';
+        }
+        
+        echo '</table>';
+    } else {
+        echo '<p class="error">❌ Table \'formatic_submissions\' does not exist!</p>';
+        echo '<p>Creating the table now...</p>';
+        
+        // Create the table
+        $pdo->exec("CREATE TABLE `formatic_submissions` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `form_id` varchar(100) NOT NULL,
+            `submission_id` varchar(100) NOT NULL,
+            `form_name` varchar(255) DEFAULT NULL,
+            `submission_data` text DEFAULT NULL,
+            `submitted_at` timestamp NOT NULL DEFAULT current_timestamp(),
+            `event_type` varchar(50) DEFAULT NULL,
+            `status` varchar(50) DEFAULT 'received',
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+        
+        echo '<p class="success">✅ Table created successfully!</p>';
+    }
+    
+    // Step 3: Check for data
+    echo '<h2>3. Data Check</h2>';
+    
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM formatic_submissions");
+    $stmt->execute();
+    $count = $stmt->fetchColumn();
+    
+    if ($count > 0) {
+        echo '<p class="success">✅ Found ' . $count . ' submissions in the database!</p>';
+        
+        // Show the most recent 5 submissions
+        $stmt = $pdo->prepare("SELECT * FROM formatic_submissions ORDER BY submitted_at DESC LIMIT 5");
+        $stmt->execute();
+        $submissions = $stmt->fetchAll();
+        
+        echo '<h3>Recent Submissions:</h3>';
+        echo '<table>';
+        echo '<tr><th>ID</th><th>Form ID</th><th>Submission ID</th><th>Form Name</th><th>Data (sample)</th><th>Submitted At</th><th>Event</th></tr>';
+        
+        foreach ($submissions as $row) {
+            // Parse the JSON submission data to display a preview
+            $data = json_decode($row['submission_data'], true);
+            $dataSample = '';
+            
+            if (is_array($data)) {
+                $i = 0;
+                foreach ($data as $key => $value) {
+                    $dataSample .= htmlspecialchars($key) . ': ' . htmlspecialchars(is_array($value) ? json_encode($value) : substr($value, 0, 30)) . '<br>';
+                    $i++;
+                    if ($i >= 3) {
+                        $dataSample .= '...';
+                        break;
+                    }
+                }
+            } else {
+                $dataSample = htmlspecialchars(substr($row['submission_data'], 0, 50)) . '...';
+            }
+            
+            echo '<tr>';
+            echo '<td>' . htmlspecialchars($row['id']) . '</td>';
+            echo '<td>' . htmlspecialchars($row['form_id']) . '</td>';
+            echo '<td>' . htmlspecialchars($row['submission_id']) . '</td>';
+            echo '<td>' . htmlspecialchars($row['form_name']) . '</td>';
+            echo '<td>' . $dataSample . '</td>';
+            echo '<td>' . htmlspecialchars($row['submitted_at']) . '</td>';
+            echo '<td>' . htmlspecialchars($row['event_type']) . '</td>';
+            echo '</tr>';
+        }
+        
+        echo '</table>';
+    } else {
+        echo '<p class="warning">⚠️ No submissions found in the database yet.</p>';
+        echo '<p>Try testing a webhook to create some data.</p>';
+    }
+    
+    // Step 4: Webhook Testing Instructions
+    echo '<h2>4. Next Steps</h2>';
+    echo '<p>If you\'re not receiving webhooks, check the following:</p>';
+    echo '<ol>';
+    echo '<li>Is your webhook receiver accessible from the internet?</li>';
+    echo '<li>Are there any PHP errors in your error log?</li>';
+    echo '<li>Is the webhook payload in the expected format?</li>';
+    echo '<li>Are the database permissions correct?</li>';
+    echo '</ol>';
+    
+    echo '<p>Use the standalone webhook receiver script to debug.</p>';
+    
+} catch (Exception $e) {
+    echo '<div class="error">';
+    echo '<h2>Error:</h2>';
+    echo '<p>' . htmlspecialchars($e->getMessage()) . '</p>';
+    echo '<h3>Stack Trace:</h3>';
+    echo '<pre>' . htmlspecialchars($e->getTraceAsString()) . '</pre>';
+    echo '</div>';
+}
+
+// Output HTML footer
+echo '</body></html>'; 

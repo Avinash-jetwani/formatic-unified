@@ -55,6 +55,9 @@ export async function POST(
     console.log(`Sending test webhook to ${webhook.url}`);
     let response;
     try {
+      // Log the exact payload we're sending for debugging
+      console.log('Test webhook payload:', JSON.stringify(payload, null, 2));
+      
       response = await fetch(webhook.url, {
         method: 'POST',
         headers: {
@@ -68,7 +71,18 @@ export async function POST(
         body: JSON.stringify(payload)
       });
       
-      const responseData = await response.json();
+      // Log response status and handle different response types
+      console.log(`Test webhook response status: ${response.status}`);
+      
+      let responseData;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        responseData = await response.json();
+        console.log('Test webhook JSON response:', JSON.stringify(responseData, null, 2));
+      } else {
+        responseData = await response.text();
+        console.log('Test webhook text response:', responseData);
+      }
       
       // Create a simulated test response
       const testResponse = {

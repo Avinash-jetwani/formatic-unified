@@ -5,10 +5,11 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { WebhookDeliveryService } from './webhook-delivery.service';
 import { WebhookSecurityService } from './webhook-security.service';
 import { WebhookLogsService } from './webhook-logs.service';
+import { WebhookLogsController } from './webhook-logs.controller';
 
 @Module({
   imports: [PrismaModule],
-  controllers: [WebhooksController],
+  controllers: [WebhooksController, WebhookLogsController],
   providers: [
     WebhooksService,
     WebhookDeliveryService,
