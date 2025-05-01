@@ -30,52 +30,95 @@ export async function POST(
     // Simulate a brief delay
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Create a simulated test response
-    const testResponse = {
-      success: true,
-      message: `Webhook test for ${webhook.name} completed successfully`,
-      timestamp: new Date().toISOString(),
-      requestDetails: {
-        url: webhook.url,
+    // Create a payload that matches PHP expectations
+    const submissionId = `sub_${Date.now().toString(36)}`;
+    const payload = {
+      event: 'SUBMISSION_CREATED',
+      form: {
+        id: params.formId,
+        title: 'Contact Form'
+      },
+      submission: {
+        id: submissionId,
+        createdAt: new Date().toISOString(),
+        data: {
+          name: 'Test User',
+          email: 'test@example.com',
+          message: 'This is a test webhook payload',
+          phone: '123-456-7890'
+        }
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    // Make an actual HTTP request to the webhook URL
+    console.log(`Sending test webhook to ${webhook.url}`);
+    let response;
+    try {
+      response = await fetch(webhook.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'User-Agent': 'Formatic-Webhook-Service/1.0',
+          'X-Formatic-Event': 'SUBMISSION_CREATED',
+          'X-Formatic-Delivery-ID': `test_${Date.now().toString(36)}`,
           ...(webhook.authType === 'BEARER' ? { 'Authorization': `Bearer ${webhook.authValue || 'token'}` } : {}),
-          ...(webhook.authType === 'API_KEY' ? { 'X-API-Key': webhook.authValue || 'api_key' } : {}),
+          ...(webhook.authType === 'API_KEY' ? { 'X-API-Key': webhook.authValue || 'api_key' } : {})
         },
-        body: (body as any).payload || {
-          event: 'SUBMISSION_CREATED',
-          form: {
-            id: params.formId,
-            name: 'Sample Form'
+        body: JSON.stringify(payload)
+      });
+      
+      const responseData = await response.json();
+      
+      // Create a simulated test response
+      const testResponse = {
+        success: true,
+        message: `Webhook test for ${webhook.name} completed successfully`,
+        timestamp: new Date().toISOString(),
+        requestDetails: {
+          url: webhook.url,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Formatic-Webhook-Service/1.0',
+            'X-Formatic-Event': 'SUBMISSION_CREATED',
+            'X-Formatic-Delivery-ID': `test_${Date.now().toString(36)}`,
+            ...(webhook.authType === 'BEARER' ? { 'Authorization': `Bearer ${webhook.authValue || 'token'}` } : {}),
+            ...(webhook.authType === 'API_KEY' ? { 'X-API-Key': webhook.authValue || 'api_key' } : {})
           },
-          submission: {
-            id: `sub_${Date.now().toString(36)}`,
-            createdAt: new Date().toISOString(),
-            fields: {
-              name: 'Test User',
-              email: 'test@example.com',
-              message: 'This is a test webhook payload'
-            }
-          }
-        }
-      },
-      responseDetails: {
-        statusCode: 200,
-        headers: {
-          'content-type': 'application/json',
-          'server': 'Mock-Server/1.0'
+          body: payload
         },
-        body: {
-          success: true,
-          message: 'Webhook received',
-          id: `rec_${Date.now().toString(36)}`
+        responseDetails: {
+          statusCode: response.status,
+          headers: {
+            'content-type': response.headers.get('content-type') || 'application/json'
+          },
+          body: responseData
         }
-      }
-    };
-    
-    return NextResponse.json(testResponse);
+      };
+      
+      return NextResponse.json(testResponse);
+    } catch (error) {
+      console.error('Error sending test webhook:', error);
+      
+      return NextResponse.json({
+        success: false,
+        message: `Error sending webhook: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: new Date().toISOString(),
+        requestDetails: {
+          url: webhook.url,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Formatic-Webhook-Service/1.0'
+          },
+          body: payload
+        },
+        error: {
+          message: error instanceof Error ? error.message : 'Unknown error'
+        }
+      });
+    }
   } catch (error) {
     console.error('Mock webhook test API error:', error);
     return NextResponse.json(
