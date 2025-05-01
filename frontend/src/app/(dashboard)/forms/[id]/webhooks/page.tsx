@@ -13,8 +13,9 @@ import { WebhookForm } from '@/components/webhook/WebhookForm';
 import { toast } from '@/components/ui/use-toast';
 import { Webhook, webhookService, CreateWebhookDto, UpdateWebhookDto } from '@/services/webhook';
 import { useUser } from '@/hooks/useUser';
-import { Loader2, PlusCircle, Edit, Trash2, PlayCircle, AlertCircle, CheckCircle, Clock, RefreshCw } from 'lucide-react';
+import { Loader2, PlusCircle, Edit, Trash2, PlayCircle, AlertCircle, CheckCircle, Clock, RefreshCw, LinkIcon, Plus } from 'lucide-react';
 import WebhooksFallback from './fallback';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default function WebhooksPage() {
   const params = useParams();
@@ -264,20 +265,28 @@ export default function WebhooksPage() {
       <Separator />
       
       {webhooks.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="rounded-full bg-muted p-4 mb-4">
-              <PlusCircle className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold">No Webhooks Found</h3>
-            <p className="text-muted-foreground text-center mt-2 max-w-md">
-              You haven't created any webhooks for this form yet. Webhooks allow you to receive form submissions in real-time.
-            </p>
-            <Button className="mt-4" onClick={() => setShowCreateModal(true)}>
-              Create Your First Webhook
+        <EmptyState
+          title="No Webhooks Yet"
+          description="Create your first webhook to automatically send form submissions to external services."
+          icon={<LinkIcon className="h-10 w-10" />}
+        >
+          <div className="flex flex-col gap-2 items-center">
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Webhook
             </Button>
-          </CardContent>
-        </Card>
+            <p className="text-xs text-muted-foreground mt-2">
+              Having issues? Try our{' '}
+              <a 
+                href="/webhook-debug" 
+                target="_blank" 
+                className="text-primary hover:underline"
+              >
+                webhook debugging tool
+              </a>
+            </p>
+          </div>
+        </EmptyState>
       ) : (
         <div className="grid gap-6">
           {webhooks.map((webhook) => (

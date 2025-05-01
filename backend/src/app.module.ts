@@ -9,6 +9,7 @@ import { SubmissionsModule } from './submissions/submissions.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ClientsModule } from './clients/clients.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ClientsModule } from './clients/clients.module';
     SubmissionsModule,
     AnalyticsModule,
     ClientsModule,
+    WebhooksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

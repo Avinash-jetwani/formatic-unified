@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 export const mockWebhooks = [
   {
     id: 'webhook_01',
-    formId: 'form_01',
+    formId: '65fef360-29a5-40ed-a79e-78fccdc4842c',
     name: 'Zapier Integration',
     url: 'https://hooks.zapier.com/hooks/catch/12345/abcdef/',
     active: true,
@@ -24,7 +24,7 @@ export const mockWebhooks = [
   },
   {
     id: 'webhook_02',
-    formId: 'form_02',
+    formId: '65fef360-29a5-40ed-a79e-78fccdc4842c',
     name: 'Slack Notification',
     url: 'https://hooks.slack.com/services/T12345/B12345/abcdefghijklmn',
     active: true,
@@ -44,6 +44,9 @@ export const mockWebhooks = [
   }
 ];
 
+// Add a debug log for when the route is loaded
+console.log('Webhook API route module loaded');
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { formId: string } }
@@ -55,17 +58,10 @@ export async function GET(
     // Simulate a brief delay
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    // If the form ID matches our mock data, return those webhooks
-    // Otherwise return an empty array
-    const webhooks = params.formId === 'form_01' || params.formId === 'form_02' 
-      ? mockWebhooks.filter(w => w.formId === params.formId)
-      : [];
+    // Filter webhooks by formId
+    const webhooks = mockWebhooks.filter(w => w.formId === params.formId);
     
-    // If we have the special form ID that we're viewing, return all webhooks
-    if (params.formId === '65fef360-29a5-40ed-a79e-78fccdc4842c') {
-      return NextResponse.json(mockWebhooks);
-    }
-    
+    console.log(`Returning ${webhooks.length} webhooks for form ${params.formId}`);
     return NextResponse.json(webhooks);
   } catch (error) {
     console.error('Mock webhook API error:', error);
@@ -120,6 +116,8 @@ export async function POST(
     
     // In a real implementation, you would save this to the database
     mockWebhooks.push(newWebhook);
+    
+    console.log('Created new webhook:', newWebhook.id);
     
     return NextResponse.json(newWebhook);
   } catch (error) {

@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
+// Define the backend API URL
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
@@ -8,6 +9,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'Cache-Control': 'no-cache',
   },
+  withCredentials: true, // Enable sending cookies with requests
 });
 
 // Add request interceptor to include auth token
@@ -39,9 +41,23 @@ export const fetchApi = async <T>(
       options.params = { t: new Date().getTime() };
     }
     
-    // Ensure URL starts with /api if it doesn't already
-    if (!url.startsWith('/api') && !url.startsWith('http')) {
-      url = `/api${url.startsWith('/') ? '' : '/'}${url}`;
+    // Handle URL routing to ensure we're calling the Next.js API routes
+    let finalUrl = url;
+    
+    // Check if we're in a browser environment (client-side)
+    if (typeof window !== 'undefined') {
+      if (url.startsWith('/api')) {
+        // Already has /api prefix, use as is for client-side requests
+        finalUrl = url;
+      } else {
+        // Add /api prefix for client-side requests
+        finalUrl = `/api${url.startsWith('/') ? '' : '/'}${url}`;
+      }
+    } else {
+      // Server-side requests should go directly to the backend API
+      if (!url.startsWith('http')) {
+        finalUrl = `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+      }
     }
 
     // Handle query parameters if provided
@@ -54,14 +70,14 @@ export const fetchApi = async <T>(
       }
       const queryString = queryParams.toString();
       if (queryString) {
-        url = `${url}${url.includes('?') ? '&' : '?'}${queryString}`;
+        finalUrl = `${finalUrl}${finalUrl.includes('?') ? '&' : '?'}${queryString}`;
       }
       delete options.params;
     }
 
-    console.log('Final URL:', url);
+    console.log('Final URL:', finalUrl);
 
-    const response = await api(url, options);
+    const response = await api(finalUrl, options);
     console.log('API response:', response.data);
     return response.data;
   } catch (error) {

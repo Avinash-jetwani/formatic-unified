@@ -6,61 +6,80 @@ export async function POST(
   { params }: { params: { formId: string, webhookId: string } }
 ) {
   try {
-    console.log('Mock webhook test API: testing webhook ID:', params.webhookId);
+    // Log the request
+    console.log('Mock webhook test API: Testing webhook:', params.webhookId);
     
-    // Simulate a brief delay to mimic network latency
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // Get the request body if provided
+    let body = {};
+    try {
+      body = await request.json();
+    } catch (e) {
+      // If there's no body or it's not valid JSON, use an empty object
+    }
     
-    // Find the webhook
+    // Find the webhook by ID
     const webhook = mockWebhooks.find(w => w.id === params.webhookId);
     
     if (!webhook) {
       return NextResponse.json(
-        { success: false, error: 'Webhook not found', message: `No webhook with ID ${params.webhookId}` },
+        { error: 'Webhook not found', message: `No webhook with ID ${params.webhookId}` },
         { status: 404 }
       );
     }
-
-    // 80% chance of success
-    const isSuccess = Math.random() > 0.2;
     
-    if (isSuccess) {
-      return NextResponse.json({
-        success: true,
+    // Simulate a brief delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Create a simulated test response
+    const testResponse = {
+      success: true,
+      message: `Webhook test for ${webhook.name} completed successfully`,
+      timestamp: new Date().toISOString(),
+      requestDetails: {
+        url: webhook.url,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Formatic-Webhook-Service/1.0',
+          ...(webhook.authType === 'BEARER' ? { 'Authorization': `Bearer ${webhook.authValue || 'token'}` } : {}),
+          ...(webhook.authType === 'API_KEY' ? { 'X-API-Key': webhook.authValue || 'api_key' } : {}),
+        },
+        body: (body as any).payload || {
+          event: 'SUBMISSION_CREATED',
+          form: {
+            id: params.formId,
+            name: 'Sample Form'
+          },
+          submission: {
+            id: `sub_${Date.now().toString(36)}`,
+            createdAt: new Date().toISOString(),
+            fields: {
+              name: 'Test User',
+              email: 'test@example.com',
+              message: 'This is a test webhook payload'
+            }
+          }
+        }
+      },
+      responseDetails: {
         statusCode: 200,
-        responseTime: Math.floor(Math.random() * 500) + 100, // Random response time between 100-600ms
-        message: 'Test webhook delivered successfully',
-        deliveryId: `delivery_${Date.now().toString(36)}`,
-        timestamp: new Date().toISOString()
-      });
-    } else {
-      // Simulate random failure
-      const errorCodes = [400, 401, 403, 404, 500, 502, 504];
-      const statusCode = errorCodes[Math.floor(Math.random() * errorCodes.length)];
-      const errorMessages = [
-        'Invalid request',
-        'Authentication failed',
-        'Access denied',
-        'Endpoint not found',
-        'Internal server error',
-        'Bad gateway',
-        'Gateway timeout'
-      ];
-      const errorMessage = errorMessages[Math.floor(Math.random() * errorMessages.length)];
-      
-      return NextResponse.json({
-        success: false,
-        statusCode,
-        responseTime: Math.floor(Math.random() * 500) + 100,
-        error: errorMessage,
-        deliveryId: `delivery_${Date.now().toString(36)}`,
-        timestamp: new Date().toISOString()
-      });
-    }
+        headers: {
+          'content-type': 'application/json',
+          'server': 'Mock-Server/1.0'
+        },
+        body: {
+          success: true,
+          message: 'Webhook received',
+          id: `rec_${Date.now().toString(36)}`
+        }
+      }
+    };
+    
+    return NextResponse.json(testResponse);
   } catch (error) {
     console.error('Mock webhook test API error:', error);
     return NextResponse.json(
-      { success: false, error: 'An error occurred', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'An error occurred', message: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }
