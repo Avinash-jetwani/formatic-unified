@@ -452,6 +452,7 @@ const FormEditPage = () => {
               <TabsTrigger value="fields">Fields</TabsTrigger>
               <TabsTrigger value="share">Share</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
             </TabsList>
             
             <TabsContent value="edit" className="mt-4 space-y-4">
@@ -867,6 +868,40 @@ const FormEditPage = () => {
                     {saving ? 'Saving...' : 'Save Settings'}
                   </Button>
                 </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="webhooks" className="mt-4 space-y-4">
+              <div className="flex justify-between">
+                <h3 className="text-lg font-medium">Webhooks</h3>
+                <Button onClick={() => router.push(`/forms/${formId}/webhooks`)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Manage Webhooks
+                </Button>
+              </div>
+              <p className="text-muted-foreground">
+                Webhooks allow you to receive form submission data in real-time in your own systems.
+                Configure and manage webhooks to integrate your form with other applications.
+              </p>
+              <div className="p-4 bg-muted/30 rounded-md">
+                <ul className="space-y-2">
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 mr-2 text-green-500" />
+                    <span>Receive real-time form submissions</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 mr-2 text-green-500" />
+                    <span>Authenticate with various methods (API key, Bearer token, etc.)</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 mr-2 text-green-500" />
+                    <span>Filter and customize the data you receive</span>
+                  </li>
+                  <li className="flex items-center">
+                    <Check className="h-4 w-4 mr-2 text-green-500" />
+                    <span>Monitor webhook deliveries and test endpoints</span>
+                  </li>
+                </ul>
               </div>
             </TabsContent>
           </Tabs>

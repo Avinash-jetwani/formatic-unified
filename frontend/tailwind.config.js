@@ -119,6 +119,11 @@ module.exports = {
           },
         },
       },
+      variants: {
+        badge: {
+          success: "bg-green-100 text-green-800 hover:bg-green-200/80"
+        }
+      },
     },
   },
   plugins: [
