@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { ClientsModule } from './clients/clients.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     AnalyticsModule,
     ClientsModule,
     WebhooksModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

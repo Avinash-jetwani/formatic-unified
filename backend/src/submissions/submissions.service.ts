@@ -1,14 +1,19 @@
-// /backend/src/submissions/submissions.service.ts
-import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
 import { UpdateSubmissionDto } from './dto/update-submission.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { Role } from '@prisma/client';
+import { Role, WebhookEventType } from '@prisma/client';
 import * as PDFDocument from 'pdfkit';
+import { WebhookDeliveryService } from '../webhooks/webhook-delivery.service';
 
 @Injectable()
 export class SubmissionsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(SubmissionsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private webhookDeliveryService: WebhookDeliveryService
+  ) {}
 
   async create(createSubmissionDto: CreateSubmissionDto) {
     // Check if form exists and is published
@@ -20,7 +25,8 @@ export class SubmissionsService {
       throw new NotFoundException('Form not found or not published');
     }
     
-    return this.prisma.submission.create({
+    // Create the submission
+    const submission = await this.prisma.submission.create({
       data: {
         formId: createSubmissionDto.formId,
         data: createSubmissionDto.data,
@@ -34,13 +40,49 @@ export class SubmissionsService {
         location: createSubmissionDto.location,
       },
     });
+
+    // Trigger webhooks for this form
+    this.triggerWebhooks(form.id, submission);
+    
+    return submission;
   }
 
-// In /src/submissions/submissions.service.ts - update the findAll method
-async findAll(userId: string, userRole: Role) {
-  // Super admin can see all submissions
-  if (userRole === Role.SUPER_ADMIN) {
+  // In /src/submissions/submissions.service.ts - update the findAll method
+  async findAll(userId: string, userRole: Role) {
+    // Super admin can see all submissions
+    if (userRole === Role.SUPER_ADMIN) {
+      return this.prisma.submission.findMany({
+        include: {
+          form: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              published: true,
+              clientId: true,
+              client: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                }
+              }
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+      });
+    }
+    
+    // Clients can only see submissions for their forms
     return this.prisma.submission.findMany({
+      where: {
+        form: {
+          clientId: userId,
+        },
+      },
       include: {
         form: {
           select: {
@@ -49,13 +91,6 @@ async findAll(userId: string, userRole: Role) {
             slug: true,
             published: true,
             clientId: true,
-            client: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              }
-            }
           }
         }
       },
@@ -64,30 +99,6 @@ async findAll(userId: string, userRole: Role) {
       },
     });
   }
-  
-  // Clients can only see submissions for their forms
-  return this.prisma.submission.findMany({
-    where: {
-      form: {
-        clientId: userId,
-      },
-    },
-    include: {
-      form: {
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          published: true,
-          clientId: true,
-        }
-      }
-    },
-    orderBy: {
-      createdAt: 'desc'
-    },
-  });
-}
 
   async findByForm(formId: string, userId: string, userRole: Role) {
     // Check if form exists
@@ -136,7 +147,7 @@ async findAll(userId: string, userRole: Role) {
 
   async update(id: string, updateSubmissionDto: UpdateSubmissionDto, userId: string, userRole: Role) {
     // Check if submission exists and user has permission
-    await this.findOne(id, userId, userRole);
+    const submission = await this.findOne(id, userId, userRole);
     
     const updateData: any = {};
     
@@ -155,10 +166,17 @@ async findAll(userId: string, userRole: Role) {
       updateData.tags = updateSubmissionDto.tags;
     }
     
-    return this.prisma.submission.update({
+    const updatedSubmission = await this.prisma.submission.update({
       where: { id },
       data: updateData,
     });
+
+    // Trigger webhook for submission updated if status changed
+    if (updateSubmissionDto.status !== undefined && updateSubmissionDto.status !== submission.status) {
+      this.triggerWebhooks(submission.form.id, updatedSubmission, WebhookEventType.SUBMISSION_UPDATED);
+    }
+    
+    return updatedSubmission;
   }
 
   async findSiblings(id: string, formId: string, userId: string, userRole: Role) {
@@ -273,6 +291,35 @@ async findAll(userId: string, userRole: Role) {
         throw error;
       }
       throw new InternalServerErrorException(`Failed to export submission: ${error.message}`);
+    }
+  }
+
+  // Helper method to trigger webhooks for a form submission
+  private async triggerWebhooks(formId: string, submission: any, eventType: WebhookEventType = WebhookEventType.SUBMISSION_CREATED) {
+    try {
+      this.logger.log(`Triggering webhooks for form ${formId}, submission ${submission.id}, event ${eventType}`);
+      
+      // Find all active webhooks for this form
+      const webhooks = await this.prisma.webhook.findMany({
+        where: {
+          formId,
+          active: true,
+          adminApproved: true,
+        }
+      });
+      
+      this.logger.log(`Found ${webhooks.length} webhooks to trigger`);
+      
+      // Queue a delivery for each webhook
+      for (const webhook of webhooks) {
+        await this.webhookDeliveryService.queueDelivery(
+          webhook,
+          submission,
+          eventType
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error triggering webhooks: ${error.message}`, error.stack);
     }
   }
 }
