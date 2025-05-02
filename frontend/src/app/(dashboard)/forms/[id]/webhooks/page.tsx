@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { WebhookForm } from '@/components/webhook/WebhookForm';
 import { toast } from '@/components/ui/use-toast';
 import { Webhook, webhookService, CreateWebhookDto, UpdateWebhookDto } from '@/services/webhook';
@@ -264,6 +265,21 @@ export default function WebhooksPage() {
       
       <Separator />
       
+      {/* Information box for clients about webhook approval */}
+      {user?.role === 'CLIENT' && webhooks.some(w => !w.adminApproved) && (
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
+          <div className="flex items-start">
+            <Clock className="h-5 w-5 text-blue-500 mr-2 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-blue-900">Webhook Approval Required</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                Some webhooks require admin approval before they become active. You will be notified once your webhooks are approved.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {webhooks.length === 0 ? (
         <EmptyState
           title="No Webhooks Yet"
@@ -301,8 +317,27 @@ export default function WebhooksPage() {
                     <Badge variant={webhook.active ? "default" : "outline"}>
                       {webhook.active ? "Active" : "Inactive"}
                     </Badge>
-                    {!webhook.adminApproved && user?.role === 'CLIENT' && (
-                      <Badge variant="secondary">Pending Approval</Badge>
+                    {user?.role === 'CLIENT' && (
+                      webhook.adminApproved === true 
+                        ? <Badge variant="success" className="bg-green-100 text-green-800 hover:bg-green-200">Approved</Badge>
+                        : webhook.adminApproved === false && webhook.adminNotes
+                          ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-200 cursor-help">
+                                    Rejected
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="text-sm">{webhook.adminNotes || 'Rejected by admin'}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )
+                          : <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-200">
+                              Pending Approval
+                            </Badge>
                     )}
                   </div>
                 </div>

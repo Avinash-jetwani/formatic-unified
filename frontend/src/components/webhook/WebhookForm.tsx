@@ -678,13 +678,32 @@ export function WebhookForm({
               </TabsContent>
             </Tabs>
           </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : webhook ? 'Update Webhook' : 'Create Webhook'}
-            </Button>
+          <CardFooter className="flex flex-col space-y-4">
+            {/* Client webhook approval message */}
+            {!isAdmin && !webhook?.adminApproved && (
+              <div className="w-full bg-amber-50 border border-amber-200 rounded-md p-4 text-left">
+                <div className="flex items-start">
+                  <svg className="h-5 w-5 text-amber-400 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-amber-800">Approval Required</h3>
+                    <div className="mt-1 text-sm text-amber-700">
+                      <p>Webhooks created by clients require admin approval before they become active. You'll be notified when your webhook is approved or rejected.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex justify-between w-full">
+              <Button variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : webhook ? 'Update Webhook' : 'Create Webhook'}
+              </Button>
+            </div>
           </CardFooter>
         </Card>
       </form>
