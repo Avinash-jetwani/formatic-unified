@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsObject } from 'class-validator';
+import { IsOptional, IsObject, IsEnum } from 'class-validator';
+import { WebhookEventType } from '@prisma/client';
 
 export class TestWebhookDto {
   @ApiProperty({ 
@@ -10,4 +11,14 @@ export class TestWebhookDto {
   @IsObject()
   @IsOptional()
   payload?: Record<string, any>;
+
+  @ApiProperty({
+    description: 'Event type to test',
+    required: false,
+    enum: WebhookEventType,
+    default: WebhookEventType.SUBMISSION_CREATED
+  })
+  @IsEnum(WebhookEventType)
+  @IsOptional()
+  eventType?: WebhookEventType = WebhookEventType.SUBMISSION_CREATED;
 } 

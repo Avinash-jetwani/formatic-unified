@@ -1,12 +1,14 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWebhookDto } from './dto/create-webhook.dto';
 import { UpdateWebhookDto } from './dto/update-webhook.dto';
 import { TestWebhookDto } from './dto/test-webhook.dto';
 import { WebhookResponseDto } from './dto/webhook-response.dto';
-import { Role, Webhook } from '@prisma/client';
+import { Role, Webhook, WebhookEventType } from '@prisma/client';
 import axios from 'axios';
 import { createHmac } from 'crypto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsObject, IsEnum } from 'class-validator';
 
 @Injectable()
 export class WebhooksService {
@@ -141,34 +143,62 @@ export class WebhooksService {
     }
 
     try {
-      // Create a test payload
-      const submissionId = `sub_test_${Date.now().toString(36)}`;
-      const payload = {
-        event: 'SUBMISSION_CREATED',
-        form: {
-          id: webhook.form.id,
-          title: webhook.form.title || 'Test Form'
-        },
-        submission: {
-          id: submissionId,
-          createdAt: new Date().toISOString(),
-          data: testDto.payload 
-            ? (typeof testDto.payload === 'string' ? JSON.parse(testDto.payload) : testDto.payload)
-            : {
-                name: 'Test User',
-                email: 'test@example.com',
-                message: 'This is a test webhook from Formatic',
-                phone: '123-456-7890'
-              }
-        },
-        timestamp: new Date().toISOString()
-      };
+      // Get the event type from the DTO or default to SUBMISSION_CREATED
+      const eventType = testDto.eventType || WebhookEventType.SUBMISSION_CREATED;
+      
+      // Create a test payload based on the event type
+      let payload: any;
+      
+      if (eventType === WebhookEventType.SUBMISSION_CREATED || eventType === WebhookEventType.SUBMISSION_UPDATED) {
+        // For submission events
+        const submissionId = `sub_test_${Date.now().toString(36)}`;
+        payload = {
+          event: eventType,
+          form: {
+            id: webhook.form.id,
+            title: webhook.form.title || 'Test Form'
+          },
+          submission: {
+            id: submissionId,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            status: 'new',
+            data: testDto.payload 
+              ? (typeof testDto.payload === 'string' ? JSON.parse(testDto.payload) : testDto.payload)
+              : {
+                  name: 'Test User',
+                  email: 'test@example.com',
+                  message: 'This is a test webhook from Formatic',
+                  phone: '123-456-7890'
+                }
+          },
+          timestamp: new Date().toISOString()
+        };
+      } else if (eventType === WebhookEventType.FORM_PUBLISHED || eventType === WebhookEventType.FORM_UNPUBLISHED) {
+        // For form events
+        payload = {
+          event: eventType,
+          form: {
+            id: webhook.form.id,
+            title: webhook.form.title || 'Test Form',
+            description: webhook.form.description || 'Test form description',
+            published: eventType === WebhookEventType.FORM_PUBLISHED ? true : false,
+            createdAt: webhook.form.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          },
+          client: {
+            id: webhook.form.clientId,
+            name: 'Test Client'
+          },
+          timestamp: new Date().toISOString()
+        };
+      }
 
       // Prepare headers
       const headers = {
         'Content-Type': 'application/json',
         'User-Agent': 'Formatic-Webhook-Service/1.0',
-        'X-Formatic-Event': 'SUBMISSION_CREATED',
+        'X-Formatic-Event': eventType,
         'X-Formatic-Delivery-ID': `test_${Date.now().toString(36)}`
       };
 
@@ -199,7 +229,7 @@ export class WebhooksService {
       await this.prisma.webhookDelivery.create({
         data: {
           webhookId: webhook.id,
-          eventType: 'SUBMISSION_CREATED',
+          eventType: eventType,
           status: 'SUCCESS',
           requestTimestamp: new Date(),
           responseTimestamp: new Date(),
@@ -224,7 +254,7 @@ export class WebhooksService {
       await this.prisma.webhookDelivery.create({
         data: {
           webhookId: webhook.id,
-          eventType: 'SUBMISSION_CREATED',
+          eventType: testDto.eventType || 'SUBMISSION_CREATED',
           status: 'FAILED',
           requestTimestamp: new Date(),
           requestBody: error.config?.data ? 

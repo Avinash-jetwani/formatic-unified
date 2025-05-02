@@ -10,15 +10,25 @@ export class WebhookDeliveryService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Queue a webhook delivery when a submission is created
+   * Queue a webhook delivery for various events
+   * @param webhookId The ID of the webhook to trigger
+   * @param eventType The type of event (e.g., SUBMISSION_CREATED)
+   * @param submissionId Optional ID of the submission for submission-related events
    */
-  async queueDelivery(webhookId: string, submissionId: string, eventType: string): Promise<void> {
+  async queueDelivery(
+    webhookId: string, 
+    eventType: string,
+    submissionId?: string
+  ): Promise<void> {
     try {
-      this.logger.log(`Queuing webhook delivery: webhook=${webhookId}, submission=${submissionId}, event=${eventType}`);
+      this.logger.log(`Queuing webhook delivery: webhook=${webhookId}, event=${eventType}${submissionId ? `, submission=${submissionId}` : ''}`);
       
       // Find the webhook
       const webhook = await this.prisma.webhook.findUnique({
-        where: { id: webhookId }
+        where: { id: webhookId },
+        include: {
+          form: true
+        }
       });
       
       if (!webhook || !webhook.active) {
@@ -26,31 +36,61 @@ export class WebhookDeliveryService {
         return;
       }
       
-      // Find the submission
-      const submission = await this.prisma.submission.findUnique({
-        where: { id: submissionId },
-        include: { form: true }
-      });
-      
-      if (!submission) {
-        this.logger.debug(`Submission ${submissionId} not found - skipping delivery`);
-        return;
-      }
-      
-      // Create payload
-      const payload = {
+      let payload: any = {
         event: eventType,
-        form: {
-          id: submission.form.id,
-          title: submission.form.title || 'Form'
-        },
-        submission: {
-          id: submission.id,
-          createdAt: submission.createdAt,
-          data: this.filterSubmissionData(submission.data, webhook)
-        },
         timestamp: new Date().toISOString()
       };
+      
+      // Create different payloads based on event type
+      if (eventType === WebhookEventType.SUBMISSION_CREATED || eventType === WebhookEventType.SUBMISSION_UPDATED) {
+        if (!submissionId) {
+          this.logger.error(`Missing submissionId for ${eventType} event`);
+          return;
+        }
+        
+        // For submission events, include submission data
+        const submission = await this.prisma.submission.findUnique({
+          where: { id: submissionId },
+          include: { form: true }
+        });
+        
+        if (!submission) {
+          this.logger.debug(`Submission ${submissionId} not found - skipping delivery`);
+          return;
+        }
+        
+        payload = {
+          ...payload,
+          form: {
+            id: submission.form.id,
+            title: submission.form.title || 'Form'
+          },
+          submission: {
+            id: submission.id,
+            createdAt: submission.createdAt,
+            updatedAt: submission.updatedAt,
+            status: submission.status,
+            data: this.filterSubmissionData(submission.data, webhook)
+          }
+        };
+      } 
+      else if (eventType === WebhookEventType.FORM_PUBLISHED || eventType === WebhookEventType.FORM_UNPUBLISHED) {
+        // For form events, include form data
+        payload = {
+          ...payload,
+          form: {
+            id: webhook.form.id,
+            title: webhook.form.title || 'Form',
+            description: webhook.form.description,
+            published: webhook.form.published,
+            createdAt: webhook.form.createdAt,
+            updatedAt: webhook.form.updatedAt
+          },
+          client: {
+            id: webhook.form.clientId
+          }
+        };
+      }
       
       // Create a delivery record
       await this.prisma.webhookDelivery.create({
@@ -65,7 +105,7 @@ export class WebhookDeliveryService {
         }
       });
       
-      this.logger.log(`Webhook delivery queued for webhook ${webhookId}, submission ${submissionId}`);
+      this.logger.log(`Webhook delivery queued for webhook ${webhookId}, event ${eventType}`);
     } catch (error) {
       this.logger.error(`Error queueing webhook delivery: ${error.message}`, error.stack);
     }

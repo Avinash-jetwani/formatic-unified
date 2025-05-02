@@ -305,6 +305,9 @@ export class SubmissionsService {
           formId,
           active: true,
           adminApproved: true,
+          eventTypes: {
+            has: eventType
+          }
         }
       });
       
@@ -314,8 +317,8 @@ export class SubmissionsService {
       for (const webhook of webhooks) {
         await this.webhookDeliveryService.queueDelivery(
           webhook.id,
-          submission.id,
-          eventType
+          eventType,
+          submission.id
         );
       }
     } catch (error) {

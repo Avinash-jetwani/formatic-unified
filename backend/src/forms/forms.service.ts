@@ -1,15 +1,21 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { CreateFormDto } from './dto/create-form.dto';
 import { UpdateFormDto } from './dto/update-form.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateFormFieldDto } from './dto/create-form-field.dto';
 import { UpdateFormFieldDto } from './dto/update-form-field.dto';
-import { Role, Form } from '@prisma/client';
+import { Role, Form, WebhookEventType } from '@prisma/client';
 import { Prisma } from '@prisma/client';
+import { WebhookDeliveryService } from '../webhooks/webhook-delivery.service';
 
 @Injectable()
 export class FormsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(FormsService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private webhookDeliveryService: WebhookDeliveryService
+  ) {}
 
   async create(userId: string, createFormDto: CreateFormDto) {
     // Generate a slug if not provided
@@ -209,15 +215,33 @@ export class FormsService {
 
   async update(id: string, userId: string, userRole: Role, updateFormDto: UpdateFormDto) {
     // Check if form exists and user has permission
-    await this.findOne(id, userId, userRole);
+    const existingForm = await this.findOne(id, userId, userRole);
     
-    return this.prisma.form.update({
+    // Check if the published status is being changed
+    const isPublishedChanged = 
+      updateFormDto.published !== undefined && 
+      updateFormDto.published !== existingForm.published;
+    
+    // Update the form
+    const updatedForm = await this.prisma.form.update({
       where: { id },
       data: updateFormDto,
       include: {
         fields: true,
       },
     });
+    
+    // Trigger webhooks if publishing status changed
+    if (isPublishedChanged) {
+      const eventType = updateFormDto.published 
+        ? WebhookEventType.FORM_PUBLISHED 
+        : WebhookEventType.FORM_UNPUBLISHED;
+      
+      this.logger.log(`Form ${id} ${updateFormDto.published ? 'published' : 'unpublished'} - triggering webhooks`);
+      this.triggerFormWebhooks(id, eventType);
+    }
+    
+    return updatedForm;
   }
 
   async updateFields(
@@ -503,5 +527,85 @@ export class FormsService {
         ...analyticsData
       },
     });
+  }
+
+  // Helper method to trigger webhooks for form events
+  private async triggerFormWebhooks(formId: string, eventType: WebhookEventType) {
+    try {
+      this.logger.log(`Triggering webhooks for form ${formId}, event ${eventType}`);
+      
+      // Find all active webhooks for this form that listen for this event type
+      const webhooks = await this.prisma.webhook.findMany({
+        where: {
+          formId,
+          active: true,
+          adminApproved: true,
+          eventTypes: {
+            has: eventType
+          }
+        }
+      });
+      
+      this.logger.log(`Found ${webhooks.length} webhooks to trigger for event ${eventType}`);
+      
+      const form = await this.prisma.form.findUnique({
+        where: { id: formId },
+        include: {
+          client: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
+      
+      if (!form) {
+        this.logger.error(`Form ${formId} not found when triggering webhooks`);
+        return;
+      }
+      
+      // For each webhook that should be triggered
+      for (const webhook of webhooks) {
+        try {
+          // Create a payload for the form event
+          const payload = {
+            event: eventType,
+            form: {
+              id: form.id,
+              title: form.title || 'Form',
+              description: form.description,
+              published: form.published,
+              createdAt: form.createdAt,
+              updatedAt: form.updatedAt
+            },
+            client: {
+              id: form.client.id,
+              name: form.client.name
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          // Create a delivery record
+          await this.prisma.webhookDelivery.create({
+            data: {
+              webhookId: webhook.id,
+              eventType: eventType,
+              status: 'PENDING',
+              requestBody: payload,
+              attemptCount: 0,
+              nextAttempt: new Date() // Schedule for immediate delivery
+            }
+          });
+          
+          this.logger.log(`Webhook delivery queued for webhook ${webhook.id}, form ${formId}, event ${eventType}`);
+        } catch (error) {
+          this.logger.error(`Error creating webhook delivery: ${error.message}`, error.stack);
+        }
+      }
+    } catch (error) {
+      this.logger.error(`Error triggering form webhooks: ${error.message}`, error.stack);
+    }
   }
 }
