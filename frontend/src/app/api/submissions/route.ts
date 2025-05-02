@@ -47,14 +47,23 @@ export async function POST(request: NextRequest) {
     
     // Send submission to backend API which will handle webhook delivery
     try {
-      // Send the submission to our backend API
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/submissions`, {
+      // Prepare API request with submission data
+      const apiRequest: any = {
         ...submission,
         // Include additional browser info
         browser: request.headers.get('user-agent')?.split(' ')[0] || '',
         device: request.headers.get('user-agent')?.includes('Mobile') ? 'mobile' : 'desktop',
         location: null,
-      });
+      };
+      
+      // If custom webhook URL is provided, include it
+      if (body.webhookUrl) {
+        console.log(`Using custom webhook URL: ${body.webhookUrl}`);
+        apiRequest.webhookUrl = body.webhookUrl;
+      }
+      
+      // Send to backend API
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/submissions`, apiRequest);
       
       console.log('Submission sent to backend API');
     } catch (error: any) {

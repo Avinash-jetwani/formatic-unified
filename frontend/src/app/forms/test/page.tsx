@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 
 export default function TestForm() {
   const router = useRouter();
+  const [formId, setFormId] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -13,6 +15,7 @@ export default function TestForm() {
   });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [response, setResponse] = useState<any>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -21,7 +24,15 @@ export default function TestForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formId) {
+      setStatus('error');
+      setErrorMessage('Please enter a Form ID');
+      return;
+    }
+    
     setStatus('submitting');
+    setErrorMessage('');
 
     try {
       // Send the form submission
@@ -31,8 +42,9 @@ export default function TestForm() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          formId: '65fef360-29a5-40ed-a79e-78fccdc4842c', // The form ID we're testing with
-          data: formData
+          formId: formId,
+          data: formData,
+          webhookUrl: webhookUrl // Optional webhook URL override
         }),
       });
 
@@ -42,19 +54,17 @@ export default function TestForm() {
       setResponse(result);
       setStatus('success');
       
-      // Clear form
+      // Clear form data but keep formId and webhookUrl
       setFormData({
         name: '',
         email: '',
         phone: '',
         message: ''
       });
-      
-      // Optional: redirect to thank you page
-      // router.push('/thank-you');
     } catch (error) {
       console.error('Error submitting form:', error);
       setStatus('error');
+      setErrorMessage('There was a problem submitting your form. Please try again.');
     }
   };
 
@@ -78,11 +88,36 @@ export default function TestForm() {
       {status === 'error' && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
           <p className="font-bold">Error!</p>
-          <p>There was a problem submitting your form. Please try again.</p>
+          <p>{errorMessage}</p>
         </div>
       )}
       
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="formId" className="block text-sm font-medium text-gray-700">Form ID</label>
+          <input
+            type="text"
+            id="formId"
+            name="formId"
+            value={formId}
+            onChange={(e) => setFormId(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+            required
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="webhookUrl" className="block text-sm font-medium text-gray-700">Webhook URL</label>
+          <input
+            type="text"
+            id="webhookUrl"
+            name="webhookUrl"
+            value={webhookUrl}
+            onChange={(e) => setWebhookUrl(e.target.value)}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+          />
+        </div>
+        
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
           <input
@@ -153,13 +188,14 @@ export default function TestForm() {
         <p className="mt-4 mb-2">With the following payload:</p>
         <pre className="bg-gray-100 p-3 rounded overflow-auto">
           {JSON.stringify({
-            formId: '65fef360-29a5-40ed-a79e-78fccdc4842c',
-            data: formData
+            formId: formId,
+            data: formData,
+            webhookUrl: webhookUrl
           }, null, 2)}
         </pre>
         
         <p className="mt-4 mb-2">The webhook will be sent to:</p>
-        <code className="block bg-gray-100 p-2 rounded">https://test.glassshop.aeapp.uk/api/formatic-webhook</code>
+        <code className="block bg-gray-100 p-2 rounded">{webhookUrl || 'https://test.glassshop.aeapp.uk/api/formatic-webhook'}</code>
       </div>
     </div>
   );

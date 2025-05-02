@@ -2,22 +2,46 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// The form ID from your submissions
-const FORM_ID = '65fef360-29a5-40ed-a79e-78fccdc4842c';
-// Your PHP endpoint URL - UPDATE THIS TO YOUR ACTUAL URL
-const WEBHOOK_URL = 'https://test.glassshop.aeapp.uk/webhook-receiver.php';
+// Configuration (replace with your actual values)
+const config = {
+  formId: process.env.FORM_ID || '', // Set via environment variable or command line arg
+  webhookUrl: process.env.WEBHOOK_URL || '', // Set via environment variable or command line arg
+};
+
+// Get command line arguments
+const args = process.argv.slice(2);
+if (args.length >= 1) {
+  config.formId = args[0];
+}
+if (args.length >= 2) {
+  config.webhookUrl = args[1];
+}
 
 async function main() {
+  // Validate config
+  if (!config.formId) {
+    console.error('Error: Form ID is required. Please provide it as an env var or command line argument.');
+    process.exit(1);
+  }
+  
+  if (!config.webhookUrl) {
+    console.error('Error: Webhook URL is required. Please provide it as an env var or command line argument.');
+    process.exit(1);
+  }
+  
+  console.log('Using configuration:');
+  console.log(`Form ID: ${config.formId}`);
+  console.log(`Webhook URL: ${config.webhookUrl}`);
   console.log('Checking for existing webhooks...');
   
   // Find existing webhooks for this form
   const existingWebhooks = await prisma.webhook.findMany({
     where: {
-      formId: FORM_ID
+      formId: config.formId
     }
   });
   
-  console.log(`Found ${existingWebhooks.length} webhooks for form ${FORM_ID}`);
+  console.log(`Found ${existingWebhooks.length} webhooks for form ${config.formId}`);
   
   if (existingWebhooks.length === 0) {
     console.log('No webhooks found. Creating new webhook...');
@@ -25,9 +49,9 @@ async function main() {
     // Create a new webhook
     const newWebhook = await prisma.webhook.create({
       data: {
-        formId: FORM_ID,
-        name: 'PHP Form Webhook',
-        url: WEBHOOK_URL,
+        formId: config.formId,
+        name: 'Dynamic Webhook',
+        url: config.webhookUrl,
         active: true,
         adminApproved: true,
         eventTypes: ['SUBMISSION_CREATED'],
@@ -50,7 +74,7 @@ async function main() {
         data: {
           active: true,
           adminApproved: true,
-          url: WEBHOOK_URL // Update URL just in case
+          url: config.webhookUrl // Update URL to the configured one
         }
       });
       

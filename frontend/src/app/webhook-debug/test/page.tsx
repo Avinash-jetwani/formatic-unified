@@ -7,7 +7,9 @@ export default function WebhookDebugTest() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [webhookUrl, setWebhookUrl] = useState('https://test.glassshop.aeapp.uk/api/formatic-webhook');
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [formId, setFormId] = useState('');
+  const [formTitle, setFormTitle] = useState('Contact Form');
   const [testData, setTestData] = useState({
     name: 'Test User',
     email: 'test@example.com',
@@ -16,6 +18,16 @@ export default function WebhookDebugTest() {
   });
 
   const sendTestWebhook = async () => {
+    if (!webhookUrl) {
+      setError('Please enter a webhook URL');
+      return;
+    }
+    
+    if (!formId) {
+      setError('Please enter a form ID');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setResult(null);
@@ -25,8 +37,8 @@ export default function WebhookDebugTest() {
       const payload = {
         event: 'SUBMISSION_CREATED',
         form: {
-          id: '65fef360-29a5-40ed-a79e-78fccdc4842c',
-          title: 'Contact Form'
+          id: formId,
+          title: formTitle
         },
         submission: {
           id: `sub_${Date.now().toString(36)}`,
@@ -82,6 +94,30 @@ export default function WebhookDebugTest() {
           type="text"
           value={webhookUrl}
           onChange={(e) => setWebhookUrl(e.target.value)}
+          className="w-full p-2 border rounded"
+        />
+      </div>
+      
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Form ID
+        </label>
+        <input
+          type="text"
+          value={formId}
+          onChange={(e) => setFormId(e.target.value)}
+          className="w-full p-2 border rounded"
+        />
+      </div>
+      
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Form Title
+        </label>
+        <input
+          type="text"
+          value={formTitle}
+          onChange={(e) => setFormTitle(e.target.value)}
           className="w-full p-2 border rounded"
         />
       </div>
@@ -172,8 +208,8 @@ export default function WebhookDebugTest() {
 {`{
   "event": "SUBMISSION_CREATED",
   "form": {
-    "id": "65fef360-29a5-40ed-a79e-78fccdc4842c",
-    "title": "Contact Form"
+    "id": "${formId}",
+    "title": "${formTitle}"
   },
   "submission": {
     "id": "sub_uniqueid",

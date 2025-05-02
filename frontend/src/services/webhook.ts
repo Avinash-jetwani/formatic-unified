@@ -220,14 +220,7 @@ export const webhookService = {
       return await makeWebhookRequest<Webhook[]>(`/forms/${formId}/webhooks`);
     } catch (error) {
       console.error('Error fetching webhooks:', error);
-      
-      // Return mock data if fetch fails
-      if (formId === '65fef360-29a5-40ed-a79e-78fccdc4842c') {
-        console.log('Using mock webhook data');
-        return mockWebhooks;
-      }
-      
-      // Return empty array for other forms
+      // Return empty array if fetch fails
       return [];
     }
   },
