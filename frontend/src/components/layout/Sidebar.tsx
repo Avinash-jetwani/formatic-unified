@@ -15,7 +15,8 @@ import {
   Menu,
   X,
   Plus,
-  LogOut
+  LogOut,
+  Link2
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/contexts/AuthContext';
@@ -101,6 +102,11 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
       name: 'Users',
       href: '/admin/users',
       icon: <Users className="h-5 w-5" />,
+    },
+    {
+      name: 'Webhooks',
+      href: '/admin/webhooks',
+      icon: <Link2 className="h-5 w-5" />,
     },
     {
       name: 'Settings',
