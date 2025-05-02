@@ -105,7 +105,16 @@ export function WebhookForm({
   // Handle form submission
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
-      await onSave(data);
+      // Make sure URL is trimmed before submitting
+      const trimmedData = {
+        ...data,
+        url: data.url.trim()
+      };
+      
+      // Submit the form with trimmed data
+      await onSave(trimmedData);
+      
+      // Only show success toast if we don't catch an error
       toast({
         title: webhook ? 'Webhook updated' : 'Webhook created',
         description: `The webhook was successfully ${webhook ? 'updated' : 'created'}.`,
@@ -188,7 +197,11 @@ export function WebhookForm({
                     <FormItem>
                       <FormLabel>Endpoint URL</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://example.com/api/webhook" {...field} />
+                        <Input 
+                          placeholder="https://example.com/api/webhook" 
+                          {...field} 
+                          onChange={(e) => field.onChange(e.target.value.trim())}
+                        />
                       </FormControl>
                       <FormDescription>The URL where webhook data will be sent.</FormDescription>
                       <FormMessage />
