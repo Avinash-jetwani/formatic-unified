@@ -45,44 +45,21 @@ export async function POST(request: NextRequest) {
     // Add to our mock database
     submissions.push(submission);
     
-    // Find any webhooks configured for this form
-    // For testing, we'll use a hardcoded webhook for the specific form IDs we're testing with
-    const webhookUrl = 'https://test.glassshop.aeapp.uk/webhook-receiver.php';
-    
-    // Special case for form ID we're working with
-    if (body.formId === '65fef360-29a5-40ed-a79e-78fccdc4842c') {
-      try {
-        console.log(`Triggering webhook to ${webhookUrl}`);
-        
-        // Format payload exactly as PHP expects
-        const webhookPayload = {
-          event: 'SUBMISSION_CREATED',
-          form: {
-            id: body.formId,
-            title: 'Contact Form'
-          },
-          submission: {
-            id,
-            createdAt: submission.createdAt,
-            data: submission.data
-          },
-          timestamp: new Date().toISOString()
-        };
-        
-        // Send the webhook
-        const response = await axios.post(webhookUrl, webhookPayload, {
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'Formatic-Webhook-Service/1.0',
-            'X-Formatic-Event': 'SUBMISSION_CREATED',
-            'X-Formatic-Delivery-ID': `del_${Date.now().toString(36)}`
-          }
-        });
-        
-        console.log('Webhook delivery response:', response.status, response.data);
-      } catch (error: any) {
-        console.error('Error delivering webhook:', error.message);
-      }
+    // Send submission to backend API which will handle webhook delivery
+    try {
+      // Send the submission to our backend API
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/submissions`, {
+        ...submission,
+        // Include additional browser info
+        browser: request.headers.get('user-agent')?.split(' ')[0] || '',
+        device: request.headers.get('user-agent')?.includes('Mobile') ? 'mobile' : 'desktop',
+        location: null,
+      });
+      
+      console.log('Submission sent to backend API');
+    } catch (error: any) {
+      console.error('Error sending submission to backend:', error.message);
+      // Continue anyway since we've already stored the submission locally
     }
     
     // Return success response with the new submission
