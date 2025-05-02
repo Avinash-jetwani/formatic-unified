@@ -5,7 +5,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Role, WebhookEventType } from '@prisma/client';
 import * as PDFDocument from 'pdfkit';
 import { WebhookDeliveryService } from '../webhooks/webhook-delivery.service';
-import axios from 'axios';
 
 @Injectable()
 export class SubmissionsService {
@@ -20,17 +19,13 @@ export class SubmissionsService {
     // Check if form exists and is published
     const form = await this.prisma.form.findUnique({
       where: { id: createSubmissionDto.formId },
-      include: {
-        webhooks: {
-          where: { active: true }
-        }
-      }
     });
     
     if (!form || !form.published) {
       throw new NotFoundException('Form not found or not published');
     }
     
+    // Create the submission
     const submission = await this.prisma.submission.create({
       data: {
         formId: createSubmissionDto.formId,
@@ -46,12 +41,8 @@ export class SubmissionsService {
       },
     });
 
-    // Trigger webhooks if present
-    if (form.webhooks && form.webhooks.length > 0) {
-      this.triggerWebhooks(form, submission).catch(err => {
-        console.error('Error triggering webhooks:', err);
-      });
-    }
+    // Trigger webhooks for this form
+    this.triggerWebhooks(form.id, submission);
     
     return submission;
   }
@@ -304,121 +295,31 @@ export class SubmissionsService {
   }
 
   // Helper method to trigger webhooks for a form submission
-  private async triggerWebhooks(form, submission) {
-    // Process each webhook
-    for (const webhook of form.webhooks) {
-      try {
-        // Only process active webhooks
-        if (!webhook.active) continue;
-        
-        // Check if webhook includes SUBMISSION_CREATED event
-        if (!webhook.eventTypes || 
-            !Array.isArray(webhook.eventTypes) || 
-            !webhook.eventTypes.includes('SUBMISSION_CREATED')) {
-          continue;
+  private async triggerWebhooks(formId: string, submission: any, eventType: WebhookEventType = WebhookEventType.SUBMISSION_CREATED) {
+    try {
+      this.logger.log(`Triggering webhooks for form ${formId}, submission ${submission.id}, event ${eventType}`);
+      
+      // Find all active webhooks for this form
+      const webhooks = await this.prisma.webhook.findMany({
+        where: {
+          formId,
+          active: true,
+          adminApproved: true,
         }
-        
-        // Create webhook payload
-        const payload = {
-          event: 'SUBMISSION_CREATED',
-          form: {
-            id: form.id,
-            title: form.title
-          },
-          submission: {
-            id: submission.id,
-            createdAt: submission.createdAt,
-            data: this.filterSubmissionData(submission.data, webhook)
-          },
-          timestamp: new Date().toISOString()
-        };
-        
-        // Setup headers
-        const headers = {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Formatic-Webhook-Service/1.0',
-          'X-Formatic-Event': 'SUBMISSION_CREATED',
-          'X-Formatic-Delivery-ID': `del_${Date.now().toString(36)}`
-        };
-        
-        // Add auth headers if necessary
-        if (webhook.authType === 'BEARER' && webhook.authValue) {
-          headers['Authorization'] = `Bearer ${webhook.authValue}`;
-        } else if (webhook.authType === 'API_KEY' && webhook.authValue) {
-          headers['X-API-Key'] = webhook.authValue;
-        }
-        
-        // Send webhook POST request
-        console.log(`Sending webhook to ${webhook.url}`);
-        const response = await axios.post(webhook.url, payload, { headers });
-        
-        // Create a delivery log record
-        await this.prisma.webhookDelivery.create({
-          data: {
-            webhookId: webhook.id,
-            submissionId: submission.id,
-            eventType: 'SUBMISSION_CREATED',
-            status: response.status >= 200 && response.status < 300 ? 'SUCCESS' : 'FAILED',
-            requestTimestamp: new Date(),
-            responseTimestamp: new Date(),
-            requestBody: payload,
-            responseBody: response.data,
-            statusCode: response.status,
-            attemptCount: 1
-          }
-        });
-        
-        console.log(`Webhook ${webhook.id} delivered successfully: ${response.status}`);
-      } catch (error) {
-        console.error(`Error delivering webhook ${webhook.id}:`, error);
-        
-        // Create a failed delivery log
-        try {
-          await this.prisma.webhookDelivery.create({
-            data: {
-              webhookId: webhook.id,
-              submissionId: submission.id,
-              eventType: 'SUBMISSION_CREATED',
-              status: 'FAILED',
-              requestTimestamp: new Date(),
-              requestBody: {
-                event: 'SUBMISSION_CREATED',
-                form: { id: form.id, title: form.title },
-                submission: { id: submission.id }
-              },
-              errorMessage: error.message || 'Unknown error',
-              attemptCount: 1
-            }
-          });
-        } catch (err) {
-          console.error('Error creating webhook delivery log:', err);
-        }
+      });
+      
+      this.logger.log(`Found ${webhooks.length} webhooks to trigger`);
+      
+      // Queue a delivery for each webhook
+      for (const webhook of webhooks) {
+        await this.webhookDeliveryService.queueDelivery(
+          webhook.id,
+          submission.id,
+          eventType
+        );
       }
+    } catch (error) {
+      this.logger.error(`Error triggering webhooks: ${error.message}`, error.stack);
     }
-  }
-  
-  private filterSubmissionData(data, webhook) {
-    if (!data) return {};
-    
-    // Create a copy of the data
-    const filteredData = { ...data };
-    
-    // Apply include fields filter
-    if (webhook.includeFields && webhook.includeFields.length > 0) {
-      Object.keys(filteredData).forEach(key => {
-        if (!webhook.includeFields.includes(key)) {
-          delete filteredData[key];
-        }
-      });
-    }
-    
-    // Apply exclude fields filter
-    if (webhook.excludeFields && webhook.excludeFields.length > 0) {
-      webhook.excludeFields.forEach(field => {
-        delete filteredData[field];
-      });
-    }
-    
-    return filteredData;
   }
 }

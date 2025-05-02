@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     
     // Find any webhooks configured for this form
     // For testing, we'll use a hardcoded webhook for the specific form IDs we're testing with
-    const webhookUrl = 'https://test.glassshop.aeapp.uk/api/formatic-webhook';
+    const webhookUrl = 'https://test.glassshop.aeapp.uk/webhook-receiver.php';
     
     // Special case for form ID we're working with
     if (body.formId === '65fef360-29a5-40ed-a79e-78fccdc4842c') {
