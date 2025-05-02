@@ -225,8 +225,20 @@ export default function AdminWebhooksPage() {
                         {webhook.url}
                       </div>
                     </TableCell>
-                    <TableCell>{webhook.formId}</TableCell>
-                    <TableCell>{webhook.createdById || 'System'}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{webhook.formTitle || "Unknown Form"}</div>
+                      <div className="text-xs text-muted-foreground">{webhook.formId}</div>
+                    </TableCell>
+                    <TableCell>
+                      {webhook.clientName ? (
+                        <div>
+                          <div className="font-medium">{webhook.clientName}</div>
+                          <div className="text-xs text-muted-foreground">{webhook.clientEmail}</div>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">{webhook.createdById || 'System'}</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
                         {!webhook.adminApproved ? (
@@ -249,21 +261,49 @@ export default function AdminWebhooksPage() {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>{formatDate(webhook.createdAt, { year: 'numeric', month: 'short', day: 'numeric' })}</TableCell>
+                    <TableCell>{formatDate(webhook.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
                         {!webhook.adminApproved && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedWebhook(webhook);
-                              setShowApproveDialog(true);
-                            }}
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-1" />
-                            Approve
-                          </Button>
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-green-600 border-green-600 hover:bg-green-50"
+                              onClick={() => {
+                                setSelectedWebhook(webhook);
+                                setShowApproveDialog(true);
+                              }}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                              onClick={async () => {
+                                try {
+                                  await webhookService.rejectWebhook(webhook.id);
+                                  await loadWebhooks();
+                                  toast({
+                                    title: 'Webhook rejected',
+                                    description: 'The webhook has been rejected.',
+                                  });
+                                } catch (err) {
+                                  console.error('Error rejecting webhook:', err);
+                                  toast({
+                                    title: 'Error',
+                                    description: 'Failed to reject webhook. Please try again.',
+                                    variant: 'destructive',
+                                  });
+                                }
+                              }}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Reject
+                            </Button>
+                          </>
                         )}
                         <Button
                           variant="outline"

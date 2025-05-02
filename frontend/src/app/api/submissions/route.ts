@@ -48,26 +48,29 @@ export async function POST(request: NextRequest) {
     // Send submission to backend API which will handle webhook delivery
     try {
       // Prepare API request with submission data
-      const apiRequest: any = {
-        ...submission,
-        // Include additional browser info
-        browser: request.headers.get('user-agent')?.split(' ')[0] || '',
-        device: request.headers.get('user-agent')?.includes('Mobile') ? 'mobile' : 'desktop',
-        location: null,
+      const apiRequest = {
+        formId: body.formId,
+        data: body.data,
+        ipAddress: submission.ipAddress,
+        userAgent: submission.userAgent,
+        referrer: submission.referrer,
+        browser: body.browser || request.headers.get('user-agent')?.split(' ')[0] || '',
+        device: body.device || (request.headers.get('user-agent')?.includes('Mobile') ? 'mobile' : 'desktop'),
+        location: body.location || null,
       };
       
-      // If custom webhook URL is provided, include it
-      if (body.webhookUrl) {
-        console.log(`Using custom webhook URL: ${body.webhookUrl}`);
-        apiRequest.webhookUrl = body.webhookUrl;
-      }
+      console.log('Sending to backend API:', apiRequest);
       
-      // Send to backend API
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/submissions`, apiRequest);
+      // Make sure to use the correct backend API URL
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const response = await axios.post(`${backendUrl}/api/submissions`, apiRequest);
       
-      console.log('Submission sent to backend API');
+      console.log('Backend API response:', response.data);
     } catch (error: any) {
       console.error('Error sending submission to backend:', error.message);
+      if (error.response) {
+        console.error('Backend error details:', error.response.data);
+      }
       // Continue anyway since we've already stored the submission locally
     }
     

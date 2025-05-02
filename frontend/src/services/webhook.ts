@@ -56,6 +56,9 @@ export interface Webhook {
   };
   isTemplate: boolean;
   templateId?: string;
+  formTitle?: string;
+  clientName?: string;
+  clientEmail?: string;
 }
 
 export interface WebhookDelivery {
@@ -397,5 +400,22 @@ export const webhookService = {
     return makeWebhookRequest<Webhook>(`/admin/webhooks/${webhookId}/approve`, {
       method: 'PATCH',
     });
+  },
+
+  // Admin only: Reject a webhook
+  rejectWebhook: async (webhookId: string): Promise<Webhook> => {
+    return makeWebhookRequest<Webhook>(`/admin/webhooks/${webhookId}/reject`, {
+      method: 'PATCH',
+    });
+  },
+
+  // Admin only: Get pending webhooks that need approval
+  getPendingWebhooks: async (): Promise<Webhook[]> => {
+    try {
+      return await makeWebhookRequest<Webhook[]>(`/admin/webhooks/pending`);
+    } catch (error) {
+      console.error('Error fetching pending webhooks:', error);
+      return [];
+    }
   },
 }; 

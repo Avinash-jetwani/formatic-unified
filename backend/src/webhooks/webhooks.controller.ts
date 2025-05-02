@@ -100,8 +100,7 @@ export class WebhooksController {
   @ApiOperation({ summary: 'Get all webhooks (admin only)' })
   @ApiResponse({ status: 200, description: 'Success', type: [WebhookResponseDto] })
   findAllAdmin(@Request() req: any): Promise<WebhookResponseDto[]> {
-    // This would be implemented in the service
-    throw new Error('Not implemented');
+    return this.webhooksService.findAllForAdmin(req.user.id);
   }
 
   @Patch('admin/webhooks/:id/approve')
@@ -113,7 +112,26 @@ export class WebhooksController {
     @Param('id') id: string,
     @Request() req: any
   ): Promise<WebhookResponseDto> {
-    // This would be implemented in the service
-    throw new Error('Not implemented');
+    return this.webhooksService.approveWebhook(id, true, req.user.id, req.user.role);
+  }
+
+  @Patch('admin/webhooks/:id/reject')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Reject a webhook (admin only)' })
+  @ApiParam({ name: 'id', description: 'Webhook ID' })
+  @ApiResponse({ status: 200, description: 'Success', type: WebhookResponseDto })
+  rejectWebhook(
+    @Param('id') id: string,
+    @Request() req: any
+  ): Promise<WebhookResponseDto> {
+    return this.webhooksService.approveWebhook(id, false, req.user.id, req.user.role);
+  }
+
+  @Get('admin/webhooks/pending')
+  @Roles(Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Get all pending webhooks requiring approval (admin only)' })
+  @ApiResponse({ status: 200, description: 'Success', type: [WebhookResponseDto] })
+  findPendingWebhooks(@Request() req: any): Promise<WebhookResponseDto[]> {
+    return this.webhooksService.findAllPending(req.user.id);
   }
 } 

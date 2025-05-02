@@ -34,6 +34,8 @@ export class WebhooksService {
         ...createWebhookDto,
         formId,
         createdById: userId,
+        // Auto-approve webhooks created by SUPER_ADMIN, require approval for CLIENT
+        adminApproved: userRole === Role.SUPER_ADMIN ? true : false,
       },
     });
 
@@ -241,6 +243,113 @@ export class WebhooksService {
         statusCode: error.response?.status
       };
     }
+  }
+
+  /**
+   * Admin only: Approve or reject a webhook
+   */
+  async approveWebhook(id: string, approved: boolean, userId: string, userRole: Role): Promise<WebhookResponseDto> {
+    // Only SUPER_ADMIN can approve webhooks
+    if (userRole !== Role.SUPER_ADMIN) {
+      throw new ForbiddenException('Only super admins can approve webhooks');
+    }
+
+    const webhook = await this.prisma.webhook.findUnique({
+      where: { id },
+      include: { form: true },
+    });
+
+    if (!webhook) {
+      throw new NotFoundException(`Webhook with ID ${id} not found`);
+    }
+
+    const updatedWebhook = await this.prisma.webhook.update({
+      where: { id },
+      data: {
+        adminApproved: approved,
+        adminNotes: approved ? 'Approved by admin' : 'Rejected by admin',
+      },
+    });
+
+    this.logger.log(`Webhook ${id} ${approved ? 'approved' : 'rejected'} by admin ${userId}`);
+
+    return this.toResponseDto(updatedWebhook);
+  }
+
+  /**
+   * Admin only: Find all webhooks that need approval
+   */
+  async findAllPending(userId: string): Promise<WebhookResponseDto[]> {
+    // Get all webhooks that aren't approved yet
+    const webhooks = await this.prisma.webhook.findMany({
+      where: {
+        adminApproved: false
+      },
+      include: {
+        form: {
+          select: {
+            id: true,
+            title: true,
+            clientId: true,
+            client: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    this.logger.log(`Found ${webhooks.length} webhooks pending approval`);
+    
+    // Map to response DTOs with extra form info
+    return webhooks.map(webhook => ({
+      ...this.toResponseDto(webhook),
+      formTitle: webhook.form.title,
+      clientName: webhook.form.client?.name,
+      clientEmail: webhook.form.client?.email
+    }));
+  }
+
+  /**
+   * Admin only: Find all webhooks for admin oversight
+   */
+  async findAllForAdmin(userId: string): Promise<WebhookResponseDto[]> {
+    // Get all webhooks with form and client info
+    const webhooks = await this.prisma.webhook.findMany({
+      include: {
+        form: {
+          select: {
+            id: true,
+            title: true,
+            clientId: true,
+            client: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    this.logger.log(`Found ${webhooks.length} total webhooks for admin`);
+    
+    // Map to response DTOs with extra form info
+    return webhooks.map(webhook => ({
+      ...this.toResponseDto(webhook),
+      formTitle: webhook.form?.title || 'Unknown Form',
+      clientName: webhook.form?.client?.name || 'Unknown Client',
+      clientEmail: webhook.form?.client?.email
+    }));
   }
 
   // Helper to convert database model to response DTO
