@@ -320,7 +320,7 @@ export default function WebhooksPage() {
                     {user?.role === 'CLIENT' && (
                       webhook.adminApproved === true 
                         ? <Badge variant="success" className="bg-green-100 text-green-800 hover:bg-green-200">Approved</Badge>
-                        : webhook.adminApproved === false && webhook.adminNotes
+                        : webhook.adminApproved === false
                           ? (
                             <TooltipProvider>
                               <Tooltip>
