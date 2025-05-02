@@ -202,16 +202,15 @@ const useProxiedApi = true;
 // Helper function to make webhook requests
 const makeWebhookRequest = async <T>(endpoint: string, options: any = {}): Promise<T> => {
   try {
-    // Always ensure we're using Next.js API routes by prefixing with /api
-    const apiEndpoint = endpoint.startsWith('/api/') 
-      ? endpoint 
-      : `/api${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+    // Add cache-busting parameter
+    const cacheBust = `?_t=${Date.now()}`;
+    const url = useProxiedApi 
+      ? `/api/forms${endpoint}${endpoint.includes('?') ? '&' : cacheBust}`
+      : `/forms${endpoint}${endpoint.includes('?') ? '&' : cacheBust}`;
     
-    console.log('Making webhook request to:', apiEndpoint, 'with options:', options);
-    
-    return await fetchApi<T>(apiEndpoint, options);
+    return await fetchApi<T>(url, options);
   } catch (error) {
-    console.error('Webhook request error:', error);
+    console.error(`Webhook API error (${endpoint}):`, error);
     throw error;
   }
 };

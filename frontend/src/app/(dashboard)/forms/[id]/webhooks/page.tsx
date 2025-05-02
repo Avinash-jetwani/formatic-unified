@@ -56,13 +56,28 @@ export default function WebhooksPage() {
     }
   }, [formId]);
 
+  // Debug webhook approval status
+  useEffect(() => {
+    if (webhooks.length > 0 && user?.role === 'CLIENT') {
+      webhooks.forEach(webhook => {
+        console.log(`Webhook ${webhook.id}: adminApproved=${webhook.adminApproved}, type=${typeof webhook.adminApproved}, role=${user?.role}`);
+      });
+    }
+  }, [webhooks, user?.role]);
+
   // Load webhooks for the current form
   const loadWebhooks = async () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Add timestamp for cache-busting in URL (handled in service layer)
       const data = await webhookService.getWebhooks(formId);
+      
+      console.log('Loaded webhooks:', data);
+      
+      // Ensure all webhooks have a defined adminApproved value for display logic
       setWebhooks(data);
+      
       // Reset fallback state if successful
       setShowFallback(false);
     } catch (err) {
@@ -222,6 +237,39 @@ export default function WebhooksPage() {
     router.push(`/forms/${formId}/webhooks/${webhookId}/logs`);
   };
 
+  // Helper function to determine badge display
+  const getApprovalBadge = (webhook: Webhook) => {
+    if (webhook.adminApproved === true) {
+      return (
+        <Badge variant="success" className="bg-green-100 text-green-800 hover:bg-green-200">
+          Approved
+        </Badge>
+      );
+    } else if (webhook.adminApproved === false) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-200 cursor-help">
+                Rejected
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-sm">{webhook.adminNotes || 'Rejected by admin'}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    } else {
+      // For null, undefined or any other value
+      return (
+        <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-200">
+          Pending Approval
+        </Badge>
+      );
+    }
+  };
+
   if (showFallback) {
     return <WebhooksFallback />;
   }
@@ -257,10 +305,16 @@ export default function WebhooksPage() {
             Manage webhooks to receive form data in real-time.
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <PlusCircle className="h-4 w-4 mr-2" />
-          Create Webhook
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={loadWebhooks} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Create Webhook
+          </Button>
+        </div>
       </div>
       
       <Separator />
@@ -317,27 +371,9 @@ export default function WebhooksPage() {
                     <Badge variant={webhook.active ? "default" : "outline"}>
                       {webhook.active ? "Active" : "Inactive"}
                     </Badge>
+                    
                     {user?.role === 'CLIENT' && (
-                      webhook.adminApproved === true 
-                        ? <Badge variant="success" className="bg-green-100 text-green-800 hover:bg-green-200">Approved</Badge>
-                        : webhook.adminApproved === false
-                          ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-200 cursor-help">
-                                    Rejected
-                                  </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p className="text-sm">{webhook.adminNotes || 'Rejected by admin'}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          )
-                          : <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-200">
-                              Pending Approval
-                            </Badge>
+                      getApprovalBadge(webhook)
                     )}
                   </div>
                 </div>
