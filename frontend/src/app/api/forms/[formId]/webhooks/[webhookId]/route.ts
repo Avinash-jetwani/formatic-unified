@@ -7,30 +7,47 @@ import { mockWebhooks } from '../route';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { formId: string, webhookId: string } }
+  { params }: { params: { formId: string; webhookId: string } }
 ) {
+  const formId = params.formId;
+  const webhookId = params.webhookId;
+  
   try {
-    // Log the request
-    console.log('Mock webhook API: GET single webhook:', params.webhookId);
+    const cookieStore = cookies();
+    const authToken = cookieStore.get('auth_token')?.value;
     
-    // Simulate a brief delay
-    await new Promise(resolve => setTimeout(resolve, 200));
-    
-    // Find the webhook by ID
-    const webhook = mockWebhooks.find(w => w.id === params.webhookId);
-    
-    if (!webhook) {
+    if (!authToken) {
       return NextResponse.json(
-        { error: 'Webhook not found', message: `No webhook with ID ${params.webhookId}` },
-        { status: 404 }
+        { error: 'Unauthorized', message: 'Authentication required' },
+        { status: 401 }
       );
     }
     
-    return NextResponse.json(webhook);
+    const response = await fetch(
+      `http://localhost:4000/api/forms/${formId}/webhooks/${webhookId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      const error = await response.json();
+      return NextResponse.json(
+        { error: error.message || 'Failed to fetch webhook' },
+        { status: response.status }
+      );
+    }
+    
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Mock webhook API error:', error);
+    console.error('Error fetching webhook:', error);
     return NextResponse.json(
-      { error: 'An error occurred', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'An unexpected error occurred' },
       { status: 500 }
     );
   }
@@ -38,39 +55,51 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { formId: string, webhookId: string } }
+  { params }: { params: { formId: string; webhookId: string } }
 ) {
+  const formId = params.formId;
+  const webhookId = params.webhookId;
+  
   try {
-    const body = await request.json();
-    console.log('Mock webhook API: PATCH request for webhook ID:', params.webhookId, 'with data:', body);
+    const cookieStore = cookies();
+    const authToken = cookieStore.get('auth_token')?.value;
     
-    // Simulate a brief delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Find the webhook to update
-    const webhookIndex = mockWebhooks.findIndex(w => w.id === params.webhookId);
-    
-    if (webhookIndex === -1) {
+    if (!authToken) {
       return NextResponse.json(
-        { error: 'Webhook not found', message: `No webhook with ID ${params.webhookId}` },
-        { status: 404 }
+        { error: 'Unauthorized', message: 'Authentication required' },
+        { status: 401 }
       );
     }
     
-    // Update the webhook
-    const updatedWebhook = {
-      ...mockWebhooks[webhookIndex],
-      ...body,
-      updatedAt: new Date().toISOString()
-    };
+    const requestData = await request.json();
+    console.log('Updating webhook with data:', requestData);
     
-    mockWebhooks[webhookIndex] = updatedWebhook;
+    const response = await fetch(
+      `http://localhost:4000/api/forms/${formId}/webhooks/${webhookId}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      }
+    );
     
-    return NextResponse.json(updatedWebhook);
+    if (!response.ok) {
+      const error = await response.json();
+      return NextResponse.json(
+        { error: error.message || 'Failed to update webhook' },
+        { status: response.status }
+      );
+    }
+    
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Mock webhook API error:', error);
+    console.error('Error updating webhook:', error);
     return NextResponse.json(
-      { error: 'An error occurred', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'An unexpected error occurred while updating webhook' },
       { status: 500 }
     );
   }
@@ -78,32 +107,46 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { formId: string, webhookId: string } }
+  { params }: { params: { formId: string; webhookId: string } }
 ) {
+  const formId = params.formId;
+  const webhookId = params.webhookId;
+  
   try {
-    console.log('Mock webhook API: DELETE request for webhook ID:', params.webhookId);
+    const cookieStore = cookies();
+    const authToken = cookieStore.get('auth_token')?.value;
     
-    // Simulate a brief delay
-    await new Promise(resolve => setTimeout(resolve, 400));
-    
-    // Find the webhook index
-    const webhookIndex = mockWebhooks.findIndex(w => w.id === params.webhookId);
-    
-    if (webhookIndex === -1) {
+    if (!authToken) {
       return NextResponse.json(
-        { error: 'Webhook not found', message: `No webhook with ID ${params.webhookId}` },
-        { status: 404 }
+        { error: 'Unauthorized', message: 'Authentication required' },
+        { status: 401 }
       );
     }
     
-    // Remove the webhook
-    mockWebhooks.splice(webhookIndex, 1);
+    const response = await fetch(
+      `http://localhost:4000/api/forms/${formId}/webhooks/${webhookId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      const error = await response.json();
+      return NextResponse.json(
+        { error: error.message || 'Failed to delete webhook' },
+        { status: response.status }
+      );
+    }
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Mock webhook API error:', error);
+    console.error('Error deleting webhook:', error);
     return NextResponse.json(
-      { error: 'An error occurred', message: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'An unexpected error occurred while deleting webhook' },
       { status: 500 }
     );
   }

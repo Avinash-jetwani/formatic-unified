@@ -19,7 +19,6 @@ import { CreateWebhookDto, UpdateWebhookDto, Webhook } from '@/services/webhook'
 import { toast } from '@/components/ui/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useRouter } from 'next/navigation';
-import { Role } from '@/types/user';
 
 // Define the form validation schema using Zod
 const formSchema = z.object({
@@ -44,11 +43,14 @@ const formSchema = z.object({
   adminNotes: z.string().optional(),
 });
 
+// Define the form values type based on the schema
+type FormValues = z.infer<typeof formSchema>;
+
 interface WebhookFormProps {
   formId: string;
   webhook?: Webhook;
   fields?: Array<{ id: string; label: string; }>;
-  userRole?: Role;
+  userRole?: 'SUPER_ADMIN' | 'CLIENT';
   onSave: (data: CreateWebhookDto | UpdateWebhookDto) => Promise<void>;
   onCancel: () => void;
   isSubmitting?: boolean;
@@ -70,13 +72,26 @@ export function WebhookForm({
   const router = useRouter();
 
   // Initialize form with either existing webhook data or defaults
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: webhook ? {
       ...webhook,
-      // Convert any JSON strings back to objects if needed
-      headers: webhook.headers ? webhook.headers : undefined,
-      filterConditions: webhook.filterConditions ? webhook.filterConditions : undefined,
+      // Make sure all required fields are set
+      name: webhook.name,
+      url: webhook.url,
+      active: webhook.active ?? true,
+      authType: webhook.authType,
+      eventTypes: webhook.eventTypes ?? ['SUBMISSION_CREATED'],
+      includeFields: webhook.includeFields ?? [],
+      excludeFields: webhook.excludeFields ?? [],
+      allowedIpAddresses: webhook.allowedIpAddresses ?? [],
+      retryCount: webhook.retryCount ?? 3,
+      retryInterval: webhook.retryInterval ?? 60,
+      secretKey: webhook.secretKey ?? '',
+      verificationToken: webhook.verificationToken ?? '',
+      isTemplate: webhook.isTemplate ?? false,
+      adminApproved: webhook.adminApproved,
+      adminNotes: webhook.adminNotes ?? '',
     } : {
       name: '',
       url: '',
@@ -96,34 +111,68 @@ export function WebhookForm({
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (name === 'authType') {
-        setSelectedAuthType(value.authType as string);
+        setSelectedAuthType(value.authType as 'NONE' | 'BASIC' | 'BEARER' | 'API_KEY');
       }
     });
     return () => subscription.unsubscribe();
   }, [form]);
 
-  // Handle form submission
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  // Handle tab changes for debugging
+  const handleTabChange = (value: string) => {
+    console.log('Switching to tab:', value);
+    setActiveTab(value);
+  };
+  
+  // Log form values for debugging
+  const logFormValues = () => {
+    const values = form.getValues();
+    console.log('Current form values:', values);
+  };
+
+  // Add debug logging for the form submission
+  const onSubmit = async (values: FormValues) => {
     try {
-      // Make sure URL is trimmed before submitting
-      const trimmedData = {
-        ...data,
-        url: data.url.trim()
+      console.log('Submitting webhook form with values:', values);
+      
+      // Create a clean object for submission
+      const submitData: CreateWebhookDto | UpdateWebhookDto = {
+        name: values.name,
+        url: values.url,
+        active: values.active,
+        secretKey: values.secretKey || undefined,
+        authType: values.authType,
+        authValue: values.authValue || undefined,
+        eventTypes: values.eventTypes,
+        includeFields: values.includeFields,
+        excludeFields: values.excludeFields,
+        retryCount: values.retryCount,
+        retryInterval: values.retryInterval,
+        allowedIpAddresses: values.allowedIpAddresses || [],
+        verificationToken: values.verificationToken || undefined,
+        dailyLimit: values.dailyLimit,
+        isTemplate: values.isTemplate,
+        templateId: values.templateId,
       };
       
-      // Submit the form with trimmed data
-      await onSave(trimmedData);
+      // Add admin fields if user is admin
+      if (isAdmin) {
+        (submitData as UpdateWebhookDto).adminApproved = values.adminApproved;
+        (submitData as UpdateWebhookDto).adminNotes = values.adminNotes;
+      }
       
-      // Only show success toast if we don't catch an error
+      console.log('Submitting cleaned data:', submitData);
+      await onSave(submitData);
+      
+      // Show success toast unless we catch an error
       toast({
         title: webhook ? 'Webhook updated' : 'Webhook created',
         description: `The webhook was successfully ${webhook ? 'updated' : 'created'}.`,
       });
     } catch (error) {
-      console.error('Error saving webhook:', error);
+      console.error('Error submitting webhook form:', error);
       toast({
         title: 'Error',
-        description: `Failed to ${webhook ? 'update' : 'create'} webhook. ${error instanceof Error ? error.message : 'Please try again.'}`,
+        description: 'Failed to save webhook. Please try again.',
         variant: 'destructive',
       });
     }
@@ -165,7 +214,7 @@ export function WebhookForm({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="basic" value={activeTab} onValueChange={setActiveTab}>
+            <Tabs defaultValue="basic" value={activeTab} onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="basic">Basic</TabsTrigger>
                 <TabsTrigger value="authentication">Authentication</TabsTrigger>
@@ -697,9 +746,16 @@ export function WebhookForm({
             )}
             
             <div className="flex justify-between w-full">
-              <Button variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
+              <div className="flex space-x-2">
+                <Button variant="outline" onClick={onCancel}>
+                  Cancel
+                </Button>
+                {process.env.NODE_ENV === 'development' && (
+                  <Button variant="secondary" type="button" onClick={logFormValues}>
+                    Debug Form
+                  </Button>
+                )}
+              </div>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? 'Saving...' : webhook ? 'Update Webhook' : 'Create Webhook'}
               </Button>
