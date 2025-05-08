@@ -41,6 +41,13 @@ export default function WebhooksPage() {
   const [testResult, setTestResult] = useState<any>(null);
   const [isTesting, setIsTesting] = useState(false);
 
+  // Helper function to map user roles to WebhookForm accepted roles
+  const mapUserRole = (role?: string): 'SUPER_ADMIN' | 'CLIENT' | undefined => {
+    if (role === 'ADMIN') return 'SUPER_ADMIN';
+    if (role === 'CLIENT') return 'CLIENT';
+    return undefined;
+  };
+
   // Initialize form ID from URL params
   useEffect(() => {
     if (params.id && typeof params.id === 'string') {
@@ -155,11 +162,18 @@ export default function WebhooksPage() {
 
   // Update an existing webhook
   const handleUpdateWebhook = async (data: UpdateWebhookDto) => {
-    if (!editingWebhook) return;
+    console.log("🔍 handleUpdateWebhook called with data:", data);
+    
+    if (!editingWebhook) {
+      console.error("❌ No editingWebhook found - can't update!");
+      return;
+    }
     
     setIsSubmitting(true);
     try {
+      console.log(`📤 Calling updateWebhook service: formId=${formId}, webhookId=${editingWebhook.id}`);
       await webhookService.updateWebhook(formId, editingWebhook.id, data);
+      console.log("✅ Webhook updated successfully!");
       await loadWebhooks();
       setEditingWebhook(null);
       toast({
@@ -461,7 +475,7 @@ export default function WebhooksPage() {
           <WebhookForm
             formId={formId}
             fields={formFields}
-            userRole={user?.role}
+            userRole={mapUserRole(user?.role)}
             onSave={(data) => handleCreateWebhook(data as CreateWebhookDto)}
             onCancel={() => setShowCreateModal(false)}
             isSubmitting={isSubmitting}
@@ -483,7 +497,7 @@ export default function WebhooksPage() {
               formId={formId}
               webhook={editingWebhook}
               fields={formFields}
-              userRole={user?.role}
+              userRole={mapUserRole(user?.role)}
               onSave={handleUpdateWebhook}
               onCancel={() => setEditingWebhook(null)}
               isSubmitting={isSubmitting}

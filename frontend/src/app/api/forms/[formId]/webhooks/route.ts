@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-// Mock data to simulate webhooks - exported for use in other routes
-export const mockWebhooks = [
+// Mock data to simulate webhooks - local constant, not exported
+const mockWebhooks = [
   {
     id: 'webhook_01',
     formId: '65fef360-29a5-40ed-a79e-78fccdc4842c',

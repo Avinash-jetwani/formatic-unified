@@ -71,6 +71,11 @@ export function WebhookForm({
   const [isAdmin] = useState(userRole === 'SUPER_ADMIN');
   const router = useRouter();
 
+  // Log component mount and webhook changes
+  useEffect(() => {
+    console.log("📌 WebhookForm mounted/updated", { webhook, userRole, isAdmin });
+  }, [webhook, userRole, isAdmin]);
+
   // Initialize form with either existing webhook data or defaults
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -131,7 +136,23 @@ export function WebhookForm({
 
   // Add debug logging for the form submission
   const onSubmit = async (values: FormValues) => {
+    console.log("🔥 FORM SUBMISSION STARTED:", values);
     try {
+      // Check form validation
+      const formErrors = form.formState.errors;
+      if (Object.keys(formErrors).length > 0) {
+        console.error("❌ Form validation failed:", formErrors);
+        Object.entries(formErrors).forEach(([field, error]) => {
+          console.error(`Field ${field} error:`, error);
+        });
+        toast({
+          title: 'Validation Error',
+          description: 'Please fix the form errors before submitting.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       console.log('Submitting webhook form with values:', values);
       
       // Create a clean object for submission
@@ -161,7 +182,10 @@ export function WebhookForm({
       }
       
       console.log('Submitting cleaned data:', submitData);
+      
+      console.log('Calling onSave function...');
       await onSave(submitData);
+      console.log('onSave function completed successfully!');
       
       // Show success toast unless we catch an error
       toast({
@@ -205,7 +229,14 @@ export function WebhookForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          console.log("⚡ Form submission intercepted");
+          form.handleSubmit(onSubmit)(e);
+        }} 
+        className="space-y-6"
+      >
         <Card>
           <CardHeader>
             <CardTitle>{webhook ? 'Edit Webhook' : 'Create Webhook'}</CardTitle>
@@ -756,7 +787,15 @@ export function WebhookForm({
                   </Button>
                 )}
               </div>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button 
+                type="button" 
+                disabled={isSubmitting}
+                onClick={() => {
+                  console.log("🔴 Button clicked directly");
+                  const values = form.getValues();
+                  onSubmit(values);
+                }}
+              >
                 {isSubmitting ? 'Saving...' : webhook ? 'Update Webhook' : 'Create Webhook'}
               </Button>
             </div>

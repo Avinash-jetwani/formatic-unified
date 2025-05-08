@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-// Import the mock webhooks from parent route
-// In a real app, you'd use proper state management or database
-import { mockWebhooks } from '../route';
-
 export async function GET(
   request: NextRequest,
   { params }: { params: { formId: string; webhookId: string } }

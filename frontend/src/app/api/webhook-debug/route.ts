@@ -1,5 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mockWebhooks } from '../forms/[formId]/webhooks/route';
+
+// Local mock data for debugging
+const debugWebhooks: any[] = [
+  {
+    id: 'webhook_debug_01',
+    formId: '65fef360-29a5-40ed-a79e-78fccdc4842c',
+    name: 'Debug Webhook',
+    url: 'http://localhost:3000/api/webhook-test',
+    active: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    adminApproved: true,
+    authType: 'NONE',
+    allowedIpAddresses: [],
+    eventTypes: ['SUBMISSION_CREATED'],
+    includeFields: [],
+    excludeFields: [],
+    retryCount: 3,
+    retryInterval: 60,
+    dailyUsage: 0,
+    isTemplate: false
+  }
+];
 
 // Debug endpoint for webhook system
 export async function GET(request: NextRequest) {
@@ -11,7 +33,7 @@ export async function GET(request: NextRequest) {
       case 'list-webhooks':
         return NextResponse.json({
           status: 'success',
-          webhooks: mockWebhooks
+          webhooks: debugWebhooks
         });
         
       case 'create-webhook':
@@ -39,7 +61,7 @@ export async function GET(request: NextRequest) {
           isTemplate: false
         };
         
-        mockWebhooks.push(newWebhook);
+        debugWebhooks.push(newWebhook);
         
         return NextResponse.json({
           status: 'success',
@@ -50,8 +72,8 @@ export async function GET(request: NextRequest) {
       case 'test-webhook':
         const webhookId = searchParams.get('webhookId');
         const webhook = webhookId 
-          ? mockWebhooks.find(w => w.id === webhookId)
-          : mockWebhooks[0];
+          ? debugWebhooks.find(w => w.id === webhookId)
+          : debugWebhooks[0];
           
         if (!webhook) {
           return NextResponse.json({
