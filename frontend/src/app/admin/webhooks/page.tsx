@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { Webhook, webhookService } from '@/services/webhook';
-import { Loader2, Search, Filter, CheckCircle, XCircle, AlertTriangle, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Loader2, Search, Filter, CheckCircle, XCircle, AlertTriangle, ExternalLink, CheckCircle2, AlertCircle, Edit, Trash2, Lock, Unlock, Eye, PowerOff, Power } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function AdminWebhooksPage() {
   const router = useRouter();
@@ -21,10 +22,6 @@ export default function AdminWebhooksPage() {
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const [selectedWebhook, setSelectedWebhook] = useState<Webhook | null>(null);
-  const [showApproveDialog, setShowApproveDialog] = useState(false);
-  const [isApproving, setIsApproving] = useState(false);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive' | 'pending'>('all');
@@ -38,10 +35,12 @@ export default function AdminWebhooksPage() {
     setIsLoading(true);
     setError(null);
     try {
+      console.log('📊 Fetching all webhooks...');
       const data = await webhookService.getAllWebhooks();
+      console.log(`✅ Loaded ${data.length} webhooks successfully`);
       setWebhooks(data);
     } catch (err) {
-      console.error('Error loading webhooks:', err);
+      console.error('❌ Error loading webhooks:', err);
       setError('Failed to load webhooks. Please try again.');
     } finally {
       setIsLoading(false);
@@ -49,27 +48,30 @@ export default function AdminWebhooksPage() {
   };
   
   // Approve a webhook
-  const approveWebhook = async () => {
-    if (!selectedWebhook) return;
-    
-    setIsApproving(true);
+  const approveWebhook = async (webhookId: string) => {
+    console.log(`🔄 Approving webhook ${webhookId}...`);
     try {
-      await webhookService.approveWebhook(selectedWebhook.id);
+      const result = await webhookService.approveWebhook(webhookId);
+      console.log(`✅ Webhook ${webhookId} approved successfully:`, result);
       await loadWebhooks();
-      setShowApproveDialog(false);
-      toast({
-        title: 'Webhook approved',
-        description: 'The webhook has been approved successfully.',
-      });
+      return true;
     } catch (err) {
-      console.error('Error approving webhook:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to approve webhook. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsApproving(false);
+      console.error(`❌ Error approving webhook ${webhookId}:`, err);
+      throw err;
+    }
+  };
+  
+  // Reject a webhook
+  const rejectWebhook = async (webhookId: string) => {
+    console.log(`🔄 Rejecting webhook ${webhookId}...`);
+    try {
+      const result = await webhookService.rejectWebhook(webhookId);
+      console.log(`✅ Webhook ${webhookId} rejected successfully:`, result);
+      await loadWebhooks();
+      return true;
+    } catch (err) {
+      console.error(`❌ Error rejecting webhook ${webhookId}:`, err);
+      throw err;
     }
   };
   
@@ -88,15 +90,89 @@ export default function AdminWebhooksPage() {
     // Status filter
     let matchesStatus = true;
     if (filterStatus === 'active') {
-      matchesStatus = webhook.active && webhook.adminApproved;
+      matchesStatus = webhook.active && webhook.adminApproved === true;
     } else if (filterStatus === 'inactive') {
-      matchesStatus = !webhook.active && webhook.adminApproved;
+      matchesStatus = !webhook.active || webhook.adminApproved === false;
     } else if (filterStatus === 'pending') {
-      matchesStatus = !webhook.adminApproved;
+      matchesStatus = webhook.adminApproved === null;
     }
     
     return matchesSearch && matchesStatus;
   });
+
+  // Sort webhooks to show pending at the top
+  const sortedWebhooks = [...filteredWebhooks].sort((a, b) => {
+    // Pending webhooks come first
+    if (a.adminApproved === null && b.adminApproved !== null) return -1;
+    if (a.adminApproved !== null && b.adminApproved === null) return 1;
+    // Then sort by creation date (newest first)
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
+  
+  // Add lock/unlock webhook function
+  const toggleLockWebhook = async (webhookId: string, currentLocked: boolean) => {
+    try {
+      await webhookService.updateWebhook(
+        webhooks.find(w => w.id === webhookId)?.formId || '', 
+        webhookId, 
+        { adminLocked: !currentLocked }
+      );
+      await loadWebhooks();
+      toast({
+        title: currentLocked ? 'Webhook unlocked' : 'Webhook locked',
+        description: currentLocked 
+          ? 'The webhook can now be modified by the client.'
+          : 'The webhook has been locked and cannot be modified by the client.',
+      });
+      return true;
+    } catch (err) {
+      console.error('Error locking/unlocking webhook:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to update webhook lock status.',
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
+  
+  // Add a function to toggle webhook active status
+  const toggleWebhookActive = async (webhookId: string, currentActive: boolean) => {
+    try {
+      const webhook = webhooks.find(w => w.id === webhookId);
+      if (!webhook) return false;
+      
+      // If activating a webhook, clear the deactivatedById field
+      // If deactivating, set the deactivatedById field to the current user's ID
+      await webhookService.updateWebhook(
+        webhook.formId, 
+        webhookId, 
+        { 
+          active: !currentActive,
+          // When deactivating we need to set deactivatedById, but we don't have the user ID here
+          // The backend will handle this using the authenticated user's ID
+        }
+      );
+      
+      await loadWebhooks();
+      
+      toast({
+        title: currentActive ? 'Webhook deactivated' : 'Webhook activated',
+        description: currentActive 
+          ? 'The webhook has been deactivated and will not process submissions.'
+          : 'The webhook has been activated and can now process submissions.',
+      });
+      return true;
+    } catch (err) {
+      console.error('Error toggling webhook active status:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to update webhook status.',
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
   
   if (isLoading) {
     return (
@@ -105,6 +181,9 @@ export default function AdminWebhooksPage() {
       </div>
     );
   }
+  
+  // Count pending webhooks
+  const pendingWebhooks = webhooks.filter(w => w.adminApproved === null || w.adminApproved === undefined).length;
   
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -116,6 +195,19 @@ export default function AdminWebhooksPage() {
       </div>
       
       <Separator />
+      
+      {pendingWebhooks > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start space-x-3">
+          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+          <div>
+            <h3 className="font-medium text-amber-800">Webhooks Waiting for Approval</h3>
+            <p className="text-sm text-amber-700">
+              There {pendingWebhooks === 1 ? 'is' : 'are'} {pendingWebhooks} webhook{pendingWebhooks !== 1 ? 's' : ''} waiting for your approval. 
+              Webhooks won't receive any data until approved.
+            </p>
+          </div>
+        </div>
+      )}
       
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -202,6 +294,11 @@ export default function AdminWebhooksPage() {
             <CardTitle>All Webhooks</CardTitle>
             <CardDescription>
               Showing {filteredWebhooks.length} of {webhooks.length} webhooks
+              {filterStatus === 'pending' && pendingWebhooks > 0 && (
+                <span className="ml-1 text-amber-600 font-medium">
+                  ({pendingWebhooks} pending approval)
+                </span>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -217,7 +314,7 @@ export default function AdminWebhooksPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredWebhooks.map((webhook) => (
+                {sortedWebhooks.map((webhook) => (
                   <TableRow key={webhook.id}>
                     <TableCell>
                       <div className="font-medium">{webhook.name}</div>
@@ -241,17 +338,28 @@ export default function AdminWebhooksPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        {!webhook.adminApproved ? (
+                        {webhook.adminApproved === null ? (
                           <Badge variant="outline" className="border-amber-500 text-amber-500">
                             Pending Approval
                           </Badge>
-                        ) : webhook.active ? (
-                          <Badge variant="default">
-                            Active
-                          </Badge>
+                        ) : webhook.adminApproved ? (
+                          webhook.active ? (
+                            <Badge variant="default">
+                              Active
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">
+                              Inactive
+                            </Badge>
+                          )
                         ) : (
-                          <Badge variant="outline">
-                            Inactive
+                          <Badge variant="destructive">
+                            Rejected
+                          </Badge>
+                        )}
+                        {webhook.adminLocked && (
+                          <Badge variant="outline" className="border-gray-500 text-gray-500">
+                            Locked
                           </Badge>
                         )}
                         {webhook.isTemplate && (
@@ -264,55 +372,155 @@ export default function AdminWebhooksPage() {
                     <TableCell>{formatDate(webhook.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end space-x-2">
-                        {!webhook.adminApproved && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-green-600 border-green-600 hover:bg-green-50"
-                              onClick={() => {
-                                setSelectedWebhook(webhook);
-                                setShowApproveDialog(true);
-                              }}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-red-600 border-red-600 hover:bg-red-50"
-                              onClick={async () => {
-                                try {
-                                  await webhookService.rejectWebhook(webhook.id);
-                                  await loadWebhooks();
-                                  toast({
-                                    title: 'Webhook rejected',
-                                    description: 'The webhook has been rejected.',
-                                  });
-                                } catch (err) {
-                                  console.error('Error rejecting webhook:', err);
-                                  toast({
-                                    title: 'Error',
-                                    description: 'Failed to reject webhook. Please try again.',
-                                    variant: 'destructive',
-                                  });
-                                }
-                              }}
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
                           onClick={() => viewWebhookDetails(webhook.formId, webhook.id)}
                         >
-                          <ExternalLink className="h-4 w-4 mr-1" />
-                          View
+                          <Eye className="h-4 w-4" />
                         </Button>
+                        
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => toggleLockWebhook(webhook.id, webhook.adminLocked === true)}
+                              >
+                                {webhook.adminLocked 
+                                  ? <Unlock className="h-4 w-4" /> 
+                                  : <Lock className="h-4 w-4" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {webhook.adminLocked ? 'Unlock this webhook' : 'Lock this webhook'}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={() => toggleWebhookActive(webhook.id, webhook.active)}
+                              >
+                                {webhook.active 
+                                  ? <PowerOff className="h-4 w-4 text-red-500" /> 
+                                  : <Power className="h-4 w-4 text-green-500" />}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {webhook.active ? 'Deactivate this webhook' : 'Activate this webhook'}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        
+                        {webhook.adminApproved === null && (
+                          <>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={async () => {
+                                      console.log('⏱️ Starting webhook approval process...');
+                                      const startTime = Date.now();
+                                      
+                                      try {
+                                        // Show toast as immediate feedback that action is being processed
+                                        toast({
+                                          title: 'Processing',
+                                          description: 'Approving webhook...',
+                                        });
+                                        
+                                        await approveWebhook(webhook.id);
+                                        
+                                        const endTime = Date.now();
+                                        console.log(`⏱️ Webhook approval process completed in ${endTime - startTime}ms`);
+                                        
+                                        toast({
+                                          title: 'Webhook approved',
+                                          description: 'The webhook has been approved and can now receive data.',
+                                        });
+                                        
+                                        // Reload the data
+                                        await loadWebhooks();
+                                      } catch (err) {
+                                        const endTime = Date.now();
+                                        console.error(`⏱️ Webhook approval process failed after ${endTime - startTime}ms:`, err);
+                                        
+                                        toast({
+                                          title: 'Error',
+                                          description: 'Failed to approve webhook',
+                                          variant: 'destructive'
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Approve this webhook</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={async () => {
+                                      if (confirm('Are you sure you want to reject this webhook?')) {
+                                        console.log('⏱️ Starting webhook rejection process...');
+                                        const startTime = Date.now();
+                                        
+                                        try {
+                                          toast({
+                                            title: 'Processing',
+                                            description: 'Rejecting webhook...',
+                                          });
+                                          
+                                          await rejectWebhook(webhook.id);
+                                          
+                                          const endTime = Date.now();
+                                          console.log(`⏱️ Webhook rejection process completed in ${endTime - startTime}ms`);
+                                          
+                                          toast({
+                                            title: 'Webhook rejected',
+                                            description: 'The webhook has been rejected and will not receive any data.'
+                                          });
+                                          
+                                          await loadWebhooks();
+                                        } catch (err) {
+                                          const endTime = Date.now();
+                                          console.error(`⏱️ Webhook rejection process failed after ${endTime - startTime}ms:`, err);
+                                          
+                                          toast({
+                                            title: 'Error',
+                                            description: 'Failed to reject webhook',
+                                            variant: 'destructive'
+                                          });
+                                        }
+                                      }
+                                    }}
+                                  >
+                                    <XCircle className="h-4 w-4 text-red-500" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Reject this webhook</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -322,73 +530,6 @@ export default function AdminWebhooksPage() {
           </CardContent>
         </Card>
       )}
-      
-      {/* Approve Webhook Dialog */}
-      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Approve Webhook</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to approve this webhook? Once approved, it will be able to receive data from form submissions.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedWebhook && (
-            <div className="space-y-4 py-4">
-              <div>
-                <h4 className="text-sm font-medium mb-1">Name</h4>
-                <p>{selectedWebhook.name}</p>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium mb-1">URL</h4>
-                <p className="break-all">{selectedWebhook.url}</p>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium mb-1">Created By</h4>
-                <p>{selectedWebhook.createdById || 'System'}</p>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium mb-1">Event Types</h4>
-                <div className="flex flex-wrap gap-2">
-                  {selectedWebhook.eventTypes.map(eventType => (
-                    <Badge key={eventType} variant="outline">
-                      {eventType.replace('_', ' ')}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={() => setShowApproveDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={approveWebhook}
-              disabled={isApproving}
-            >
-              {isApproving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Approving...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Approve Webhook
-                </>
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 } 

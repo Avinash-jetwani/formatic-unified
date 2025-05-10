@@ -243,6 +243,22 @@ export function WebhookForm({
             <CardDescription>
               Configure a webhook to receive form data in real-time.
             </CardDescription>
+            
+            {userRole === 'CLIENT' && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-start">
+                  <svg className="h-5 w-5 text-blue-500 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">Administrator Approval Required</h3>
+                    <div className="mt-1 text-sm text-blue-700">
+                      <p>All webhooks require approval from an administrator before they become active. A webhook will not receive any data until it has been approved, even if it is marked as active.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="basic" value={activeTab} onValueChange={handleTabChange}>
@@ -252,6 +268,59 @@ export function WebhookForm({
                 <TabsTrigger value="filters">Filters & Fields</TabsTrigger>
                 <TabsTrigger value="advanced">Advanced</TabsTrigger>
               </TabsList>
+              
+              {/* Status warnings */}
+              {webhook && (
+                <>
+                  {!webhook.active && webhook.deactivatedById && (
+                    <div className="mt-4 w-full bg-red-50 border border-red-200 rounded-md p-4 text-left">
+                      <div className="flex items-start">
+                        <svg className="h-5 w-5 text-red-400 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-red-800">Webhook Deactivated by Administrator</h3>
+                          <div className="mt-1 text-sm text-red-700">
+                            <p>This webhook has been deactivated by an administrator and cannot be reactivated by clients. Please contact an administrator for assistance.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!webhook.active && !webhook.deactivatedById && (
+                    <div className="mt-4 w-full bg-red-50 border border-red-200 rounded-md p-4 text-left">
+                      <div className="flex items-start">
+                        <svg className="h-5 w-5 text-red-400 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-red-800">Webhook Inactive</h3>
+                          <div className="mt-1 text-sm text-red-700">
+                            <p>This webhook is currently inactive and will not receive any data. Use the "Active" toggle below to enable it.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {webhook.active && !webhook.adminApproved && userRole !== 'SUPER_ADMIN' && (
+                    <div className="mt-4 w-full bg-amber-50 border border-amber-200 rounded-md p-4 text-left">
+                      <div className="flex items-start">
+                        <svg className="h-5 w-5 text-amber-400 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                        </svg>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-amber-800">Pending Admin Approval</h3>
+                          <div className="mt-1 text-sm text-amber-700">
+                            <p>This webhook is enabled but waiting for administrator approval. It will not receive any data until approved.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
               
               {/* Basic tab */}
               <TabsContent value="basic" className="space-y-4 pt-4">
@@ -298,12 +367,18 @@ export function WebhookForm({
                         <FormLabel className="text-base">Active</FormLabel>
                         <FormDescription>
                           Enable or disable this webhook.
+                          {webhook?.deactivatedById && userRole !== 'SUPER_ADMIN' && (
+                            <span className="text-red-600 mt-1 block">
+                              This webhook has been deactivated by an administrator and cannot be reactivated.
+                            </span>
+                          )}
                         </FormDescription>
                       </div>
                       <FormControl>
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          disabled={webhook?.deactivatedById !== null && webhook?.deactivatedById !== undefined && userRole !== 'SUPER_ADMIN'}
                         />
                       </FormControl>
                     </FormItem>

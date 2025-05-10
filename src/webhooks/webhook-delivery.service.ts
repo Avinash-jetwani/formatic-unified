@@ -15,9 +15,14 @@ export class WebhookDeliveryService {
    */
   async queueDelivery(webhook: Webhook, submission: Submission, eventType: WebhookEventType): Promise<void> {
     try {
-      // Check if webhook is active and approved
-      if (!webhook.active || !webhook.adminApproved) {
-        this.logger.debug(`Webhook ${webhook.id} is inactive or not approved - skipping delivery`);
+      // First check if webhook is active and admin approved - this is a strict requirement
+      if (!webhook.active || webhook.deactivatedById) {
+        this.logger.debug(`Webhook ${webhook.id} is inactive or deactivated by admin - skipping delivery`);
+        return;
+      }
+      
+      if (!webhook.adminApproved) {
+        this.logger.debug(`Webhook ${webhook.id} is not approved by admin - skipping delivery`);
         return;
       }
 
@@ -118,7 +123,8 @@ export class WebhookDeliveryService {
           nextAttempt: { lte: new Date() },
           webhook: {
             active: true,
-            adminApproved: true
+            adminApproved: true,
+            deactivatedById: null // Only retry webhooks that haven't been deactivated by an admin
           }
         },
         include: {
@@ -165,13 +171,28 @@ export class WebhookDeliveryService {
     this.logger.debug(`Processing webhook delivery ${delivery.id}`);
     
     try {
-      // Get the webhook and check if it's still active
-      if (!delivery.webhook.active || !delivery.webhook.adminApproved) {
+      // Get the webhook and check if it's still active and not deactivated by admin
+      if (!delivery.webhook.active || delivery.webhook.deactivatedById) {
         await this.prisma.webhookDelivery.update({
           where: { id: delivery.id },
           data: {
             status: WebhookDeliveryStatus.FAILED,
-            errorMessage: 'Webhook is no longer active or approved',
+            errorMessage: delivery.webhook.deactivatedById 
+              ? 'Webhook has been deactivated by administrator'
+              : 'Webhook is currently inactive',
+            nextAttempt: null,
+          },
+        });
+        return;
+      }
+
+      // Check if webhook is approved by admin
+      if (!delivery.webhook.adminApproved) {
+        await this.prisma.webhookDelivery.update({
+          where: { id: delivery.id },
+          data: {
+            status: WebhookDeliveryStatus.FAILED,
+            errorMessage: 'Webhook is not approved by administrator',
             nextAttempt: null,
           },
         });

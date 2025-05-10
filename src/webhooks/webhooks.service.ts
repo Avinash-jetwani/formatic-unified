@@ -35,7 +35,8 @@ export class WebhooksService {
     const filterConditions = createWebhookDto.filterConditions ? JSON.parse(createWebhookDto.filterConditions) : null;
 
     // Handle admin approval based on role
-    const adminApproved = userRole === Role.SUPER_ADMIN;
+    // Set to null for CLIENT (pending) and true for SUPER_ADMIN (auto-approved)
+    const adminApproved = userRole === Role.SUPER_ADMIN ? true : null;
 
     // Create webhook
     const webhook = await this.prisma.webhook.create({
@@ -120,7 +121,6 @@ export class WebhooksService {
    * Update a webhook
    */
   async update(id: string, updateWebhookDto: UpdateWebhookDto, userId: string, userRole: Role): Promise<WebhookResponseDto> {
-    // First get the webhook to check permissions
     const webhook = await this.prisma.webhook.findUnique({
       where: { id },
       include: { form: true },
@@ -130,33 +130,67 @@ export class WebhooksService {
       throw new NotFoundException(`Webhook with ID ${id} not found`);
     }
 
-    // Check if user has permission (is form owner or super admin)
+    // Basic permission check
     if (webhook.form.clientId !== userId && userRole !== Role.SUPER_ADMIN) {
       throw new ForbiddenException('You do not have permission to update this webhook');
     }
 
-    // Super admin specific fields
-    if (userRole !== Role.SUPER_ADMIN) {
-      // Remove admin-only fields if user is not super admin
-      delete updateWebhookDto.adminApproved;
-      delete updateWebhookDto.adminNotes;
+    // If webhook is locked by admin, clients cannot modify it
+    if (webhook.adminLocked && userRole !== Role.SUPER_ADMIN) {
+      throw new ForbiddenException('This webhook has been locked by an administrator and cannot be modified');
     }
 
-    // Process JSON fields
-    const headers = updateWebhookDto.headers ? JSON.parse(updateWebhookDto.headers) : undefined;
-    const filterConditions = updateWebhookDto.filterConditions ? JSON.parse(updateWebhookDto.filterConditions) : undefined;
+    // Detect if we're activating or deactivating
+    let isDeactivating = false;
+    let isActivating = false;
+    
+    if (updateWebhookDto.active !== undefined) {
+      isDeactivating = webhook.active === true && updateWebhookDto.active === false;
+      isActivating = webhook.active === false && updateWebhookDto.active === true;
+    }
 
-    // Update webhook
-    const updatedWebhook = await this.prisma.webhook.update({
-      where: { id },
-      data: {
-        ...updateWebhookDto,
-        headers: headers !== undefined ? headers : undefined,
-        filterConditions: filterConditions !== undefined ? filterConditions : undefined,
-      },
-    });
+    // If a client is trying to activate a webhook that was deactivated by an admin, prevent it
+    if (isActivating && webhook.deactivatedById && userRole !== Role.SUPER_ADMIN) {
+      throw new ForbiddenException('This webhook was deactivated by an administrator and cannot be reactivated');
+    }
 
-    return new WebhookResponseDto(updatedWebhook);
+    // Prepare update data
+    const updateData: any = { ...updateWebhookDto };
+    
+    // If admin is deactivating, track who did it
+    if (isDeactivating && userRole === Role.SUPER_ADMIN) {
+      updateData.deactivatedById = userId;
+    }
+    
+    // If admin is activating, clear deactivation info
+    if (isActivating && userRole === Role.SUPER_ADMIN) {
+      updateData.deactivatedById = null;
+    }
+    
+    // If admin is specifically locking/unlocking this webhook
+    if (userRole === Role.SUPER_ADMIN && updateWebhookDto.adminLocked !== undefined) {
+      updateData.adminLocked = updateWebhookDto.adminLocked;
+    }
+
+    // Prevent clients from changing admin-controlled fields
+    if (userRole !== Role.SUPER_ADMIN) {
+      delete updateData.adminApproved;
+      delete updateData.adminNotes;
+      delete updateData.adminLocked;
+      delete updateData.deactivatedById;
+    }
+
+    try {
+      const updatedWebhook = await this.prisma.webhook.update({
+        where: { id },
+        data: updateData,
+      });
+
+      return new WebhookResponseDto(updatedWebhook);
+    } catch (error) {
+      this.logger.error(`Error updating webhook: ${error.message}`, error.stack);
+      throw new BadRequestException(`Failed to update webhook: ${error.message}`);
+    }
   }
 
   /**
@@ -201,6 +235,28 @@ export class WebhooksService {
     // Check if user has permission (is form owner or super admin)
     if (webhook.form.clientId !== userId && userRole !== Role.SUPER_ADMIN) {
       throw new ForbiddenException('You do not have permission to test this webhook');
+    }
+
+    // Check if webhook is active
+    if (!webhook.active) {
+      return {
+        success: false,
+        error: {
+          message: 'Webhook is inactive. Please activate it before testing.',
+          status: 400
+        }
+      };
+    }
+
+    // Check if webhook is admin approved (if user is not super admin)
+    if (!webhook.adminApproved && userRole !== Role.SUPER_ADMIN) {
+      return {
+        success: false,
+        error: {
+          message: 'Webhook is not approved by admin. It must be approved before it can be used.',
+          status: 400
+        }
+      };
     }
 
     // Generate test payload
