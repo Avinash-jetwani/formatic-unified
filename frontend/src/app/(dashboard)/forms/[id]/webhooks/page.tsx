@@ -14,7 +14,7 @@ import { WebhookForm } from '@/components/webhook/WebhookForm';
 import { toast } from '@/components/ui/use-toast';
 import { Webhook, webhookService, CreateWebhookDto, UpdateWebhookDto } from '@/services/webhook';
 import { useUser } from '@/hooks/useUser';
-import { Loader2, PlusCircle, Edit, Trash2, PlayCircle, AlertCircle, CheckCircle, Clock, RefreshCw, LinkIcon, Plus } from 'lucide-react';
+import { Loader2, PlusCircle, Edit, Trash2, PlayCircle, AlertCircle, CheckCircle, Clock, RefreshCw, LinkIcon, Plus, XCircle, Lock, BookOpen } from 'lucide-react';
 import WebhooksFallback from './fallback';
 import { EmptyState } from '@/components/ui/empty-state';
 
@@ -65,12 +65,13 @@ export default function WebhooksPage() {
 
   // Debug webhook approval status
   useEffect(() => {
-    if (webhooks.length > 0 && user?.role === 'CLIENT') {
+    if (webhooks.length > 0) {
+      console.log('Webhook status debugging:');
       webhooks.forEach(webhook => {
-        console.log(`Webhook ${webhook.id}: adminApproved=${webhook.adminApproved}, type=${typeof webhook.adminApproved}, role=${user?.role}`);
+        console.log(`- ${webhook.name}: adminApproved=${webhook.adminApproved}, type=${typeof webhook.adminApproved}, active=${webhook.active}`);
       });
     }
-  }, [webhooks, user?.role]);
+  }, [webhooks]);
 
   // Load webhooks for the current form
   const loadWebhooks = async () => {
@@ -218,6 +219,34 @@ export default function WebhooksPage() {
   const handleTestWebhook = async () => {
     if (!testingWebhookId) return;
     
+    // Get the webhook to check its status
+    const webhook = webhooks.find(w => w.id === testingWebhookId);
+    if (!webhook) return;
+    
+    // Check if webhook is active
+    if (!webhook.active) {
+      setTestResult({
+        success: false,
+        error: {
+          message: 'Cannot test inactive webhook. Please activate the webhook before testing.',
+          status: 400
+        }
+      });
+      return;
+    }
+    
+    // Check if webhook is admin approved (for client users)
+    if (!webhook.adminApproved && user?.role === 'CLIENT') {
+      setTestResult({
+        success: false,
+        error: {
+          message: 'This webhook is waiting for administrator approval and cannot be tested yet.',
+          status: 400
+        }
+      });
+      return;
+    }
+    
     setIsTesting(true);
     setTestResult(null);
     try {
@@ -249,39 +278,6 @@ export default function WebhooksPage() {
   // View webhook logs
   const viewWebhookLogs = (webhookId: string) => {
     router.push(`/forms/${formId}/webhooks/${webhookId}/logs`);
-  };
-
-  // Helper function to determine badge display
-  const getApprovalBadge = (webhook: Webhook) => {
-    if (webhook.adminApproved === true) {
-      return (
-        <Badge variant="success" className="bg-green-100 text-green-800 hover:bg-green-200">
-          Approved
-        </Badge>
-      );
-    } else if (webhook.adminApproved === false) {
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="destructive" className="bg-red-100 text-red-800 hover:bg-red-200 cursor-help">
-                Rejected
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-sm">{webhook.adminNotes || 'Rejected by admin'}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    } else {
-      // For null, undefined or any other value
-      return (
-        <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-200">
-          Pending Approval
-        </Badge>
-      );
-    }
   };
 
   if (showFallback) {
@@ -324,24 +320,40 @@ export default function WebhooksPage() {
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Create Webhook
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={() => router.push(`/forms/${formId}/webhooks/help`)}
+            >
+              <BookOpen className="h-4 w-4" />
+              Documentation
+            </Button>
+            <Button 
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Create Webhook
+            </Button>
+          </div>
         </div>
       </div>
       
       <Separator />
       
       {/* Information box for clients about webhook approval */}
-      {user?.role === 'CLIENT' && webhooks.some(w => !w.adminApproved) && (
+      {user?.role === 'CLIENT' && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-6">
           <div className="flex items-start">
             <Clock className="h-5 w-5 text-blue-500 mr-2 mt-0.5" />
             <div>
-              <h3 className="font-medium text-blue-900">Webhook Approval Required</h3>
+              <h3 className="font-medium text-blue-900">Administrator Approval Required</h3>
               <p className="text-sm text-blue-700 mt-1">
-                Some webhooks require admin approval before they become active. You will be notified once your webhooks are approved.
+                <strong>Important:</strong> All webhooks require administrator approval before they can receive any data. 
+                Even if a webhook is marked as "Active", it will not function until approved by an administrator.
+                When a webhook is "Pending Approval", it cannot be tested or used for receiving submissions.
+                You will see the status update once an administrator reviews your webhook.
               </p>
             </div>
           </div>
@@ -378,16 +390,74 @@ export default function WebhooksPage() {
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-xl">{webhook.name}</CardTitle>
+                    <CardTitle className="text-xl flex items-center">
+                      {webhook.name}
+                      {!webhook.active && (
+                        <span className="ml-2 text-sm font-normal text-red-500 px-2 py-0.5 rounded-md bg-red-50">(Inactive)</span>
+                      )}
+                      {webhook.active && webhook.adminApproved === null && (
+                        <span className="ml-2 text-sm font-normal text-amber-500 px-2 py-0.5 rounded-md bg-amber-50">(Pending Approval)</span>
+                      )}
+                      {webhook.active && webhook.adminApproved === false && (
+                        <span className="ml-2 text-sm font-normal text-red-500 px-2 py-0.5 rounded-md bg-red-50">(Rejected)</span>
+                      )}
+                    </CardTitle>
                     <CardDescription className="mt-1 break-all">{webhook.url}</CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={webhook.active ? "default" : "outline"}>
-                      {webhook.active ? "Active" : "Inactive"}
-                    </Badge>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant={webhook.active ? "default" : "outline"} className={!webhook.active ? "border-red-200 text-red-700" : ""}>
+                            {webhook.active ? "Active" : "Inactive"}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          {webhook.active 
+                            ? "This webhook is active and will receive data according to the trigger events."
+                            : "This webhook is currently inactive and will not receive any data."}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                     
-                    {user?.role === 'CLIENT' && (
-                      getApprovalBadge(webhook)
+                    {webhook.adminLocked && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="border-gray-700 text-gray-700">Locked</Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>This webhook has been locked by an administrator and cannot be modified.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    
+                    {/* Show approval status badge - FIXED logic */}
+                    {webhook.adminApproved === false && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="destructive">Rejected</Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>This webhook has been rejected by an administrator.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    
+                    {webhook.adminApproved === null && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="border-amber-200 text-amber-700">Pending Approval</Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>This webhook is waiting for administrator approval before it can receive data.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                 </div>
@@ -423,27 +493,83 @@ export default function WebhooksPage() {
                     </p>
                   </div>
                 </div>
+                
+                {!webhook.active && (
+                  <div className="mt-4 p-2 bg-red-50 border border-red-100 rounded text-sm text-red-700">
+                    <AlertCircle className="h-4 w-4 inline-block mr-1" />
+                    {webhook.deactivatedById ? (
+                      <>This webhook has been <strong>deactivated by an administrator</strong> and cannot be reactivated.</>
+                    ) : (
+                      <>This webhook is inactive and will not receive any data. Enable it in the webhook settings to start receiving data.</>
+                    )}
+                  </div>
+                )}
+                
+                {webhook.active && webhook.adminApproved === null && (
+                  <div className="mt-4 p-2 bg-amber-50 border border-amber-100 rounded text-sm text-amber-700">
+                    <Clock className="h-4 w-4 inline-block mr-1" />
+                    Waiting for admin approval. This webhook won't receive data until approved.
+                  </div>
+                )}
+
+                {webhook.active && webhook.adminApproved === false && (
+                  <div className="mt-4 p-2 bg-red-50 border border-red-100 rounded text-sm text-red-700">
+                    <XCircle className="h-4 w-4 inline-block mr-1" />
+                    This webhook has been rejected by an administrator and will not receive any data.
+                  </div>
+                )}
+
+                {webhook.adminLocked && (
+                  <div className="mt-4 p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700">
+                    <Lock className="h-4 w-4 inline-block mr-1" />
+                    This webhook has been locked by an administrator and cannot be modified. Please contact an administrator for any changes.
+                  </div>
+                )}
               </CardContent>
               <div className="px-6 py-4 bg-muted/50 flex justify-between items-center rounded-b-lg">
                 <Button variant="secondary" size="sm" onClick={() => viewWebhookLogs(webhook.id)}>
                   View Logs
                 </Button>
                 <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setTestingWebhookId(webhook.id);
-                      setShowTestDialog(true);
-                    }}
-                  >
-                    <PlayCircle className="h-4 w-4 mr-1" />
-                    Test
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setTestingWebhookId(webhook.id);
+                              setShowTestDialog(true);
+                            }}
+                            disabled={!webhook.active || 
+                              (!webhook.adminApproved && user?.role === 'CLIENT') || 
+                              webhook.adminLocked === true || 
+                              webhook.deactivatedById !== null && webhook.deactivatedById !== undefined}
+                          >
+                            <PlayCircle className="h-4 w-4 mr-1" />
+                            Test
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      {!webhook.active && (
+                        <TooltipContent>
+                          <p>Cannot test inactive webhook. Please activate it first.</p>
+                        </TooltipContent>
+                      )}
+                      {webhook.deactivatedById && (
+                        <TooltipContent>
+                          <p>This webhook has been deactivated by an administrator and cannot be tested.</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => setEditingWebhook(webhook)}
+                    disabled={webhook.adminLocked === true || 
+                      webhook.deactivatedById !== null && webhook.deactivatedById !== undefined}
                   >
                     <Edit className="h-4 w-4 mr-1" />
                     Edit
@@ -452,6 +578,7 @@ export default function WebhooksPage() {
                     variant="destructive" 
                     size="sm"
                     onClick={() => setWebhookToDelete(webhook.id)}
+                    disabled={webhook.adminLocked}
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
                     Delete
@@ -493,15 +620,30 @@ export default function WebhooksPage() {
             </DialogDescription>
           </DialogHeader>
           {editingWebhook && (
-            <WebhookForm
-              formId={formId}
-              webhook={editingWebhook}
-              fields={formFields}
-              userRole={mapUserRole(user?.role)}
-              onSave={handleUpdateWebhook}
-              onCancel={() => setEditingWebhook(null)}
-              isSubmitting={isSubmitting}
-            />
+            <>
+              <WebhookForm
+                formId={formId}
+                webhook={editingWebhook}
+                fields={formFields}
+                userRole={mapUserRole(user?.role)}
+                onSave={handleUpdateWebhook}
+                onCancel={() => setEditingWebhook(null)}
+                isSubmitting={isSubmitting}
+              />
+              {editingWebhook.adminLocked && (
+                <div className="mt-4 w-full bg-red-50 border border-red-200 rounded-md p-4 text-left">
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-red-800">Administrator Locked</h3>
+                      <div className="mt-1 text-sm text-red-700">
+                        <p>This webhook has been locked by an administrator and cannot be modified. Please contact an administrator for assistance.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </DialogContent>
       </Dialog>
@@ -582,20 +724,69 @@ export default function WebhooksPage() {
                   <div>
                     <h4 className="text-sm font-medium">Error</h4>
                     <p className="text-sm text-destructive">
-                      {testResult.error}
+                      {typeof testResult.error === 'object' ? testResult.error.message : testResult.error}
                     </p>
                   </div>
                 )}
               </div>
             ) : (
               <div className="space-y-4">
-                <p>
-                  This will send a test payload to your webhook endpoint. The test payload will contain sample data similar to what would be sent when a form is submitted.
-                </p>
-                <Button onClick={handleTestWebhook} className="w-full">
-                  <PlayCircle className="h-4 w-4 mr-2" />
-                  Send Test Payload
-                </Button>
+                {testingWebhookId && (() => {
+                  const webhook = webhooks.find(w => w.id === testingWebhookId);
+                  if (!webhook) return null;
+                  
+                  // Show status warnings
+                  if (!webhook.active) {
+                    return (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
+                        <AlertCircle className="h-5 w-5 inline-block mr-2" />
+                        <span className="font-medium">Webhook Inactive</span>
+                        <p className="mt-1">This webhook is currently inactive and cannot be tested. Please activate it first.</p>
+                      </div>
+                    );
+                  } else if (webhook.adminLocked) {
+                    return (
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-md text-gray-700">
+                        <Lock className="h-5 w-5 inline-block mr-2" />
+                        <span className="font-medium">Webhook Locked</span>
+                        <p className="mt-1">This webhook has been locked by an administrator and cannot be tested. Please contact an administrator for assistance.</p>
+                      </div>
+                    );
+                  } else if (!webhook.adminApproved && user?.role === 'CLIENT') {
+                    return (
+                      <div className="p-4 bg-amber-50 border border-amber-200 rounded-md text-amber-700">
+                        <Clock className="h-5 w-5 inline-block mr-2" />
+                        <span className="font-medium">Pending Approval</span>
+                        <p className="mt-1">This webhook is waiting for administrator approval and cannot be tested yet.</p>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <p>
+                      This will send a test payload to your webhook endpoint. The test payload will contain sample data similar to what would be sent when a form is submitted.
+                    </p>
+                  );
+                })()}
+                
+                {testingWebhookId && (() => {
+                  const webhook = webhooks.find(w => w.id === testingWebhookId);
+                  if (!webhook) return null;
+                  
+                  return (
+                    <Button 
+                      onClick={handleTestWebhook} 
+                      className="w-full"
+                      disabled={!webhook.active || 
+                        (!webhook.adminApproved && user?.role === 'CLIENT') || 
+                        webhook.adminLocked === true || 
+                        webhook.deactivatedById !== null && webhook.deactivatedById !== undefined}
+                    >
+                      <PlayCircle className="h-4 w-4 mr-2" />
+                      Send Test Payload
+                    </Button>
+                  );
+                })()}
               </div>
             )}
           </div>

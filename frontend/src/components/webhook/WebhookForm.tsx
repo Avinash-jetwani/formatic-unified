@@ -19,6 +19,7 @@ import { CreateWebhookDto, UpdateWebhookDto, Webhook } from '@/services/webhook'
 import { toast } from '@/components/ui/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useRouter } from 'next/navigation';
+import { BookOpen } from 'lucide-react';
 
 // Define the form validation schema using Zod
 const formSchema = z.object({
@@ -239,7 +240,24 @@ export function WebhookForm({
       >
         <Card>
           <CardHeader>
-            <CardTitle>{webhook ? 'Edit Webhook' : 'Create Webhook'}</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>{webhook ? 'Edit Webhook' : 'Create Webhook'}</CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex items-center gap-1 text-xs text-muted-foreground"
+                onClick={() => {
+                  // Get the form ID from the current URL
+                  const formId = window.location.pathname.split('/forms/')[1]?.split('/')[0];
+                  if (formId) {
+                    router.push(`/forms/${formId}/webhooks/guide`);
+                  }
+                }}
+              >
+                <BookOpen className="h-3.5 w-3.5" />
+                Need help?
+              </Button>
+            </div>
             <CardDescription>
               Configure a webhook to receive form data in real-time.
             </CardDescription>
