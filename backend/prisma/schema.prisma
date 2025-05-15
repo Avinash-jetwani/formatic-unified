@@ -1,0 +1,226 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String     @id @default(uuid())
+  email               String     @unique
+  password            String
+  name                String?
+  role                Role       @default(CLIENT)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  lastLogin           DateTime?
+  status              UserStatus @default(ACTIVE)
+  company             String?
+  phone               String?
+  website             String?
+  resetToken          String?
+  resetTokenExpires   DateTime?
+  forms               Form[]
+  webhooks            Webhook[]
+  deactivatedWebhooks Webhook[]  @relation("DeactivatedWebhooks")
+}
+
+model Form {
+  id                 String                @id @default(uuid())
+  title              String
+  description        String?
+  clientId           String
+  slug               String                @unique
+  published          Boolean               @default(false)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  submissionMessage  String?
+  category           String?
+  isTemplate         Boolean               @default(false)
+  tags               String[]              @default([])
+  multiPageEnabled   Boolean               @default(false)
+  successRedirectUrl String?
+  accessPassword     String?
+  accessRestriction  String?               @default("none")
+  allowedEmails      String[]              @default([])
+  consentText        String?               @default("I consent to having this website store my submitted information.")
+  emailNotifications Boolean               @default(false)
+  expirationDate     DateTime?
+  maxSubmissions     Int?
+  notificationEmails String[]              @default([])
+  notificationType   String                @default("all")
+  requireConsent     Boolean               @default(false)
+  client             User                  @relation(fields: [clientId], references: [id])
+  fields             FormField[]
+  notifications      PendingNotification[]
+  submissions        Submission[]
+  webhooks           Webhook[]
+}
+
+model FormField {
+  id          String    @id @default(uuid())
+  formId      String
+  type        FieldType
+  label       String
+  placeholder String?
+  required    Boolean   @default(false)
+  options     String[]  @default([])
+  order       Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  config      Json?     @default("{}")
+  conditions  Json?     @default("{}")
+  page        Int       @default(1)
+  form        Form      @relation(fields: [formId], references: [id], onDelete: Cascade)
+}
+
+model Submission {
+  id                String                @id @default(cuid())
+  formId            String
+  data              Json
+  createdAt         DateTime              @default(now())
+  browser           String?
+  device            String?
+  ipAddress         String?
+  location          Json?
+  notes             String?
+  notesUpdatedAt    DateTime?
+  referrer          String?
+  status            String                @default("new")
+  statusUpdatedAt   DateTime?
+  tags              String[]              @default([])
+  updatedAt         DateTime              @updatedAt
+  userAgent         String?
+  messages          Message[]
+  notifications     PendingNotification[]
+  form              Form                  @relation(fields: [formId], references: [id], onDelete: Cascade)
+  webhookDeliveries WebhookDelivery[]
+}
+
+model Message {
+  id           String     @id @default(cuid())
+  submissionId String
+  content      String
+  sender       String
+  createdAt    DateTime   @default(now())
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model PendingNotification {
+  id           String     @id @default(cuid())
+  formId       String
+  submissionId String
+  recipients   String[]
+  createdAt    DateTime   @default(now())
+  processed    Boolean    @default(false)
+  processedAt  DateTime?
+  form         Form       @relation(fields: [formId], references: [id], onDelete: Cascade)
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model Webhook {
+  id                 String             @id @default(cuid())
+  formId             String
+  name               String
+  url                String
+  active             Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  secretKey          String?
+  authType           WebhookAuthType    @default(NONE)
+  authValue          String?
+  eventTypes         WebhookEventType[] @default([SUBMISSION_CREATED])
+  headers            Json?
+  includeFields      String[]           @default([])
+  excludeFields      String[]           @default([])
+  retryCount         Int                @default(3)
+  retryInterval      Int                @default(60)
+  filterConditions   Json?
+  adminApproved      Boolean?
+  adminNotes         String?
+  allowedIpAddresses String[]           @default([])
+  createdById        String?
+  dailyLimit         Int?
+  dailyResetAt       DateTime?
+  dailyUsage         Int                @default(0)
+  isTemplate         Boolean            @default(false)
+  templateId         String?
+  verificationToken  String?
+  adminLocked        Boolean            @default(false)
+  deactivatedById    String?
+  createdBy          User?              @relation(fields: [createdById], references: [id])
+  deactivatedBy      User?              @relation("DeactivatedWebhooks", fields: [deactivatedById], references: [id])
+  form               Form               @relation(fields: [formId], references: [id], onDelete: Cascade)
+  deliveryLogs       WebhookDelivery[]
+}
+
+model WebhookDelivery {
+  id                String                @id @default(cuid())
+  webhookId         String
+  submissionId      String?
+  eventType         WebhookEventType
+  status            WebhookDeliveryStatus
+  requestTimestamp  DateTime              @default(now())
+  responseTimestamp DateTime?
+  requestBody       Json
+  responseBody      Json?
+  statusCode        Int?
+  errorMessage      String?
+  attemptCount      Int                   @default(0)
+  nextAttempt       DateTime?
+  submission        Submission?           @relation(fields: [submissionId], references: [id])
+  webhook           Webhook               @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  SUPER_ADMIN
+  CLIENT
+}
+
+enum FieldType {
+  TEXT
+  LONG_TEXT
+  EMAIL
+  PHONE
+  URL
+  NUMBER
+  DATE
+  TIME
+  DATETIME
+  RATING
+  SLIDER
+  SCALE
+  DROPDOWN
+  CHECKBOX
+  RADIO
+  FILE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+enum WebhookAuthType {
+  NONE
+  BASIC
+  BEARER
+  API_KEY
+}
+
+enum WebhookEventType {
+  SUBMISSION_CREATED
+  SUBMISSION_UPDATED
+  FORM_PUBLISHED
+  FORM_UNPUBLISHED
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  SCHEDULED
+}

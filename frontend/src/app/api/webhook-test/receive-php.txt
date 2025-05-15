@@ -1,0 +1,148 @@
+<?php
+/**
+ * Simple standalone PHP webhook receiver for testing
+ * 
+ * How to use:
+ * 1. Save this file as webhook-receiver.php on your server
+ * 2. Make sure it's accessible via URL, e.g. https://test.glassshop.aeapp.uk/webhook-receiver.php
+ * 3. Point your webhooks to this URL
+ * 4. Check the webhook-debug.log file for incoming webhooks
+ */
+
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Log all webhook requests to a file
+$rawInput = file_get_contents('php://input');
+$headers = getallheaders();
+
+// Create a log file in the same directory
+file_put_contents(
+    __DIR__ . '/webhook-debug.log', 
+    date('Y-m-d H:i:s') . " Received webhook\n" .
+    "Headers: " . json_encode($headers) . "\n" .
+    "Body: " . $rawInput . "\n\n", 
+    FILE_APPEND
+);
+
+// Parse the JSON payload
+$payload = json_decode($rawInput);
+
+// Database connection settings - CHANGE THESE TO YOUR ACTUAL SETTINGS
+$dbSettings = [
+    'host' => 'localhost',
+    'dbname' => 'testlink_glassshop',  // Your database name
+    'user' => 'root',                  // Your database username
+    'pass' => ''                       // Your database password
+];
+
+try {
+    // Only process if we have a valid JSON payload
+    if ($payload && isset($payload->submission) && isset($payload->form)) {
+        // Extract data from the webhook payload
+        $formId = $payload->form->id;
+        $submissionId = $payload->submission->id;
+        $formName = $payload->form->title;
+        $submissionData = json_encode($payload->submission->data);
+        $eventType = $payload->event;
+        
+        // Log the data we're about to insert
+        file_put_contents(
+            __DIR__ . '/webhook-debug.log', 
+            date('Y-m-d H:i:s') . " Processing webhook data:\n" .
+            "Form ID: $formId\n" .
+            "Submission ID: $submissionId\n" .
+            "Form Name: $formName\n" .
+            "Event Type: $eventType\n" .
+            "Data: $submissionData\n\n", 
+            FILE_APPEND
+        );
+        
+        // Connect to the database
+        $dsn = "mysql:host={$dbSettings['host']};dbname={$dbSettings['dbname']};charset=utf8mb4";
+        $pdo = new PDO($dsn, $dbSettings['user'], $dbSettings['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
+        
+        // Create the table if it doesn't exist
+        $pdo->exec("CREATE TABLE IF NOT EXISTS `formatic_submissions` (
+            `id` int(11) NOT NULL AUTO_INCREMENT,
+            `form_id` varchar(100) NOT NULL,
+            `submission_id` varchar(100) NOT NULL,
+            `form_name` varchar(255) DEFAULT NULL,
+            `submission_data` text DEFAULT NULL,
+            `submitted_at` timestamp NOT NULL DEFAULT current_timestamp(),
+            `event_type` varchar(50) DEFAULT NULL,
+            `status` varchar(50) DEFAULT 'received',
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+        
+        // Prepare and execute the insert
+        $sql = "INSERT INTO formatic_submissions (form_id, submission_id, form_name, submission_data, event_type) 
+                VALUES (:form_id, :submission_id, :form_name, :submission_data, :event_type)";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(":form_id", $formId);
+        $stmt->bindParam(":submission_id", $submissionId);
+        $stmt->bindParam(":form_name", $formName);
+        $stmt->bindParam(":submission_data", $submissionData);
+        $stmt->bindParam(":event_type", $eventType);
+        
+        $result = $stmt->execute();
+        
+        // Log the result
+        file_put_contents(
+            __DIR__ . '/webhook-debug.log', 
+            date('Y-m-d H:i:s') . " Database result: " . ($result ? "Success" : "Failed") . "\n\n", 
+            FILE_APPEND
+        );
+        
+        // Return a success response
+        http_response_code(200);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'message' => 'Webhook received and processed',
+            'data' => [
+                'formId' => $formId,
+                'submissionId' => $submissionId,
+                'insertId' => $pdo->lastInsertId()
+            ]
+        ]);
+    } else {
+        // Log invalid payload
+        file_put_contents(
+            __DIR__ . '/webhook-debug.log', 
+            date('Y-m-d H:i:s') . " Error: Invalid payload structure\n\n", 
+            FILE_APPEND
+        );
+        
+        // Return an error response
+        http_response_code(400);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Invalid webhook payload',
+            'receivedPayload' => $payload
+        ]);
+    }
+} catch (Exception $e) {
+    // Log the error
+    file_put_contents(
+        __DIR__ . '/webhook-debug.log', 
+        date('Y-m-d H:i:s') . " Error: " . $e->getMessage() . "\n" .
+        "Stack trace: " . $e->getTraceAsString() . "\n\n", 
+        FILE_APPEND
+    );
+    
+    // Return an error response
+    http_response_code(500);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => false,
+        'message' => 'Error processing webhook',
+        'error' => $e->getMessage()
+    ]);
+} 
