@@ -40,6 +40,7 @@
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "framer-motion": "^12.11.4",
     "lucide-react": "^0.331.0",
     "nanoid": "^5.1.5",
     "next": "^14.1.0",

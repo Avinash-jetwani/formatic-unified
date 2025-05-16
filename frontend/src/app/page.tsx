@@ -954,18 +954,18 @@ export default function HomePage() {
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
-                variants={{
-                  hidden: { opacity: 0 },
-                  visible: {
-                    opacity: 1,
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
                     transition: { staggerChildren: 0.3 }
-                  }
-                }}
-              >
+                }
+              }}
+            >
                 {/* Step 1 */}
-                <motion.div 
+              <motion.div 
                   className="flex flex-col md:flex-row items-center md:items-start gap-8"
-                  variants={{
+                variants={{
                     hidden: { opacity: 0 },
                     visible: { opacity: 1 }
                   }}
@@ -979,7 +979,7 @@ export default function HomePage() {
                   >
                     <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl rotate-3 shadow-lg flex items-center justify-center text-white">
                       <div className="w-16 h-16 rounded-xl bg-blue-600/80 backdrop-blur-sm flex items-center justify-center font-bold text-3xl">1</div>
-                    </div>
+                      </div>
                     <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-500/20 rounded-full animate-pulse"></div>
                   </motion.div>
                   
@@ -999,15 +999,15 @@ export default function HomePage() {
                         <div className="bg-blue-500/10 dark:bg-blue-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-blue-600 dark:text-blue-400 flex items-center">
                           <FileText className="h-3.5 w-3.5 mr-1.5" />
                           <span>Drag & Drop Builder</span>
-                        </div>
+                    </div>
                         <div className="bg-blue-500/10 dark:bg-blue-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-blue-600 dark:text-blue-400 flex items-center">
                           <Code className="h-3.5 w-3.5 mr-1.5" />
                           <span>Custom Logic</span>
-                        </div>
+                    </div>
                         <div className="bg-blue-500/10 dark:bg-blue-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-blue-600 dark:text-blue-400 flex items-center">
                           <MonitorSmartphone className="h-3.5 w-3.5 mr-1.5" />
                           <span>Mobile Responsive</span>
-                        </div>
+                  </div>
                       </div>
                     </motion.div>
                   </div>
@@ -1051,7 +1051,7 @@ export default function HomePage() {
                         <div className="bg-violet-500/10 dark:bg-violet-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-violet-600 dark:text-violet-400 flex items-center">
                           <Bell className="h-3.5 w-3.5 mr-1.5" />
                           <span>Real-time Notifications</span>
-                        </div>
+                  </div>
                         <div className="bg-violet-500/10 dark:bg-violet-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-violet-600 dark:text-violet-400 flex items-center">
                           <FileText className="h-3.5 w-3.5 mr-1.5" />
                           <span>Secure Storage</span>
@@ -1062,13 +1062,13 @@ export default function HomePage() {
                         </div>
                       </div>
                     </motion.div>
-                  </div>
-                </motion.div>
-                
+                </div>
+              </motion.div>
+              
                 {/* Step 3 */}
-                <motion.div 
+              <motion.div 
                   className="flex flex-col md:flex-row items-center md:items-start gap-8"
-                  variants={{
+                variants={{
                     hidden: { opacity: 0 },
                     visible: { opacity: 1 }
                   }}
@@ -1082,7 +1082,7 @@ export default function HomePage() {
                   >
                     <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl rotate-3 shadow-lg flex items-center justify-center text-white">
                       <div className="w-16 h-16 rounded-xl bg-emerald-600/80 backdrop-blur-sm flex items-center justify-center font-bold text-3xl">3</div>
-                    </div>
+                      </div>
                     <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-emerald-500/20 rounded-full animate-pulse"></div>
                   </motion.div>
                   
@@ -1102,7 +1102,7 @@ export default function HomePage() {
                         <div className="bg-emerald-500/10 dark:bg-emerald-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-emerald-600 dark:text-emerald-400 flex items-center">
                           <BarChart4 className="h-3.5 w-3.5 mr-1.5" />
                           <span>Advanced Analytics</span>
-                        </div>
+                    </div>
                         <div className="bg-emerald-500/10 dark:bg-emerald-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-emerald-600 dark:text-emerald-400 flex items-center">
                           <Webhook className="h-3.5 w-3.5 mr-1.5" />
                           <span>Webhook Integration</span>
@@ -1171,14 +1171,14 @@ export default function HomePage() {
                       <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex-shrink-0 flex items-center justify-center shadow-sm">
                         <span className="text-primary text-xl font-bold">
                           {testimonial.author.split(' ').map(name => name[0]).join('')}
-                        </span>
-                      </div>
+                      </span>
+                    </div>
                       <div className="flex-1">
                         <div className="mb-4 flex">
                           {[...Array(5)].map((_, i) => (
                             <Star key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />
                           ))}
-                        </div>
+                  </div>
                         <blockquote className="text-lg md:text-xl italic mb-6">
                           "{testimonial.quote}"
                         </blockquote>
