@@ -723,16 +723,31 @@ export default function HomePage() {
                 <motion.div
                   key={index}
                   variants={fadeIn}
-                  className="bg-card rounded-xl border p-6 text-center hover:shadow-md transition-all hover:translate-y-[-5px] duration-300"
-                  whileHover={{ scale: 1.02 }}
+                  className="group bg-card rounded-xl border p-6 text-center hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+                  whileHover={{ 
+                    y: -10,
+                    transition: { duration: 0.3 }
+                  }}
                 >
-                  <div className="flex justify-center">
-                    {useCase.icon}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300" 
+                    style={{ 
+                      background: index === 0 ? 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)' : 
+                                index === 1 ? 'linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%)' :
+                                index === 2 ? 'linear-gradient(135deg, #6ee7b7 0%, #10b981 100%)' :
+                                index === 3 ? 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)' :
+                                index === 4 ? 'linear-gradient(135deg, #7dd3fc 0%, #0ea5e9 100%)' :
+                                'linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%)'
+                    }}
+                  ></div>
+                  <div className="flex justify-center mb-4 relative">
+                    <div className="relative transition-transform duration-300 group-hover:scale-110 group-hover:-translate-y-2">
+                      {useCase.icon}
+                    </div>
                   </div>
-                  <h3 className="text-xl font-bold mt-2 mb-4">{useCase.title}</h3>
-                  <ul className="space-y-2">
+                  <h3 className="text-xl font-bold mt-2 mb-4 relative">{useCase.title}</h3>
+                  <ul className="space-y-2 relative">
                     {useCase.cases.map((caseItem, i) => (
-                      <li key={i} className="text-muted-foreground">{caseItem}</li>
+                      <li key={i} className="text-muted-foreground group-hover:text-foreground/90 transition-colors duration-300">{caseItem}</li>
                     ))}
                   </ul>
                 </motion.div>
@@ -802,84 +817,108 @@ export default function HomePage() {
             >
               <motion.div 
                 variants={fadeIn}
-                className="bg-card rounded-lg border p-6 shadow-sm hover:shadow-md transition-all hover:translate-y-[-5px] duration-300"
-                whileHover={{ scale: 1.02 }}
+                className="group bg-card rounded-lg border p-6 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+                whileHover={{ 
+                  y: -10,
+                  transition: { duration: 0.3 }
+                }}
               >
-                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <FileText className="h-6 w-6 text-primary" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300 bg-gradient-to-br from-primary via-primary/50 to-transparent"></div>
+                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300 flex items-center justify-center relative z-10">
+                  <FileText className="h-6 w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
                 </div>
-                <h3 className="mb-2 text-xl font-medium">Intuitive Form Builder</h3>
-                <p className="text-muted-foreground">
+                <h3 className="mb-2 text-xl font-medium group-hover:text-primary transition-colors duration-300">Intuitive Form Builder</h3>
+                <p className="text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300">
                   Create beautiful, responsive forms with our drag-and-drop builder. Add conditional logic, multi-page flows, and custom validation.
                 </p>
               </motion.div>
               
               <motion.div 
                 variants={fadeIn}
-                className="bg-card rounded-lg border p-6 shadow-sm hover:shadow-md transition-all hover:translate-y-[-5px] duration-300"
-                whileHover={{ scale: 1.02 }}
+                className="group bg-card rounded-lg border p-6 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+                whileHover={{ 
+                  y: -10,
+                  transition: { duration: 0.3 }
+                }}
               >
-                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Webhook className="h-6 w-6 text-primary" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300 bg-gradient-to-br from-blue-500 via-blue-500/50 to-transparent"></div>
+                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300 flex items-center justify-center relative z-10">
+                  <Webhook className="h-6 w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
                 </div>
-                <h3 className="mb-2 text-xl font-medium">Seamless Integrations</h3>
-                <p className="text-muted-foreground">
+                <h3 className="mb-2 text-xl font-medium group-hover:text-primary transition-colors duration-300">Seamless Integrations</h3>
+                <p className="text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300">
                   Connect your forms to other services with our powerful webhook system. Send data where you need it, when you need it.
                 </p>
               </motion.div>
               
               <motion.div 
                 variants={fadeIn}
-                className="bg-card rounded-lg border p-6 shadow-sm hover:shadow-md transition-all hover:translate-y-[-5px] duration-300"
-                whileHover={{ scale: 1.02 }}
+                className="group bg-card rounded-lg border p-6 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+                whileHover={{ 
+                  y: -10,
+                  transition: { duration: 0.3 }
+                }}
               >
-                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <BarChart4 className="h-6 w-6 text-primary" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300 bg-gradient-to-br from-violet-500 via-violet-500/50 to-transparent"></div>
+                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300 flex items-center justify-center relative z-10">
+                  <BarChart4 className="h-6 w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
                 </div>
-                <h3 className="mb-2 text-xl font-medium">Advanced Analytics</h3>
-                <p className="text-muted-foreground">
+                <h3 className="mb-2 text-xl font-medium group-hover:text-primary transition-colors duration-300">Advanced Analytics</h3>
+                <p className="text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300">
                   Gain insights from submission data with comprehensive analytics. Track completion rates, field performance, and user behavior.
                 </p>
               </motion.div>
               
               <motion.div 
                 variants={fadeIn}
-                className="bg-card rounded-lg border p-6 shadow-sm hover:shadow-md transition-all hover:translate-y-[-5px] duration-300"
-                whileHover={{ scale: 1.02 }}
+                className="group bg-card rounded-lg border p-6 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+                whileHover={{ 
+                  y: -10,
+                  transition: { duration: 0.3 }
+                }}
               >
-                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Bell className="h-6 w-6 text-primary" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300 bg-gradient-to-br from-amber-500 via-amber-500/50 to-transparent"></div>
+                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300 flex items-center justify-center relative z-10">
+                  <Bell className="h-6 w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
                 </div>
-                <h3 className="mb-2 text-xl font-medium">Smart Notifications</h3>
-                <p className="text-muted-foreground">
+                <h3 className="mb-2 text-xl font-medium group-hover:text-primary transition-colors duration-300">Smart Notifications</h3>
+                <p className="text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300">
                   Stay informed with customizable notifications. Get alerted about new submissions, form activity, and system events.
                 </p>
               </motion.div>
               
               <motion.div 
                 variants={fadeIn}
-                className="bg-card rounded-lg border p-6 shadow-sm hover:shadow-md transition-all hover:translate-y-[-5px] duration-300"
-                whileHover={{ scale: 1.02 }}
+                className="group bg-card rounded-lg border p-6 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+                whileHover={{ 
+                  y: -10,
+                  transition: { duration: 0.3 }
+                }}
               >
-                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Upload className="h-6 w-6 text-primary" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300 bg-gradient-to-br from-emerald-500 via-emerald-500/50 to-transparent"></div>
+                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300 flex items-center justify-center relative z-10">
+                  <Upload className="h-6 w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
                 </div>
-                <h3 className="mb-2 text-xl font-medium">File Management</h3>
-                <p className="text-muted-foreground">
+                <h3 className="mb-2 text-xl font-medium group-hover:text-primary transition-colors duration-300">File Management</h3>
+                <p className="text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300">
                   Collect and organize file uploads securely. Preview images, manage documents, and control access with ease.
                 </p>
               </motion.div>
               
               <motion.div 
                 variants={fadeIn}
-                className="bg-card rounded-lg border p-6 shadow-sm hover:shadow-md transition-all hover:translate-y-[-5px] duration-300"
-                whileHover={{ scale: 1.02 }}
+                className="group bg-card rounded-lg border p-6 shadow-sm hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+                whileHover={{ 
+                  y: -10,
+                  transition: { duration: 0.3 }
+                }}
               >
-                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Shield className="h-6 w-6 text-primary" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-300 bg-gradient-to-br from-red-500 via-red-500/50 to-transparent"></div>
+                <div className="mb-4 h-12 w-12 rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300 flex items-center justify-center relative z-10">
+                  <Shield className="h-6 w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
                 </div>
-                <h3 className="mb-2 text-xl font-medium">Enterprise Security</h3>
-                <p className="text-muted-foreground">
+                <h3 className="mb-2 text-xl font-medium group-hover:text-primary transition-colors duration-300">Enterprise Security</h3>
+                <p className="text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300">
                   Protect your data with advanced security features. Role-based access control, data encryption, and compliance tools.
                 </p>
               </motion.div>
@@ -887,7 +926,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* How It Works Section */}
+        {/* How It Works Section - Enhanced */}
         <section id="how-it-works" className="py-20 bg-gradient-to-b from-background to-secondary/10 overflow-hidden">
           <div className="container-content relative">
             <motion.div 
@@ -910,8 +949,10 @@ export default function HomePage() {
             </motion.div>
             
             <div className="relative">
-              {/* Connecting line (visible on md+ screens) */}
-              <div className="hidden md:block absolute top-24 left-1/2 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent w-[80%] -translate-x-1/2"></div>
+              {/* Connecting line with animated gradient (visible on md+ screens) */}
+              <div className="hidden md:block absolute top-24 left-1/2 h-1 w-[80%] -translate-x-1/2 overflow-hidden rounded-full">
+                <div className="h-full w-full bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-500 animate-gradient-flow bg-[length:200%_auto]"></div>
+              </div>
               
               <motion.div 
                 className="grid grid-cols-1 md:grid-cols-3 gap-12"
@@ -937,20 +978,22 @@ export default function HomePage() {
                     }
                   }}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-primary-foreground text-2xl font-bold mb-2 shadow-md relative">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative">
                     <span>1</span>
-                    <div className="absolute w-full h-full rounded-full bg-primary/30 animate-ping opacity-20"></div>
+                    <div className="absolute -inset-1 rounded-full bg-blue-400/20 animate-pulse opacity-75"></div>
                   </div>
-                  <h3 className="text-xl font-medium">Create Forms</h3>
+                  <h3 className="text-xl font-bold">Create Forms</h3>
                   <p className="text-muted-foreground">
                     Build custom forms with our intuitive drag-and-drop interface. Add fields, conditional logic, and validation.
                   </p>
-                  <div className="relative w-full aspect-video mt-4 rounded-lg overflow-hidden bg-card border shadow-sm group">
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10 group-hover:scale-105 transition-transform duration-500">
-                      <div className="w-3/4 h-3/4 border-2 border-dashed border-primary/30 rounded-md flex items-center justify-center">
-                        <FileText className="h-10 w-10 text-primary/70" />
+                  <div className="relative w-full aspect-video mt-4 rounded-lg overflow-hidden bg-card border shadow-md group perspective">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-500/10 group-hover:opacity-75 transition-opacity duration-500"></div>
+                    <div className="absolute inset-4 border-2 border-dashed border-blue-500/30 rounded-md flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
+                      <div className="p-4 bg-white/80 dark:bg-slate-800/80 rounded shadow-sm">
+                        <FileText className="h-10 w-10 text-blue-500" />
                       </div>
                     </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
                   </div>
                 </motion.div>
                 
@@ -965,23 +1008,25 @@ export default function HomePage() {
                     }
                   }}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-primary-foreground text-2xl font-bold mb-2 shadow-md">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative">
                     <span>2</span>
-                    <div className="absolute w-full h-full rounded-full bg-primary/30 animate-ping opacity-20 delay-300"></div>
+                    <div className="absolute -inset-1 rounded-full bg-violet-400/20 animate-pulse opacity-75 delay-300"></div>
                   </div>
-                  <h3 className="text-xl font-medium">Collect Submissions</h3>
+                  <h3 className="text-xl font-bold">Collect Submissions</h3>
                   <p className="text-muted-foreground">
                     Share your forms and gather responses. Receive notifications as submissions come in.
                   </p>
-                  <div className="relative w-full aspect-video mt-4 rounded-lg overflow-hidden bg-card border shadow-sm group">
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10 group-hover:scale-105 transition-transform duration-500">
-                      <div className="w-3/4 h-3/4 border-2 border-dashed border-primary/30 rounded-md flex items-center justify-center">
+                  <div className="relative w-full aspect-video mt-4 rounded-lg overflow-hidden bg-card border shadow-md group perspective">
+                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-violet-500/10 group-hover:opacity-75 transition-opacity duration-500"></div>
+                    <div className="absolute inset-4 border-2 border-dashed border-violet-500/30 rounded-md flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
+                      <div className="p-4 bg-white/80 dark:bg-slate-800/80 rounded shadow-sm">
                         <div className="relative">
-                          <Zap className="h-10 w-10 text-primary/70" />
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse"></div>
+                          <Zap className="h-10 w-10 text-violet-500" />
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-violet-500 rounded-full animate-ping"></div>
                         </div>
                       </div>
                     </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-violet-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
                   </div>
                 </motion.div>
                 
@@ -996,27 +1041,29 @@ export default function HomePage() {
                     }
                   }}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-primary-foreground text-2xl font-bold mb-2 shadow-md">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative">
                     <span>3</span>
-                    <div className="absolute w-full h-full rounded-full bg-primary/30 animate-ping opacity-20 delay-600"></div>
+                    <div className="absolute -inset-1 rounded-full bg-emerald-400/20 animate-pulse opacity-75 delay-600"></div>
                   </div>
-                  <h3 className="text-xl font-medium">Analyze & Act</h3>
+                  <h3 className="text-xl font-bold">Analyze & Act</h3>
                   <p className="text-muted-foreground">
                     Review submissions, export data, trigger webhooks, and gain insights through analytics.
                   </p>
-                  <div className="relative w-full aspect-video mt-4 rounded-lg overflow-hidden bg-card border shadow-sm group">
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10 group-hover:scale-105 transition-transform duration-500">
-                      <div className="w-3/4 h-3/4 border-2 border-dashed border-primary/30 rounded-md flex items-center justify-center">
-                        <LineChart className="h-10 w-10 text-primary/70" />
+                  <div className="relative w-full aspect-video mt-4 rounded-lg overflow-hidden bg-card border shadow-md group perspective">
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 group-hover:opacity-75 transition-opacity duration-500"></div>
+                    <div className="absolute inset-4 border-2 border-dashed border-emerald-500/30 rounded-md flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
+                      <div className="p-4 bg-white/80 dark:bg-slate-800/80 rounded shadow-sm">
+                        <LineChart className="h-10 w-10 text-emerald-500" />
                       </div>
                     </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
                   </div>
                 </motion.div>
               </motion.div>
             </div>
             
-            <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full bg-primary/5 blur-3xl opacity-70"></div>
-            <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-primary/5 blur-3xl opacity-70"></div>
+            <div className="absolute -bottom-24 -left-24 w-64 h-64 rounded-full bg-primary/10 blur-3xl opacity-70"></div>
+            <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full bg-secondary/10 blur-3xl opacity-70"></div>
           </div>
         </section>
 
@@ -1183,30 +1230,75 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-primary/10 to-primary/5">
-          <div className="container-content text-center space-y-8">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+        {/* CTA Section - Enhanced */}
+        <section className="py-20 relative overflow-hidden">
+          {/* Background with animated gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-blue-500/5 to-violet-500/10 animate-gradient-flow bg-[length:200%_auto]"></div>
+          
+          {/* Background shapes */}
+          <div className="absolute top-0 left-0 w-full h-full overflow-hidden opacity-20 pointer-events-none">
+            <div className="absolute top-10 left-10 w-40 h-40 rounded-full border-4 border-primary/20 animate-float"></div>
+            <div className="absolute bottom-10 right-10 w-60 h-60 rounded-full border-4 border-blue-500/20 animate-float delay-300"></div>
+            <div className="absolute top-1/2 left-1/4 w-20 h-20 rounded-full border-4 border-violet-500/20 animate-float delay-500"></div>
+          </div>
+          
+          <div className="container-content text-center space-y-8 relative z-10">
+            <motion.h2 
+              className="text-3xl font-bold tracking-tight sm:text-4xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 dark:from-blue-400 dark:to-violet-400"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+            >
               Ready to transform your form management?
-            </h2>
-            <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+            </motion.h2>
+            <motion.p 
+              className="mx-auto max-w-2xl text-lg text-muted-foreground"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ delay: 0.1 }}
+            >
               Join thousands of users creating forms and collecting responses with Formatic.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            </motion.p>
+            <motion.div 
+              className="flex flex-col sm:flex-row gap-4 justify-center pt-6"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ delay: 0.2 }}
+            >
               <Link
                 href="/register"
-                className="rounded-md bg-primary dark:bg-blue-600 px-8 py-4 text-base font-semibold text-primary-foreground hover:bg-primary/90 dark:hover:bg-blue-500 transition-colors inline-flex items-center justify-center dark:shadow-lg dark:shadow-blue-500/20"
+                className="group relative rounded-md bg-primary dark:bg-blue-600 px-8 py-4 text-base font-semibold text-primary-foreground hover:bg-primary/90 dark:hover:bg-blue-500 transition-colors inline-flex items-center justify-center dark:shadow-lg dark:shadow-blue-500/20 overflow-hidden"
               >
-                Get Started for Free
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                <span className="relative flex items-center">
+                  Get Started for Free
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
+                </span>
               </Link>
               <Link
                 href="/contact"
-                className="rounded-md bg-secondary dark:bg-slate-600 px-8 py-4 text-base font-semibold text-secondary-foreground dark:text-white hover:bg-secondary/80 dark:hover:bg-slate-500 transition-colors inline-flex items-center justify-center border border-transparent dark:border-white/10"
+                className="group relative rounded-md bg-secondary dark:bg-slate-600 px-8 py-4 text-base font-semibold text-secondary-foreground dark:text-white hover:bg-secondary/80 dark:hover:bg-slate-500 transition-colors inline-flex items-center justify-center border border-transparent dark:border-white/10 overflow-hidden"
               >
-                Contact Sales
+                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></span>
+                <span className="relative">Contact Sales</span>
               </Link>
-            </div>
+            </motion.div>
+            <motion.div 
+              className="mt-8 flex justify-center items-center gap-6"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="flex -space-x-2">
+                {[...Array(5)].map((_, index) => (
+                  <div key={index} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800"></div>
+                ))}
+              </div>
+              <span className="text-sm text-muted-foreground">Join 5,000+ users</span>
+            </motion.div>
           </div>
         </section>
       </main>
