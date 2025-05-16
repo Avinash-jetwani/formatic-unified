@@ -950,8 +950,9 @@ export default function HomePage() {
             
             <div className="relative">
               {/* Connecting line with animated gradient (visible on md+ screens) */}
-              <div className="hidden md:block absolute top-24 left-1/2 h-1 w-[80%] -translate-x-1/2 overflow-hidden rounded-full">
-                <div className="h-full w-full bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-500 animate-gradient-flow bg-[length:200%_auto]"></div>
+              <div className="hidden md:block absolute top-[68px] left-1/2 w-[80%] -translate-x-1/2 z-0">
+                <div className="h-1.5 w-full bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-500 animate-gradient-flow bg-[length:200%_auto] rounded-full shadow-sm opacity-80"></div>
+                <div className="h-0.5 w-full bg-white/20 dark:bg-white/10 rounded-full mt-0.5"></div>
               </div>
               
               <motion.div 
@@ -978,7 +979,7 @@ export default function HomePage() {
                     }
                   }}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative z-10">
                     <span>1</span>
                     <div className="absolute -inset-1 rounded-full bg-blue-400/20 animate-pulse opacity-75"></div>
                   </div>
@@ -1008,7 +1009,7 @@ export default function HomePage() {
                     }
                   }}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative z-10">
                     <span>2</span>
                     <div className="absolute -inset-1 rounded-full bg-violet-400/20 animate-pulse opacity-75 delay-300"></div>
                   </div>
@@ -1041,7 +1042,7 @@ export default function HomePage() {
                     }
                   }}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative z-10">
                     <span>3</span>
                     <div className="absolute -inset-1 rounded-full bg-emerald-400/20 animate-pulse opacity-75 delay-600"></div>
                   </div>
