@@ -948,14 +948,10 @@ export default function HomePage() {
               </p>
             </motion.div>
             
-            <div className="relative">
-              {/* Connecting line with animated gradient (visible on md+ screens) */}
-              <div className="hidden md:block absolute top-[68px] left-1/2 w-[80%] -translate-x-1/2 z-0">
-                <div className="h-1.5 w-full bg-gradient-to-r from-blue-500 via-violet-500 to-emerald-500 animate-gradient-flow bg-[length:200%_auto] rounded-full shadow-sm opacity-80"></div>
-                <div className="h-0.5 w-full bg-white/20 dark:bg-white/10 rounded-full mt-0.5"></div>
-              </div>
-              
-              <motion.div 
+                          <div className="relative">
+                {/* Connecting line removed as requested */}
+                
+                <motion.div 
                 className="grid grid-cols-1 md:grid-cols-3 gap-12"
                 initial="hidden"
                 whileInView="visible"
