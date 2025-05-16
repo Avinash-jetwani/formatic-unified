@@ -926,7 +926,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* How It Works Section - Enhanced */}
+        {/* How It Works Section - Modernized */}
         <section id="how-it-works" className="py-20 bg-gradient-to-b from-background to-secondary/10 overflow-hidden">
           <div className="container-content relative">
             <motion.div 
@@ -948,11 +948,9 @@ export default function HomePage() {
               </p>
             </motion.div>
             
-                          <div className="relative">
-                {/* Connecting line removed as requested */}
-                
-                <motion.div 
-                className="grid grid-cols-1 md:grid-cols-3 gap-12"
+            <div className="relative">
+              <motion.div 
+                className="flex flex-col space-y-16"
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: "-100px" }}
@@ -960,100 +958,161 @@ export default function HomePage() {
                   hidden: { opacity: 0 },
                   visible: {
                     opacity: 1,
-                    transition: { staggerChildren: 0.2 }
+                    transition: { staggerChildren: 0.3 }
                   }
                 }}
               >
+                {/* Step 1 */}
                 <motion.div 
-                  className="flex flex-col items-center text-center space-y-4"
+                  className="flex flex-col md:flex-row items-center md:items-start gap-8"
                   variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: { 
-                      opacity: 1, 
-                      y: 0,
-                      transition: { duration: 0.6 }
-                    }
+                    hidden: { opacity: 0 },
+                    visible: { opacity: 1 }
                   }}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative z-10">
-                    <span>1</span>
-                    <div className="absolute -inset-1 rounded-full bg-blue-400/20 animate-pulse opacity-75"></div>
-                  </div>
-                  <h3 className="text-xl font-bold">Create Forms</h3>
-                  <p className="text-muted-foreground">
-                    Build custom forms with our intuitive drag-and-drop interface. Add fields, conditional logic, and validation.
-                  </p>
-                  <div className="relative w-full aspect-video mt-4 rounded-lg overflow-hidden bg-card border shadow-md group perspective">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-500/10 group-hover:opacity-75 transition-opacity duration-500"></div>
-                    <div className="absolute inset-4 border-2 border-dashed border-blue-500/30 rounded-md flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
-                      <div className="p-4 bg-white/80 dark:bg-slate-800/80 rounded shadow-sm">
-                        <FileText className="h-10 w-10 text-blue-500" />
-                      </div>
+                  <motion.div 
+                    className="flex-shrink-0 relative"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl rotate-3 shadow-lg flex items-center justify-center text-white">
+                      <div className="w-16 h-16 rounded-xl bg-blue-600/80 backdrop-blur-sm flex items-center justify-center font-bold text-3xl">1</div>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
-                  </div>
-                </motion.div>
-                
-                <motion.div 
-                  className="flex flex-col items-center text-center space-y-4"
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: { 
-                      opacity: 1, 
-                      y: 0,
-                      transition: { duration: 0.6 }
-                    }
-                  }}
-                >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative z-10">
-                    <span>2</span>
-                    <div className="absolute -inset-1 rounded-full bg-violet-400/20 animate-pulse opacity-75 delay-300"></div>
-                  </div>
-                  <h3 className="text-xl font-bold">Collect Submissions</h3>
-                  <p className="text-muted-foreground">
-                    Share your forms and gather responses. Receive notifications as submissions come in.
-                  </p>
-                  <div className="relative w-full aspect-video mt-4 rounded-lg overflow-hidden bg-card border shadow-md group perspective">
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-violet-500/10 group-hover:opacity-75 transition-opacity duration-500"></div>
-                    <div className="absolute inset-4 border-2 border-dashed border-violet-500/30 rounded-md flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
-                      <div className="p-4 bg-white/80 dark:bg-slate-800/80 rounded shadow-sm">
-                        <div className="relative">
-                          <Zap className="h-10 w-10 text-violet-500" />
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-violet-500 rounded-full animate-ping"></div>
+                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-500/20 rounded-full animate-pulse"></div>
+                  </motion.div>
+                  
+                  <div className="flex-1 md:pt-3">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                    >
+                      <h3 className="text-2xl font-bold text-blue-500 dark:text-blue-400 mb-3">Create Forms</h3>
+                      <p className="text-muted-foreground max-w-xl mb-4">
+                        Build custom forms with our intuitive drag-and-drop interface. Add fields, conditional logic, and validation.
+                      </p>
+                      
+                      <div className="flex flex-wrap gap-3 mt-4">
+                        <div className="bg-blue-500/10 dark:bg-blue-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-blue-600 dark:text-blue-400 flex items-center">
+                          <FileText className="h-3.5 w-3.5 mr-1.5" />
+                          <span>Drag & Drop Builder</span>
+                        </div>
+                        <div className="bg-blue-500/10 dark:bg-blue-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-blue-600 dark:text-blue-400 flex items-center">
+                          <Code className="h-3.5 w-3.5 mr-1.5" />
+                          <span>Custom Logic</span>
+                        </div>
+                        <div className="bg-blue-500/10 dark:bg-blue-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-blue-600 dark:text-blue-400 flex items-center">
+                          <MonitorSmartphone className="h-3.5 w-3.5 mr-1.5" />
+                          <span>Mobile Responsive</span>
                         </div>
                       </div>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-violet-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
+                    </motion.div>
                   </div>
                 </motion.div>
                 
+                {/* Step 2 */}
                 <motion.div 
-                  className="flex flex-col items-center text-center space-y-4"
+                  className="flex flex-col md:flex-row-reverse items-center md:items-start gap-8"
                   variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: { 
-                      opacity: 1, 
-                      y: 0,
-                      transition: { duration: 0.6 }
-                    }
+                    hidden: { opacity: 0 },
+                    visible: { opacity: 1 }
                   }}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white text-2xl font-bold mb-2 shadow-md relative z-10">
-                    <span>3</span>
-                    <div className="absolute -inset-1 rounded-full bg-emerald-400/20 animate-pulse opacity-75 delay-600"></div>
-                  </div>
-                  <h3 className="text-xl font-bold">Analyze & Act</h3>
-                  <p className="text-muted-foreground">
-                    Review submissions, export data, trigger webhooks, and gain insights through analytics.
-                  </p>
-                  <div className="relative w-full aspect-video mt-4 rounded-lg overflow-hidden bg-card border shadow-md group perspective">
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-emerald-500/10 group-hover:opacity-75 transition-opacity duration-500"></div>
-                    <div className="absolute inset-4 border-2 border-dashed border-emerald-500/30 rounded-md flex items-center justify-center transform group-hover:scale-110 transition-transform duration-500">
-                      <div className="p-4 bg-white/80 dark:bg-slate-800/80 rounded shadow-sm">
-                        <LineChart className="h-10 w-10 text-emerald-500" />
-                      </div>
+                  <motion.div 
+                    className="flex-shrink-0 relative"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div className="w-20 h-20 bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl -rotate-3 shadow-lg flex items-center justify-center text-white">
+                      <div className="w-16 h-16 rounded-xl bg-violet-600/80 backdrop-blur-sm flex items-center justify-center font-bold text-3xl">2</div>
                     </div>
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700"></div>
+                    <div className="absolute -top-2 -left-2 w-10 h-10 bg-violet-500/20 rounded-full animate-pulse"></div>
+                  </motion.div>
+                  
+                  <div className="flex-1 md:pt-3">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                      className="md:text-right"
+                    >
+                      <h3 className="text-2xl font-bold text-violet-500 dark:text-violet-400 mb-3">Collect Submissions</h3>
+                      <p className="text-muted-foreground max-w-xl mb-4 md:ml-auto">
+                        Share your forms and gather responses. Receive notifications as submissions come in.
+                      </p>
+                      
+                      <div className="flex flex-wrap gap-3 mt-4 md:justify-end">
+                        <div className="bg-violet-500/10 dark:bg-violet-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-violet-600 dark:text-violet-400 flex items-center">
+                          <Bell className="h-3.5 w-3.5 mr-1.5" />
+                          <span>Real-time Notifications</span>
+                        </div>
+                        <div className="bg-violet-500/10 dark:bg-violet-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-violet-600 dark:text-violet-400 flex items-center">
+                          <FileText className="h-3.5 w-3.5 mr-1.5" />
+                          <span>Secure Storage</span>
+                        </div>
+                        <div className="bg-violet-500/10 dark:bg-violet-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-violet-600 dark:text-violet-400 flex items-center">
+                          <Upload className="h-3.5 w-3.5 mr-1.5" />
+                          <span>File Uploads</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                </motion.div>
+                
+                {/* Step 3 */}
+                <motion.div 
+                  className="flex flex-col md:flex-row items-center md:items-start gap-8"
+                  variants={{
+                    hidden: { opacity: 0 },
+                    visible: { opacity: 1 }
+                  }}
+                >
+                  <motion.div 
+                    className="flex-shrink-0 relative"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl rotate-3 shadow-lg flex items-center justify-center text-white">
+                      <div className="w-16 h-16 rounded-xl bg-emerald-600/80 backdrop-blur-sm flex items-center justify-center font-bold text-3xl">3</div>
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-emerald-500/20 rounded-full animate-pulse"></div>
+                  </motion.div>
+                  
+                  <div className="flex-1 md:pt-3">
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                    >
+                      <h3 className="text-2xl font-bold text-emerald-500 dark:text-emerald-400 mb-3">Analyze & Act</h3>
+                      <p className="text-muted-foreground max-w-xl mb-4">
+                        Review submissions, export data, trigger webhooks, and gain insights through analytics.
+                      </p>
+                      
+                      <div className="flex flex-wrap gap-3 mt-4">
+                        <div className="bg-emerald-500/10 dark:bg-emerald-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-emerald-600 dark:text-emerald-400 flex items-center">
+                          <BarChart4 className="h-3.5 w-3.5 mr-1.5" />
+                          <span>Advanced Analytics</span>
+                        </div>
+                        <div className="bg-emerald-500/10 dark:bg-emerald-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-emerald-600 dark:text-emerald-400 flex items-center">
+                          <Webhook className="h-3.5 w-3.5 mr-1.5" />
+                          <span>Webhook Integration</span>
+                        </div>
+                        <div className="bg-emerald-500/10 dark:bg-emerald-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-emerald-600 dark:text-emerald-400 flex items-center">
+                          <FileText className="h-3.5 w-3.5 mr-1.5" />
+                          <span>Export Options</span>
+                        </div>
+                      </div>
+                    </motion.div>
                   </div>
                 </motion.div>
               </motion.div>
