@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import Logo from '@/components/ui/logo';
 import { 
   Bell, 
   Menu, 
@@ -105,10 +106,7 @@ export function Navbar({ sidebarCollapsed, onToggleSidebar }: NavbarProps) {
             href="/dashboard" 
             className="flex items-center"
           >
-            <div className="rounded-full bg-primary h-7 w-7 flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">F</span>
-            </div>
-            <span className="ml-2 text-lg font-semibold">Formatic</span>
+            <Logo size="sm" />
           </Link>
         </div>
         

@@ -17,7 +17,7 @@ const Footer = ({ className }: FooterProps) => {
     )}>
       <div className="container flex flex-col items-center justify-between md:flex-row">
         <p className="text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} Formatic. All rights reserved.
+          &copy; {new Date().getFullYear()} Datizmo. All rights reserved.
         </p>
         
         <div className="flex items-center gap-4">
@@ -43,7 +43,7 @@ const Footer = ({ className }: FooterProps) => {
           </nav>
           
           <Link
-            href="https://github.com/formatic"
+            href="https://github.com/datizmo"
             target="_blank"
             rel="noreferrer"
             className="text-muted-foreground hover:text-foreground transition-colors"

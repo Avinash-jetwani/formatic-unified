@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Logo from '@/components/ui/logo';
 import { 
   AtSign, 
   Lock, 
@@ -194,16 +195,14 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
-            <div className="rounded-full bg-primary h-12 w-12 flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xl">F</span>
-            </div>
+            <Logo size="lg" />
           </div>
           
           <div className="bg-card rounded-lg border shadow-sm p-8">
             <div className="text-center mb-6">
               <h1 className="text-2xl font-bold">Create your account</h1>
               <p className="text-muted-foreground mt-2">
-                Join Formatic and start creating powerful forms
+                Join Datizmo and start creating powerful forms
               </p>
             </div>
             
@@ -655,14 +654,14 @@ export default function RegisterPage() {
       {/* Right side - Branding & info (hidden on mobile) */}
       <div className="hidden w-1/2 bg-gradient-to-br from-primary to-primary/80 text-white lg:flex lg:flex-col lg:justify-between p-8">
         <div>
-          <h1 className="text-3xl font-bold">Formatic</h1>
+          <Logo size="lg" />
           <p className="mt-2 text-primary-foreground/90">Streamlined form management</p>
         </div>
         
         <div className="max-w-md">
           <h2 className="text-4xl font-bold mb-6">Start your journey</h2>
           <p className="text-xl text-primary-foreground/90 mb-8">
-            Create an account and unlock the full potential of Formatic's form management platform.
+            Create an account and unlock the full potential of Datizmo's form management platform.
           </p>
           
           <div className="space-y-6">
@@ -705,7 +704,7 @@ export default function RegisterPage() {
           
           <div className="mt-10 bg-white/10 rounded-lg p-6">
             <blockquote className="italic text-primary-foreground/90">
-              "Formatic has revolutionized how we collect and manage customer feedback. It's become an essential tool for our business."
+              "Datizmo has revolutionized how we collect and manage customer feedback. It's become an essential tool for our business."
             </blockquote>
             <div className="mt-4 flex items-center">
               <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
@@ -720,7 +719,7 @@ export default function RegisterPage() {
         </div>
         
         <div className="text-sm text-primary-foreground/70">
-          &copy; {new Date().getFullYear()} Formatic. All rights reserved.
+          &copy; {new Date().getFullYear()} Datizmo. All rights reserved.
         </div>
       </div>
     </div>

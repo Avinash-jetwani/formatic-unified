@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, ArrowLeft, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Logo from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authService } from '@/services/auth';
@@ -77,7 +78,7 @@ export default function ResetPasswordPage() {
       {/* Left side - Branding & info (hidden on mobile) */}
       <div className="hidden w-1/2 bg-gradient-to-br from-primary to-primary/80 text-white lg:flex lg:flex-col lg:justify-between p-8">
         <div>
-          <h1 className="text-3xl font-bold">Formatic</h1>
+          <Logo size="lg" />
           <p className="mt-2 text-primary-foreground/90">Streamlined form management</p>
         </div>
         
@@ -103,7 +104,7 @@ export default function ResetPasswordPage() {
         </div>
         
         <div className="text-sm text-primary-foreground/70">
-          &copy; {new Date().getFullYear()} Formatic. All rights reserved.
+          &copy; {new Date().getFullYear()} Datizmo. All rights reserved.
         </div>
       </div>
       
@@ -112,9 +113,7 @@ export default function ResetPasswordPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex justify-center mb-8">
-            <div className="rounded-full bg-primary h-12 w-12 flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-xl">F</span>
-            </div>
+            <Logo size="lg" />
           </div>
           
           <div className="bg-card rounded-lg border shadow-sm p-8">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import Logo from '@/components/ui/logo';
 import { 
   ArrowRight, 
   Check, 
@@ -37,7 +38,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Testimonials data
 const testimonials = [
   {
-    quote: "Formatic has revolutionized how we collect and analyze customer feedback. The form builder is intuitive and the analytics are powerful.",
+    quote: "Datizmo has revolutionized how we collect and analyze customer feedback. The form builder is intuitive and the analytics are powerful.",
     author: "Sarah Johnson",
     role: "Product Manager",
     company: "TechCorp"
@@ -49,7 +50,7 @@ const testimonials = [
     company: "Dataflow Inc"
   },
   {
-    quote: "We've reduced our form processing time by 70% since switching to Formatic. The conditional logic feature is brilliant!",
+    quote: "We've reduced our form processing time by 70% since switching to Datizmo. The conditional logic feature is brilliant!",
     author: "Emma Rodriguez",
     role: "Operations Director",
     company: "GlobalServe"
@@ -381,10 +382,7 @@ export default function HomePage() {
         <div className="container-content flex h-16 items-center justify-between">
           <div className="flex items-center space-x-4">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">F</span>
-              </div>
-              <span className="font-bold text-xl">Formatic</span>
+              <Logo />
             </Link>
           </div>
           
@@ -550,11 +548,12 @@ export default function HomePage() {
                           }`}>
                             {formExamples[activeForm].formIcon}
                           </div>
+                          <Logo size="sm" showText={false} className="ml-2" />
                           <span className={`ml-2 font-bold text-sm sm:text-base ${
                             activeForm === 0 ? 'text-blue-600 dark:text-blue-400' : 
                             activeForm === 1 ? 'text-violet-600 dark:text-violet-400' :
                             'text-emerald-600 dark:text-emerald-400'
-                          }`}>Formatic</span>
+                          }`}>Datizmo</span>
                         </div>
                         
                         <div className="ml-auto flex space-x-1">
@@ -709,7 +708,7 @@ export default function HomePage() {
                 Build forms for any purpose
               </h2>
               <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-                From simple contact forms to complex multi-page applications, Formatic adapts to your specific needs
+                From simple contact forms to complex multi-page applications, Datizmo adapts to your specific needs
               </p>
             </motion.div>
             
@@ -805,7 +804,7 @@ export default function HomePage() {
                 Everything you need to manage forms
               </h2>
               <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-                Formatic provides all the tools you need to create, share, and analyze forms efficiently.
+                Datizmo provides all the tools you need to create, share, and analyze forms efficiently.
               </p>
             </motion.div>
             
@@ -942,7 +941,7 @@ export default function HomePage() {
                   <span className="text-sm font-medium text-primary">Simple Process</span>
                 </div>
               </div>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">How Formatic Works</h2>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">How Datizmo Works</h2>
               <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
                 A streamlined workflow for collecting and managing form submissions
               </p>
@@ -1141,7 +1140,7 @@ export default function HomePage() {
               </div>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">What Our Users Say</h2>
               <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-                Join thousands of satisfied customers using Formatic
+                Join thousands of satisfied customers using Datizmo
               </p>
             </motion.div>
             
@@ -1314,7 +1313,7 @@ export default function HomePage() {
               viewport={{ once: true, margin: "-100px" }}
               transition={{ delay: 0.1 }}
             >
-              Join thousands of users creating forms and collecting responses with Formatic.
+              Join thousands of users creating forms and collecting responses with Datizmo.
             </motion.p>
             <motion.div 
               className="flex flex-col sm:flex-row gap-4 justify-center pt-6"
@@ -1365,10 +1364,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
             <div className="col-span-2 md:col-span-4 lg:col-span-2 space-y-6">
               <Link href="/" className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-lg">F</span>
-                </div>
-                <span className="font-bold text-xl">Formatic</span>
+                <Logo />
               </Link>
               <p className="text-muted-foreground max-w-xs">
                 Create, manage, and analyze forms with ease. The complete form management platform.
@@ -1424,7 +1420,7 @@ export default function HomePage() {
           </div>
           <div className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-border text-center md:text-left">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Formatic. All rights reserved.
+              &copy; {new Date().getFullYear()} Datizmo. All rights reserved.
             </p>
           </div>
         </div>
