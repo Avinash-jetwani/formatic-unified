@@ -10,3 +10,7 @@ A powerful platform for creating, managing, and analyzing forms. Build beautiful
 - Webhook integrations
 - File uploads
 - Multi-page forms
+
+## Getting Started
+
+Visit [datizmo.com](https://datizmo.com) to start creating your first form.
