@@ -12,25 +12,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
-
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
         run: |
-          # Add EC2 to known hosts
-          mkdir -p ~/.ssh
-          ssh-keyscan $EC2_HOST >> ~/.ssh/known_hosts
-          
-          # Deploy to EC2
-          ssh $EC2_USER@$EC2_HOST "cd /var/www/datizmo && \
+          # Deploy to EC2 using the key file
+          ssh -i ~/.ssh/deploy_key $EC2_USER@$EC2_HOST "cd /var/www/datizmo && \
             git pull && \
-            cd frontend && npm install && \
-            cd ../backend && npm install && \
-            npx prisma migrate deploy && \
-            pm2 restart datizmo-backend && \
-            pm2 restart datizmo-frontend"
+            chmod +x server-restart.sh && \
+            ./server-restart.sh"
