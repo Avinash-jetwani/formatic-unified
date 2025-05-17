@@ -50,7 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>Formatic - Form Management System</title>
+        <title>Datizmo - Form Management System</title>
         <meta name="description" content="Create, manage, and analyze forms with ease" />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>

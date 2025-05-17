@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import Logo from '@/components/ui/logo';
 import {
   LayoutDashboard,
   FileText,
@@ -157,10 +158,7 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
       <div className="flex items-center justify-between px-4 py-4">
         <div className={cn("flex items-center", collapsed ? "justify-center w-full" : "justify-start")}>
           <Link href="/dashboard" className="flex items-center">
-            <div className="rounded-full bg-primary h-8 w-8 flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">F</span>
-            </div>
-            {!collapsed && <span className="ml-2 text-xl font-semibold">Formatic</span>}
+            <Logo size={collapsed ? "sm" : "md"} showText={!collapsed} />
           </Link>
         </div>
         {mounted && (
