@@ -12,47 +12,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Debug environment
+      - name: Set up SSH key
         run: |
-          echo "Debugging environment variables"
-          echo "Host: ${{ secrets.EC2_HOST }}"
-          echo "User: ${{ secrets.EC2_USER }}"
-          echo "Checking if SSH key is present"
-          if [ -n "${{ secrets.EC2_SSH_KEY }}" ]; then
-            echo "SSH key is present"
-          else
-            echo "SSH key is missing"
-          fi
-
-      - name: Test SSH connection
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          debug: true
-          script: |
-            echo "Connection successful"
-            echo "Working directory: $(pwd)"
-            if [ -d "/var/www/datizmo" ]; then
-              echo "Directory /var/www/datizmo exists"
-            else
-              echo "Directory /var/www/datizmo does NOT exist"
-              exit 1
-            fi
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "${{ secrets.EC2_HOST_KEY }}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          cat ~/.ssh/id_rsa | grep -c "PRIVATE KEY" || echo "SSH key format issue"
 
       - name: Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
+        run: |
+          echo "Testing SSH connection..."
+          ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'echo "Connected successfully"'
+          
+          echo "Deploying to server..."
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} '
             cd /var/www/datizmo || exit 1
-            echo "Changed to directory: $(pwd)"
+            echo "Directory: $(pwd)"
             git pull
             echo "Git pull completed"
             chmod +x server-restart.sh
             echo "Made script executable"
             ./server-restart.sh
             echo "Deployment completed"
+          '
