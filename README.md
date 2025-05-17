@@ -14,3 +14,7 @@ A powerful platform for creating, managing, and analyzing forms. Build beautiful
 ## Getting Started
 
 Visit [datizmo.com](https://datizmo.com) to start creating your first form.
+
+## Deployment
+
+Automated deployments via GitHub Actions CI/CD.
