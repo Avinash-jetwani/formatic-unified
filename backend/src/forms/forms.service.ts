@@ -13,8 +13,8 @@ export class FormsService {
   private readonly logger = new Logger(FormsService.name);
 
   constructor(
-    private prisma: PrismaService,
-    private webhookDeliveryService: WebhookDeliveryService
+    private readonly prisma: PrismaService,
+    private readonly webhookDeliveryService: WebhookDeliveryService,
   ) {}
 
   async create(userId: string, createFormDto: CreateFormDto) {
@@ -586,7 +586,7 @@ export class FormsService {
     this.logger.debug(`Email access: ${emailAccess}`);
     
     // Only include valid fields in the Prisma create operation
-    return this.prisma.submission.create({
+    const submission = await this.prisma.submission.create({
       data: {
         formId,
         data: {
@@ -603,6 +603,42 @@ export class FormsService {
         location
       },
     });
+
+    // Trigger webhooks for this submission
+    try {
+      this.logger.log(`Triggering webhooks for form ${formId}, submission ${submission.id}`);
+      
+      // Find all active webhooks for this form
+      const webhooks = await this.prisma.webhook.findMany({
+        where: {
+          formId,
+          active: true,
+          adminApproved: true,
+          eventTypes: {
+            has: WebhookEventType.SUBMISSION_CREATED
+          }
+        },
+        include: {
+          form: true
+        }
+      });
+      
+      this.logger.log(`Found ${webhooks.length} webhooks to trigger`);
+      
+      // Queue a delivery for each webhook
+      for (const webhook of webhooks) {
+        await this.webhookDeliveryService.queueDelivery(
+          webhook.id, 
+          WebhookEventType.SUBMISSION_CREATED, 
+          submission.id
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error triggering webhooks: ${error.message}`, error.stack);
+      // Don't throw, just log the error to not disrupt the submission process
+    }
+    
+    return submission;
   }
 
   // Helper method to trigger webhooks for form events
