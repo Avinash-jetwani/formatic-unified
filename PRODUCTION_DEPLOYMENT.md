@@ -16,6 +16,16 @@ This guide explains how to deploy the Datizmo application to your live domain wh
 
 3. The Datizmo codebase cloned to your server (e.g., in `/var/www/datizmo`)
 
+4. AWS credentials for S3 access - you can provide these as environment variables or the script will prompt for them:
+   ```bash
+   # Set credentials as environment variables
+   export AWS_ACCESS_KEY_ID="your_access_key"
+   export AWS_SECRET_ACCESS_KEY="your_secret_key"
+   export AWS_REGION="eu-west-2"
+   export S3_BUCKET_NAME="formatic-uploads-dev"
+   export S3_PUBLIC_URL="https://formatic-uploads-dev.s3.amazonaws.com"
+   ```
+
 ## Deployment Steps
 
 ### 1. Prepare Your Server
@@ -60,7 +70,7 @@ The script will automatically:
 - Stop any existing services
 - Set up environment variables for production
 - Check and configure PostgreSQL
-- Set up the same AWS S3 credentials as local development
+- Prompt for AWS S3 credentials if not found in environment
 - Apply database migrations
 - Install dependencies
 - Build both frontend and backend applications
@@ -83,7 +93,7 @@ Once the deployment is complete:
 
 1. **Database**: The application will use the same database configuration as your local setup. This means it will connect to a PostgreSQL database named `formatic` on localhost.
 
-2. **S3 Storage**: The application uses the same AWS S3 bucket as your local development.
+2. **S3 Storage**: The application uses the same AWS S3 bucket as your local development. For security reasons, AWS credentials are not stored in the repository but are provided via environment variables or entered during the deployment process.
 
 3. **SSL Certificates**: The script will automatically obtain and configure SSL certificates via Let's Encrypt if they don't exist already.
 
@@ -123,7 +133,10 @@ If you encounter issues during or after deployment:
 
 ## Security Considerations
 
-1. The script includes hardcoded AWS credentials for simplicity. In a real production environment, you should use more secure methods to manage credentials, such as environment variables or AWS IAM roles.
+1. AWS credentials are now handled securely by:
+   - Using environment variables when available
+   - Asking for input only when needed
+   - Not storing credentials in the repository
 
 2. For a production system, you should follow best practices for PostgreSQL security, including setting up proper passwords and access controls.
 

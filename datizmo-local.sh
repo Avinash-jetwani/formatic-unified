@@ -69,12 +69,24 @@ fi
 
 echo -e "${GREEN}✅ Using local database: ${DB_NAME} with user ${DB_USER}${NC}"
 
-# Set hardcoded S3 details with actual AWS credentials
-AWS_REGION="eu-west-2"
-AWS_ACCESS_KEY="***REMOVED***"
-AWS_SECRET_KEY="***REMOVED***"
-S3_BUCKET="formatic-uploads-dev"
-S3_PUBLIC_URL="https://formatic-uploads-dev.s3.amazonaws.com"
+# Set S3 details - prompt for credentials if environment variables aren't set
+AWS_REGION=${AWS_REGION:-"eu-west-2"}
+AWS_ACCESS_KEY=${AWS_ACCESS_KEY_ID:-""}
+AWS_SECRET_KEY=${AWS_SECRET_ACCESS_KEY:-""}
+S3_BUCKET=${S3_BUCKET_NAME:-"formatic-uploads-dev"}
+S3_PUBLIC_URL=${S3_PUBLIC_URL:-"https://formatic-uploads-dev.s3.amazonaws.com"}
+
+# If credentials aren't set, ask for them
+if [ -z "$AWS_ACCESS_KEY" ] || [ -z "$AWS_SECRET_KEY" ]; then
+  echo -e "${YELLOW}⚠️ AWS credentials not found in environment. Please enter them now:${NC}"
+  read -p "AWS Access Key ID: " AWS_ACCESS_KEY
+  read -p "AWS Secret Access Key: " AWS_SECRET_KEY
+  
+  # Store them temporarily for this session
+  export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY
+  export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY
+fi
+
 echo -e "${GREEN}✅ Using S3 bucket: ${S3_BUCKET} in ${AWS_REGION}${NC}"
 
 # Set domain
