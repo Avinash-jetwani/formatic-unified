@@ -1,39 +1,38 @@
-name: Deploy to EC2
+name: Deploy to Production
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          echo "${{ secrets.EC2_HOST_KEY }}" >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          cat ~/.ssh/id_rsa | grep -c "PRIVATE KEY" || echo "SSH key format issue"
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Deploy to EC2
-        run: |
-          echo "Testing SSH connection..."
-          ssh -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'echo "Connected successfully"'
-          
-          echo "Deploying to server..."
-          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} '
-            cd /var/www/datizmo || exit 1
-            echo "Directory: $(pwd)"
-            git pull
-            echo "Git pull completed"
-            chmod +x server-restart.sh
-            echo "Made script executable"
-            ./server-restart.sh
-            echo "Deployment completed"
-          '
+    - name: Setup known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to production server
+      env:
+        SERVER_IP: ${{ secrets.SERVER_IP }}
+        SERVER_USER: ${{ secrets.SERVER_USER }}
+      run: |
+        # Copy deployment script to server
+        scp server-deployment.sh $SERVER_USER@$SERVER_IP:/tmp/server-deployment.sh
+        
+        # Make script executable and run it
+        ssh $SERVER_USER@$SERVER_IP "sudo chmod +x /tmp/server-deployment.sh && sudo /tmp/server-deployment.sh"
+        
+        # Verify deployment
+        ssh $SERVER_USER@$SERVER_IP "curl -s --head https://datizmo.com | grep '200 OK' && echo 'Deployment successful!' || echo 'Deployment check failed!'"
