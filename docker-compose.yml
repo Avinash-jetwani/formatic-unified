@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Use external RDS database instead of local postgres
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://postgres:immortal1497db@formatic-dev-db.c7edc3pems97.eu-west-2.rds.amazonaws.com:5432/formatic-dev-db
+      - JWT_SECRET=P9MXfrd7HJK2s5v8y/B?E(H+KbPeShVm
+      - PORT=3001
+      - NODE_ENV=production
+    restart: always
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:3001
+      - NEXTAUTH_URL=https://datizmo.com
+      - NEXTAUTH_SECRET=kYp3s6v9y$B&E)H@McQfTjWnZr4t7w!z
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - frontend
+      - backend
+    restart: always
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  postgres-data: 
