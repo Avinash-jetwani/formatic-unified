@@ -41,7 +41,9 @@ jobs:
         rm -rf node_modules
         npm ci --omit=dev # Install only production dependencies
         # Create a tarball of the frontend build and production node_modules
-        tar -czf frontend-build.tar.gz .next static public node_modules package.json package-lock.json next.config.js # Add other necessary files
+        # The .next directory contains the built static assets in .next/static
+        # The public directory is at the root of the frontend workspace
+        tar -czf frontend-build.tar.gz .next public node_modules package.json package-lock.json next.config.js # Add other necessary files
 
     - name: Copy Backend Build to EC2
       uses: appleboy/scp-action@master
