@@ -248,14 +248,19 @@ server {
 }
 EOL
 
+# Ensure Nginx service is enabled and started before testing and reloading
+log "Ensuring Nginx service is enabled and started..."
+sudo systemctl enable nginx
+sudo systemctl start nginx
+
 log "Testing Nginx configuration..."
-nginx -t
-if [ $? -eq 0 ]; then
+if sudo nginx -t; then
   log "Nginx configuration test successful. Reloading Nginx."
-  systemctl reload nginx
+  sudo systemctl reload nginx
 else
-  error "Nginx configuration test failed. Please check $NGINX_CONF_FILE. Nginx default page might be shown."
-  # Don't exit, allow certbot to try and fix
+  error "Nginx configuration test failed. Please check the output above."
+  # Optionally exit here if Nginx config is critical for next steps before certbot
+  # exit 1
 fi
 
 # 10. Setup SSL with Certbot
@@ -266,107 +271,57 @@ if command -v yum &> /dev/null; then
     yum install -y certbot python3-certbot-nginx # Use python3-certbot-nginx for AL2
 fi
 
-# Create /var/www/certbot directory if it doesn't exist (or use /var/www/html as per Nginx conf)
-WEBROOT_PATH="/var/www/html" # Matching the Nginx config for challenges
-mkdir -p $WEBROOT_PATH
-chown nginx:nginx $WEBROOT_PATH # Nginx user
-
-log "Requesting SSL certificate for $DOMAIN_NAME (using webroot $WEBROOT_PATH)..."
-certbot certonly --webroot -w $WEBROOT_PATH -d $DOMAIN_NAME -d www.$DOMAIN_NAME --non-interactive --agree-tos -m $ADMIN_EMAIL --deploy-hook "systemctl reload nginx"
-
-if [ $? -eq 0 ]; then
-  log "SSL certificate obtained successfully."
-  # Now update Nginx config to use SSL and proxy to applications
-  log "Updating Nginx configuration to use SSL and proxy to Node.js applications..."
-cat > "$NGINX_CONF_FILE" <<EOL
-server {
-    listen 80;
-    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
-
-    location /.well-known/acme-challenge/ {
-        root $WEBROOT_PATH;
-    }
-
-    location / {
-        return 301 https://\\\$host\\\$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl http2;
-    server_name $DOMAIN_NAME www.$DOMAIN_NAME;
-
-    ssl_certificate /etc/letsencrypt/live/$DOMAIN_NAME/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN_NAME/privkey.pem;
-    # Using recommended ciphers and protocols by Certbot/Mozilla
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
-    ssl_prefer_server_ciphers off;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 1d;
-    ssl_session_tickets off;
-
-    # Recommended: ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # Generate if not present: openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048
-    # Check if ssl-dhparams.pem exists, if not, Certbot might handle this or it should be generated.
-    if [ -f /etc/letsencrypt/ssl-dhparams.pem ]; then
-        ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-    fi
-
-    # HSTS
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
-    # Other Security Headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-
-    client_max_body_size 50M; # For file uploads, adjust as needed
-
-    location / {
-        proxy_pass http://localhost:3000; # Frontend (Next.js running on port 3000)
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \\\$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \\\$host;
-        proxy_set_header X-Real-IP \\\$remote_addr;
-        proxy_set_header X-Forwarded-For \\\$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \\\$scheme;
-        proxy_cache_bypass \\\$http_upgrade;
-        proxy_read_timeout 300s; # Increase timeout for potentially long requests
-        proxy_send_timeout 300s;
-    }
-
-    location /api {
-        proxy_pass http://localhost:3001; # Backend (NestJS running on port 3001)
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \\\$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \\\$host;
-        proxy_set_header X-Real-IP \\\$remote_addr;
-        proxy_set_header X-Forwarded-For \\\$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \\\$scheme;
-        proxy_cache_bypass \\\$http_upgrade;
-        proxy_read_timeout 300s;
-        proxy_send_timeout 300s;
-    }
-    
-    location /socket.io {
-        proxy_pass http://localhost:3001; # Backend WebSocket
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \\\$http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host \\\$host;
-        proxy_cache_bypass \\\$http_upgrade;
-    }
-}
-EOL
-  log "Testing final Nginx configuration..."
-  nginx -t && systemctl reload nginx
-  if [ $? -ne 0 ]; then error "Final Nginx configuration test failed. Please check $NGINX_CONF_FILE"; fi
+# Check if Certbot and python3-certbot-nginx are installed
+if ! command -v certbot &> /dev/null || ! sudo yum list installed python3-certbot-nginx &> /dev/null; then
+    log "Installing Certbot and Nginx plugin..."
+    sudo yum install -y certbot python3-certbot-nginx --allowerasing
 else
-  error "Certbot failed to obtain SSL certificate. Check logs at /var/log/letsencrypt/"
-  warn "You might need to manually adjust Nginx ($NGINX_CONF_FILE) and run certbot again."
-  warn "Consider using 'certbot --nginx' if webroot fails and Nginx is properly serving HTTP for the domain."
+    log "Certbot and Nginx plugin already installed."
+fi
+
+# Ensure Nginx is running before attempting to obtain SSL certificate
+log "Ensuring Nginx is running before Certbot SSL setup..."
+sudo systemctl start nginx # Start Nginx if not already running (e.g., if previous reload failed and stopped it)
+# Check Nginx status, optional
+# sudo systemctl status nginx
+
+if [ -d "/etc/letsencrypt/live/${DOMAIN_NAME}" ]; then
+    log "Configuring Nginx to use existing SSL certificate for ${DOMAIN_NAME}..."
+    # Update Nginx config to use SSL - this might be redundant if already in datizmo.conf
+    # Ensure the datizmo.conf has the SSL settings and then reload
+    # sudo sed -i 's|listen 80;|listen 80;\\n    listen [::]:80;|g' /etc/nginx/conf.d/datizmo.conf # Example, ensure this is idempotent or correct
+    # sudo sed -i '/server_name datizmo.com;/a \\    ssl_certificate /etc/letsencrypt/live/datizmo.com/fullchain.pem;\\n    ssl_certificate_key /etc/letsencrypt/live/datizmo.com/privkey.pem;\\n    include /etc/letsencrypt/options-ssl-nginx.conf;\\n    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;' /etc/nginx/conf.d/datizmo.conf
+
+    # The Nginx config provided earlier already includes SSL stanzas listen 443 ssl; etc.
+    # So, a simple reload should be sufficient if the certs exist.
+    log "Reloading Nginx to apply SSL configuration..."
+    sudo systemctl reload nginx
+else
+    log "Obtaining SSL certificate for ${DOMAIN_NAME} using Certbot..."
+    # Stop Nginx temporarily for standalone an_hook (if webroot not preferred or problematic)
+    # sudo systemctl stop nginx
+    # sudo certbot certonly --standalone -d "${DOMAIN_NAME}" --non-interactive --agree-tos -m "${ADMIN_EMAIL}" --test-cert # Use --test-cert for initial testing
+    # sudo certbot certonly --standalone -d "${DOMAIN_NAME}" --non-interactive --agree-tos -m "${ADMIN_EMAIL}"
+    
+    # Using webroot plugin is generally preferred as it doesn't require stopping Nginx
+    # Ensure webroot path exists and is configured in Nginx for /.well-known/acme-challenge
+    # Example for datizmo.conf if not already present:
+    # location /.well-known/acme-challenge/ {
+    #     root /var/www/html; # Or another suitable path
+    # }
+    # sudo mkdir -p /var/www/html # Ensure this path exists
+    # sudo certbot certonly --webroot -w /var/www/html -d "${DOMAIN_NAME}" --non-interactive --agree-tos -m "${ADMIN_EMAIL}" --test-cert # For testing
+    sudo certbot --nginx -d "${DOMAIN_NAME}" --non-interactive --agree-tos -m "${ADMIN_EMAIL}" --redirect --uir # --redirect handles HTTP->HTTPS, --uir adds HSTS header.
+    # Check if cert was obtained
+    if [ -d "/etc/letsencrypt/live/${DOMAIN_NAME}" ]; then
+        log "SSL certificate obtained successfully."
+        log "Reloading Nginx to apply new SSL certificate..."
+        sudo systemctl reload nginx
+    else
+        log "Failed to obtain SSL certificate. Check Certbot logs."
+        log "Attempting to start Nginx again if it was stopped..."
+        sudo systemctl start nginx # Ensure Nginx is running even if certbot failed.
+    fi
 fi
 
 # 11. Setup PM2 Ecosystem File (Optional but Recommended)
