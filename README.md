@@ -11,7 +11,7 @@ A powerful platform for creating, managing, and analyzing forms. Build beautiful
 - File uploads
 - Multi-page forms
 
-## Getting Started
+## Getting Started 1
 
 Visit [datizmo.com](https://datizmo.com) to start creating your first form.
 
