@@ -40,6 +40,16 @@ const nextConfig = {
   experimental: {
     isrFlushToDisk: false,
   },
+  output: 'standalone',
+  // Allow API requests to backend
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: process.env.NEXT_PUBLIC_API_URL + '/:path*',
+      },
+    ];
+  },
 }
 
 module.exports = nextConfig 

@@ -1,6 +1,17 @@
 node_modules/
 dist/
 .env
+*.env
+*.env.local
+*.env.production
 .next/
 *.env.bak
-*.env.bak
+
+# Ignore sensitive or large files
+*.log
+*.pem
+*.key
+
+# OS-specific
+.DS_Store
+Thumbs.db
