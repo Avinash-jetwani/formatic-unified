@@ -266,10 +266,12 @@ fi
 # 10. Setup SSL with Certbot
 log "Setting up SSL certificate using Certbot..."
 # Install Certbot - EPEL repo might be needed for Amazon Linux 2
-if command -v yum &> /dev/null; then
-    amazon-linux-extras install epel -y
-    yum install -y certbot python3-certbot-nginx # Use python3-certbot-nginx for AL2
-fi
+# For Amazon Linux 2023, amazon-linux-extras is deprecated.
+# Certbot should be available via dnf/yum directly, or EPEL needs to be enabled differently if not.
+# if command -v yum &> /dev/null; then
+    # amazon-linux-extras install epel -y # This line is for Amazon Linux 2, remove for AL2023
+    # yum install -y certbot python3-certbot-nginx # Use python3-certbot-nginx for AL2
+# fi
 
 # Check if Certbot and python3-certbot-nginx are installed
 if ! command -v certbot &> /dev/null || ! sudo yum list installed python3-certbot-nginx &> /dev/null; then
