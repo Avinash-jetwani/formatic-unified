@@ -77,9 +77,7 @@ jobs:
           NVM_DIR="/home/ec2-user/.nvm"
 
           echo "Executing deployment on server as $(whoami)..."
-          cd $APP_DIR
-          echo "Current directory: $(pwd)"
-
+          
           echo "Sourcing NVM for PM2 and Node commands..."
           export NVM_DIR="$NVM_DIR"
           [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
@@ -87,15 +85,9 @@ jobs:
 
           echo "Node version: $(node -v)"
           echo "NPM version: $(npm -v)"
-          echo "PM2 version: $(pm2 -V)"
+          echo "PM2 version: $(pm2 --version)" # Use --version for PM2
 
-          echo "Pulling latest changes from main branch (final check)..."
-          git checkout main
-          git fetch origin main # Fetch latest changes
-          git reset --hard origin/main # Force update to latest, discarding local changes
-          git pull origin main # Should be a fast-forward or no-op now
-
-          echo "Deploying Backend..."
+          echo "Deploying Backend Artifacts..."
           cd $BACKEND_DIR
           echo "Current backend directory: $(pwd)"
           ls -la # List files to ensure tarball is present
@@ -109,29 +101,7 @@ jobs:
             exit 1
           fi
           
-          echo "Ensuring backend .env file exists... (MUST be pre-configured by user on server)"
-          if [ ! -f .env ]; then
-            echo "CRITICAL WARNING: .env file not found in $BACKEND_DIR. Prisma migrate and backend start will likely fail!"
-            # Do not exit here, let it try, but it will likely fail if .env is missing critical DB_URL
-          else
-            echo ".env file found in backend directory."
-          fi
-
-          echo "Running Prisma migrations..."
-          npx prisma migrate deploy
-
-          echo "Restarting backend service with PM2..."
-          # Use ecosystem file for consistency if available and configured
-          if [ -f "$APP_DIR/ecosystem.config.js" ]; then
-            echo "Using PM2 ecosystem file to restart backend..."
-            sudo pm2 reload $APP_DIR/ecosystem.config.js --env production --only backend || sudo pm2 start $APP_DIR/ecosystem.config.js --env production --only backend
-          else
-            echo "PM2 ecosystem file not found. Starting backend directly..."
-            sudo pm2 restart backend || sudo pm2 start dist/main.js --name backend --time
-          fi
-          sudo pm2 save # Save current PM2 process list
-
-          echo "Deploying Frontend..."
+          echo "Deploying Frontend Artifacts..."
           cd $FRONTEND_DIR
           echo "Current frontend directory: $(pwd)"
           ls -la # List files to ensure tarball is present
@@ -144,8 +114,40 @@ jobs:
             echo "ERROR: frontend-build.tar.gz not found in $FRONTEND_DIR! Deployment halted."
             exit 1
           fi
+
+          echo "Updating base repository code (if necessary)..."
+          cd $APP_DIR
+          echo "Current directory: $(pwd)"
+          # git checkout main # Not strictly necessary before reset if on main
+          git fetch origin main # Fetch latest changes
+          git reset --hard origin/main # Force update to latest, discarding local changes for non-artifact files
+          # git pull origin main # Not strictly necessary after reset --hard
+
+          echo "Ensuring backend .env file exists... (MUST be pre-configured by user on server)"
+          cd $BACKEND_DIR # Change back to backend dir for .env check and migrations
+          if [ ! -f .env ]; then
+            echo "CRITICAL WARNING: .env file not found in $BACKEND_DIR. Prisma migrate and backend start will likely fail!"
+          else
+            echo ".env file found in backend directory."
+          fi
+
+          echo "Running Prisma migrations..."
+          npx prisma migrate deploy
+
+          echo "Restarting backend service with PM2..."
+          cd $APP_DIR # PM2 ecosystem file is likely in APP_DIR
+          if [ -f "ecosystem.config.js" ]; then # Check relative to current APP_DIR
+            echo "Using PM2 ecosystem file to restart backend..."
+            sudo pm2 reload ecosystem.config.js --env production --only backend || sudo pm2 start ecosystem.config.js --env production --only backend
+          else
+            echo "PM2 ecosystem file not found. Starting backend directly from $BACKEND_DIR..."
+            # Ensure PM2 knows where the backend's entry point is if not using ecosystem file
+            # This assumes your backend's package.json has a start script or you target main.js
+            sudo pm2 restart backend || sudo pm2 start $BACKEND_DIR/dist/main.js --name backend --cwd $BACKEND_DIR --time
+          fi
           
           echo "Ensuring frontend .env.production file exists... (MUST be pre-configured by user on server)"
+          cd $FRONTEND_DIR # Change to frontend dir for .env check
           if [ ! -f .env.production ]; then
             echo "WARNING: .env.production file not found in $FRONTEND_DIR. Frontend might not have all necessary NEXT_PUBLIC variables or NEXTAUTH_SECRET!"
           else
@@ -153,15 +155,17 @@ jobs:
           fi
 
           echo "Restarting frontend service with PM2..."
-          if [ -f "$APP_DIR/ecosystem.config.js" ]; then
+          cd $APP_DIR # PM2 ecosystem file is likely in APP_DIR
+          if [ -f "ecosystem.config.js" ]; then # Check relative to current APP_DIR
             echo "Using PM2 ecosystem file to restart frontend..."
-            sudo pm2 reload $APP_DIR/ecosystem.config.js --env production --only frontend || sudo pm2 start $APP_DIR/ecosystem.config.js --env production --only frontend
+            sudo pm2 reload ecosystem.config.js --env production --only frontend || sudo pm2 start ecosystem.config.js --env production --only frontend
           else
-            echo "PM2 ecosystem file not found. Starting frontend directly..."
+            echo "PM2 ecosystem file not found. Starting frontend directly from $FRONTEND_DIR..."
             # Assumes 'npm run start' is defined in frontend/package.json (e.g., next start -p 3000)
-            sudo pm2 restart frontend || sudo pm2 start npm --name frontend -- run start --time
+            sudo pm2 restart frontend || sudo pm2 start npm --name frontend -- run start --cwd $FRONTEND_DIR --time
           fi
-          sudo pm2 save
+          
+          sudo pm2 save # Save current PM2 process list
 
           echo "Reloading Nginx to apply any potential changes..."
           sudo systemctl reload nginx
