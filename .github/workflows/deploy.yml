@@ -138,6 +138,9 @@ jobs:
           echo "Running Prisma migrations..."
           npx prisma migrate deploy
 
+          echo "Regenerating Prisma client..."
+          npx prisma generate
+
           echo "Restarting backend service with PM2..."
           cd $APP_DIR # PM2 ecosystem file is likely in APP_DIR
           if [ -f "ecosystem.config.js" ]; then # Check relative to current APP_DIR
