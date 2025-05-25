@@ -52,7 +52,8 @@ jobs:
         username: ec2-user # Updated username
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         source: "backend/backend-build.tar.gz"
-        target: "/home/ec2-user/formatic-unified/backend/" # Adjust path as needed
+        target: "/home/ec2-user/formatic-unified/"
+        strip_components: 1
 
     - name: Copy Frontend Build to EC2
       uses: appleboy/scp-action@master
@@ -61,7 +62,8 @@ jobs:
         username: ec2-user # Updated username
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         source: "frontend/frontend-build.tar.gz"
-        target: "/home/ec2-user/formatic-unified/frontend/" # Adjust path as needed
+        target: "/home/ec2-user/formatic-unified/"
+        strip_components: 1
         
     - name: Execute Deployment Commands on EC2
       uses: appleboy/ssh-action@master
@@ -87,41 +89,43 @@ jobs:
           echo "NPM version: $(npm -v)"
           echo "PM2 version: $(pm2 --version)" # Use --version for PM2
 
-          echo "Deploying Backend Artifacts..."
-          cd $BACKEND_DIR
-          echo "Current backend directory: $(pwd)"
-          ls -la # List files to ensure tarball is present
-          echo "Extracting backend build..."
-          if [ -f backend-build.tar.gz ]; then
+          echo "Checking for build artifacts in $APP_DIR..."
+          cd $APP_DIR
+          ls -la *.tar.gz || echo "No .tar.gz files found in $APP_DIR"
+
+          echo "Moving and extracting Backend Artifacts..."
+          if [ -f "$APP_DIR/backend-build.tar.gz" ]; then
+            mv "$APP_DIR/backend-build.tar.gz" "$BACKEND_DIR/"
+            cd $BACKEND_DIR
+            echo "Current backend directory: $(pwd)"
+            echo "Extracting backend build..."
             tar -xzf backend-build.tar.gz
             rm backend-build.tar.gz # Clean up tarball
-            echo "Backend build extracted."
+            echo "Backend build extracted successfully."
           else
-            echo "ERROR: backend-build.tar.gz not found in $BACKEND_DIR! Deployment halted."
+            echo "ERROR: backend-build.tar.gz not found in $APP_DIR! Deployment halted."
             exit 1
           fi
           
-          echo "Deploying Frontend Artifacts..."
-          cd $FRONTEND_DIR
-          echo "Current frontend directory: $(pwd)"
-          ls -la # List files to ensure tarball is present
-          echo "Extracting frontend build..."
-          if [ -f frontend-build.tar.gz ]; then
+          echo "Moving and extracting Frontend Artifacts..."
+          if [ -f "$APP_DIR/frontend-build.tar.gz" ]; then
+            mv "$APP_DIR/frontend-build.tar.gz" "$FRONTEND_DIR/"
+            cd $FRONTEND_DIR
+            echo "Current frontend directory: $(pwd)"
+            echo "Extracting frontend build..."
             tar -xzf frontend-build.tar.gz
             rm frontend-build.tar.gz # Clean up tarball
-            echo "Frontend build extracted."
+            echo "Frontend build extracted successfully."
           else
-            echo "ERROR: frontend-build.tar.gz not found in $FRONTEND_DIR! Deployment halted."
+            echo "ERROR: frontend-build.tar.gz not found in $APP_DIR! Deployment halted."
             exit 1
           fi
 
           echo "Updating base repository code (if necessary)..."
           cd $APP_DIR
           echo "Current directory: $(pwd)"
-          # git checkout main # Not strictly necessary before reset if on main
           git fetch origin main # Fetch latest changes
           git reset --hard origin/main # Force update to latest, discarding local changes for non-artifact files
-          # git pull origin main # Not strictly necessary after reset --hard
 
           echo "Ensuring backend .env file exists... (MUST be pre-configured by user on server)"
           cd $BACKEND_DIR # Change back to backend dir for .env check and migrations
