@@ -28,3 +28,4 @@ Automated deployments via GitHub Actions CI/CD.
 ### Troubleshooting
 - If API endpoints return 404, check that environment variables are correctly set
 - For authentication issues, verify the API_URL is configured correctly
+# Trigger deployment
