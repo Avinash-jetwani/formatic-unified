@@ -71,6 +71,11 @@ fi
 # Verify installation
 certbot --version
 
+echo "=== Cleaning up existing Nginx configurations ==="
+# Remove any existing SSL configs to avoid conflicts
+rm -f /etc/nginx/conf.d/formatic.conf /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf
+rm -f /etc/nginx/conf.d/*.conf 2>/dev/null || true
+
 echo "=== Creating temporary Nginx config ==="
 mkdir -p /var/www/html
 chown -R nginx:nginx /var/www/html
