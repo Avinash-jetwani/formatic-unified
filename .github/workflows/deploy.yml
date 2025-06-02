@@ -182,8 +182,12 @@ jobs:
             echo "PM2 ecosystem file not found. Starting services directly..."
             # Delete existing processes
             pm2 delete all || echo "No existing processes to delete"
-            # Start backend
-            pm2 start $BACKEND_DIR/dist/main.js --name backend --cwd $BACKEND_DIR
+            # Start backend with correct path
+            if [ -f "$BACKEND_DIR/dist/src/main.js" ]; then
+              pm2 start $BACKEND_DIR/dist/src/main.js --name backend --cwd $BACKEND_DIR
+            else
+              pm2 start $BACKEND_DIR/dist/main.js --name backend --cwd $BACKEND_DIR
+            fi
             # Start frontend  
             pm2 start npm --name frontend -- run start --cwd $FRONTEND_DIR
           fi
@@ -194,8 +198,75 @@ jobs:
           echo "=== Checking PM2 status ==="
           pm2 status
 
-          echo "=== Reloading Nginx ==="
-          sudo systemctl reload nginx || echo "Nginx reload failed, but continuing..."
+          echo "=== Updating Nginx Configuration for Static Files ==="
+          sudo tee /etc/nginx/conf.d/datizmo.conf << 'NGINXEOF'
+          server {
+              listen 80;
+              server_name datizmo.com www.datizmo.com;
+              return 301 https://$server_name$request_uri;
+          }
+
+          server {
+              listen 443 ssl http2;
+              server_name datizmo.com www.datizmo.com;
+              
+              # SSL configuration
+              ssl_certificate /etc/ssl/certs/datizmo.com.crt;
+              ssl_certificate_key /etc/ssl/private/datizmo.com.key;
+              ssl_protocols TLSv1.2 TLSv1.3;
+              ssl_ciphers HIGH:!aNULL:!MD5;
+              ssl_prefer_server_ciphers on;
+              
+              # Security headers
+              add_header X-Frame-Options "SAMEORIGIN" always;
+              add_header X-XSS-Protection "1; mode=block" always;
+              add_header X-Content-Type-Options "nosniff" always;
+              
+              # API routes - proxy to backend
+              location /api/ {
+                  proxy_pass http://127.0.0.1:3001/;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection 'upgrade';
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_cache_bypass $http_upgrade;
+              }
+              
+              # Next.js static files
+              location /_next/static {
+                  proxy_pass http://127.0.0.1:3000;
+                  proxy_cache_valid 200 1y;
+                  add_header Cache-Control "public, immutable";
+                  expires 1y;
+              }
+              
+              # Static assets
+              location ~* \.(ico|css|js|gif|jpeg|jpg|png|svg|woff|woff2|ttf|eot)$ {
+                  proxy_pass http://127.0.0.1:3000;
+                  expires 1y;
+                  add_header Cache-Control "public, immutable";
+              }
+              
+              # All other routes - proxy to frontend
+              location / {
+                  proxy_pass http://127.0.0.1:3000;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection 'upgrade';
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_cache_bypass $http_upgrade;
+              }
+          }
+          NGINXEOF
+          
+          echo "=== Testing and Reloading Nginx ==="
+          sudo nginx -t && sudo systemctl reload nginx || echo "Nginx reload failed"
 
           echo "=== Performing health checks ==="
           # Wait for services to be fully up
