@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { AtSign, Lock, LogIn, Check, AlertCircle, Github, Twitter, Eye, EyeOff } from 'lucide-react';
+import { AtSign, Lock, LogIn, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Logo from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
@@ -233,34 +233,7 @@ export default function LoginPage() {
               </div>
             </form>
             
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-muted"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-card text-muted-foreground">Or continue with</span>
-                </div>
-              </div>
-              
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                >
-                  <Github className="h-5 w-5 mr-2" />
-                  GitHub
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                >
-                  <Twitter className="h-5 w-5 mr-2" />
-                  Twitter
-                </Button>
-              </div>
-            </div>
+
           </div>
           
           <p className="mt-8 text-center text-sm text-muted-foreground">

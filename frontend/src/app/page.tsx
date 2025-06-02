@@ -57,48 +57,7 @@ const testimonials = [
   }
 ];
 
-// Pricing plans
-const pricingPlans = [
-  {
-    name: "Starter",
-    price: "Free",
-    description: "Perfect for individuals and small projects",
-    features: [
-      "Up to 3 forms",
-      "100 submissions/month",
-      "Basic analytics",
-      "Email notifications",
-      "Standard support"
-    ]
-  },
-  {
-    name: "Professional",
-    price: "$29",
-    description: "Ideal for growing businesses",
-    features: [
-      "Unlimited forms",
-      "10,000 submissions/month",
-      "Advanced analytics",
-      "Webhook integrations",
-      "File uploads",
-      "Priority support"
-    ],
-    recommended: true
-  },
-  {
-    name: "Enterprise",
-    price: "$99",
-    description: "For organizations with advanced needs",
-    features: [
-      "Unlimited everything",
-      "Custom branding",
-      "Advanced security",
-      "API access",
-      "Dedicated support",
-      "SLA guarantee"
-    ]
-  }
-];
+
 
 // Animation variants
 const fadeIn = {
@@ -312,7 +271,6 @@ export default function HomePage() {
   const [isVisible, setIsVisible] = useState({
     features: false,
     stats: false,
-    pricing: false,
     useCases: false
   });
 
@@ -321,7 +279,6 @@ export default function HomePage() {
     const handleScroll = () => {
       const featuresSection = document.getElementById('features');
       const statsSection = document.getElementById('stats');
-      const pricingSection = document.getElementById('pricing');
       const useCasesSection = document.getElementById('use-cases');
       
       if (featuresSection) {
@@ -332,11 +289,6 @@ export default function HomePage() {
       if (statsSection) {
         const rect = statsSection.getBoundingClientRect();
         setIsVisible(prev => ({ ...prev, stats: rect.top < window.innerHeight * 0.75 }));
-      }
-      
-      if (pricingSection) {
-        const rect = pricingSection.getBoundingClientRect();
-        setIsVisible(prev => ({ ...prev, pricing: rect.top < window.innerHeight * 0.75 }));
       }
       
       if (useCasesSection) {
@@ -391,7 +343,7 @@ export default function HomePage() {
             <a href="#features" className="text-sm font-medium hover:text-primary transition-colors">Features</a>
             <a href="#use-cases" className="text-sm font-medium hover:text-primary transition-colors">Use Cases</a>
             <a href="#how-it-works" className="text-sm font-medium hover:text-primary transition-colors">How It Works</a>
-            <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors">Pricing</a>
+
             <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">Sign In</Link>
             <Link href="/register" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
               Get Started
@@ -445,13 +397,7 @@ export default function HomePage() {
               >
                 How It Works
               </a>
-              <a 
-                href="#pricing" 
-                className="text-sm font-medium py-3 px-2 rounded hover:bg-primary/10 transition-colors"
-                onClick={handleMobileNavClick}
-              >
-                Pricing
-              </a>
+
               <div className="border-t pt-4 mt-2 space-y-4">
                 <Link 
                   href="/login" 
@@ -1212,78 +1158,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Pricing Section */}
-        <section id="pricing" className="py-20 bg-gradient-to-b from-secondary/10 to-background">
-          <div className="container-content">
-            <motion.div 
-              className="text-center mb-16 space-y-4"
-              variants={fadeIn}
-              initial="hidden"
-              animate={isVisible.pricing ? "visible" : "hidden"}
-            >
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Simple, Transparent Pricing</h2>
-              <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-                Choose the plan that's right for you
-              </p>
-            </motion.div>
-            
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-3 gap-8"
-              variants={staggerContainer}
-              initial="hidden"
-              animate={isVisible.pricing ? "visible" : "hidden"}
-            >
-              {pricingPlans.map((plan, index) => (
-                <motion.div 
-                  key={plan.name}
-                  variants={fadeIn}
-                  className={`relative bg-card rounded-xl border ${
-                    plan.recommended ? 'border-primary shadow-md' : 'shadow-sm'
-                  } p-8 flex flex-col h-full`}
-                >
-                  {plan.recommended && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs font-bold uppercase tracking-wide py-1 px-3 rounded-full">
-                      Recommended
-                    </div>
-                  )}
-                  
-                  <div className="mb-6">
-                    <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                    <p className="text-muted-foreground mb-4">{plan.description}</p>
-                    <div className="flex items-baseline">
-                      <span className="text-3xl font-bold">{plan.price}</span>
-                      {plan.price !== "Free" && <span className="text-muted-foreground ml-2">/month</span>}
-                    </div>
-                  </div>
-                  
-                  <ul className="space-y-3 mb-8 flex-1">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start">
-                        <Check className="h-5 w-5 text-primary mr-2 flex-shrink-0 mt-0.5" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <Link
-                    href="/register"
-                    className={`rounded-md px-6 py-3 text-base font-semibold transition-colors inline-flex items-center justify-center ${
-                      plan.recommended 
-                        ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
-                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                    }`}
-                  >
-                    {plan.price === "Free" ? "Sign Up" : "Start Free Trial"}
-                  </Link>
-                </motion.div>
-              ))}
-            </motion.div>
-            
-            <div className="text-center mt-10 text-sm text-muted-foreground">
-              All plans include a 14-day free trial. No credit card required.
-            </div>
-          </div>
-        </section>
+
 
         {/* CTA Section - Enhanced */}
         <section className="py-20 relative overflow-hidden">
@@ -1394,7 +1269,7 @@ export default function HomePage() {
               <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Product</h3>
               <ul className="space-y-3">
                 <li><a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</a></li>
-                <li><a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</a></li>
+
                 <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Customers</a></li>
                 <li><a href="#" className="text-muted-foreground hover:text-foreground transition-colors">Integrations</a></li>
               </ul>
