@@ -54,7 +54,7 @@ export default function ProfileSection() {
         
         // Connect to backend directly where the database is properly configured
         const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        const res = await fetch(`http://localhost:4000/api/users/${user.id}`, { // Use user.id
+        const res = await fetch(`/api/users/${user.id}`, { // Use user.id
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -141,7 +141,7 @@ export default function ProfileSection() {
 
       // Connect to backend directly where the database is properly configured
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const response = await fetch(`http://localhost:4000/api/users/${user.id}`, { // Use user.id
+      const response = await fetch(`/api/users/${user.id}`, { // Use user.id
         method: 'PATCH', // Use PATCH as per backend controller
         headers: {
           'Content-Type': 'application/json',

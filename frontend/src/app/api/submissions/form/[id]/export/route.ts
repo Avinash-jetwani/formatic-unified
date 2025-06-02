@@ -16,7 +16,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
     
     // Build the backend URL with query parameters
-    const url = new URL(`http://localhost:4000/api/submissions/form/${params.id}/export`);
+    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/submissions/form/${params.id}/export`);
     url.searchParams.set('format', format);
     
     const backendUrl = url.toString();

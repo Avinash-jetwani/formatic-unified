@@ -27,7 +27,7 @@ export async function POST(
     }
     
     // Forward to backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     const uploadUrl = `${backendUrl}/api/uploads/form/${formId}/submission/${submissionId}`;
     
     // Prepare form data for the backend request

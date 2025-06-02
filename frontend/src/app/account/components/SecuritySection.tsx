@@ -48,7 +48,7 @@ export default function SecuritySection() {
       setSaving(true);
       const token = localStorage.getItem('token') || sessionStorage.getItem('token');
       
-      const apiResponse = await fetch('http://localhost:4000/api/auth/change-password', { // Added /api prefix
+      const apiResponse = await fetch('/api/auth/change-password', { // Use relative URL that Next.js will proxy
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

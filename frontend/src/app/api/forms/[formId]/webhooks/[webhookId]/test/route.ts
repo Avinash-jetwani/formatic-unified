@@ -30,7 +30,7 @@ export async function POST(
     console.log('Testing webhook with data:', requestData);
     
     const response = await fetch(
-      `http://localhost:4000/api/forms/${formId}/webhooks/${webhookId}/test`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/forms/${formId}/webhooks/${webhookId}/test`,
       {
         method: 'POST',
         headers: {
