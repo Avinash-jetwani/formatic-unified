@@ -18,23 +18,24 @@ jobs:
           cd /home/ec2-user/formatic-unified/backend
           
           echo "=== 1. CHECKING DATABASE CONNECTION ==="
-          node -e "
+          cat > test-db.js << 'EOF'
           const { PrismaClient } = require('@prisma/client');
           async function testDB() {
             const prisma = new PrismaClient();
             try {
-              await prisma.\$connect();
+              await prisma.$connect();
               console.log('✅ Database connected successfully');
-              await prisma.\$disconnect();
+              await prisma.$disconnect();
             } catch (error) {
               console.error('❌ Database connection failed:', error);
             }
           }
           testDB();
-          "
+          EOF
+          node test-db.js
           
           echo "=== 2. CHECKING EXISTING USERS ==="
-          node -e "
+          cat > check-users.js << 'EOF'
           const { PrismaClient } = require('@prisma/client');
           async function checkUsers() {
             const prisma = new PrismaClient();
@@ -44,8 +45,8 @@ jobs:
               });
               console.log('📋 Current users in database:');
               users.forEach(user => {
-                console.log(\`- \${user.email} (ID: \${user.id}, Role: \${user.role}, Status: \${user.status})\`);
-                console.log(\`  Password hash exists: \${user.password ? 'YES' : 'NO'}\`);
+                console.log(`- ${user.email} (ID: ${user.id}, Role: ${user.role}, Status: ${user.status})`);
+                console.log(`  Password hash exists: ${user.password ? 'YES' : 'NO'}`);
               });
               
               if (users.length === 0) {
@@ -54,14 +55,15 @@ jobs:
             } catch (error) {
               console.error('❌ Error checking users:', error);
             } finally {
-              await prisma.\$disconnect();
+              await prisma.$disconnect();
             }
           }
           checkUsers();
-          "
+          EOF
+          node check-users.js
           
           echo "=== 3. CREATING/UPDATING TEST USER ==="
-          node -e "
+          cat > create-user.js << 'EOF'
           const { PrismaClient } = require('@prisma/client');
           const bcrypt = require('bcrypt');
           
@@ -103,18 +105,19 @@ jobs:
             } catch (error) {
               console.error('❌ Error creating test user:', error);
             } finally {
-              await prisma.\$disconnect();
+              await prisma.$disconnect();
             }
           }
           createTestUser();
-          "
+          EOF
+          node create-user.js
           
           echo "=== 4. TESTING BACKEND API DIRECTLY ==="
           echo "Testing login endpoint..."
           curl -X POST http://localhost:3001/api/auth/login \
             -H "Content-Type: application/json" \
             -d '{"email":"test@datizmo.com","password":"password123"}' \
-            -v || echo "❌ Backend API test failed"
+            -w "\nHTTP Status: %{http_code}\n" || echo "❌ Backend API test failed"
           
           echo ""
           echo "=== 5. CHECKING PM2 STATUS ==="
@@ -123,7 +126,7 @@ jobs:
           echo ""
           echo "=== 6. CHECKING BACKEND LOGS ==="
           echo "Last 20 lines of backend logs:"
-          pm2 logs backend --lines 20 --nostream
+          pm2 logs backend --lines 20 --nostream || echo "No backend logs available"
           
           echo ""
           echo "=== 7. RESTARTING BACKEND SERVICE ==="
@@ -137,4 +140,8 @@ jobs:
           curl -X POST http://localhost:3001/api/auth/login \
             -H "Content-Type: application/json" \
             -d '{"email":"test@datizmo.com","password":"password123"}' \
-            -v 
+            -w "\nHTTP Status: %{http_code}\n"
+          
+          echo ""
+          echo "=== CLEANUP ==="
+          rm -f test-db.js check-users.js create-user.js 
