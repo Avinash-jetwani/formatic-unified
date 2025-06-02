@@ -1,0 +1,66 @@
+name: Check Database & Create Test User
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-db:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check Database and Create Test User
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ec2-user
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /home/ec2-user/formatic-unified/backend
+          
+          echo "=== Checking database connection ==="
+          npx prisma db pull --preview-feature || echo "DB pull failed"
+          
+          echo "=== Checking existing users ==="
+          node -e "
+          const { PrismaClient } = require('@prisma/client');
+          async function checkUsers() {
+            const prisma = new PrismaClient();
+            try {
+              const users = await prisma.user.findMany({
+                select: { id: true, email: true, name: true, role: true, status: true }
+              });
+              console.log('Existing users:', JSON.stringify(users, null, 2));
+              
+              if (users.length === 0) {
+                console.log('No users found, creating test user...');
+                const bcrypt = require('bcrypt');
+                const hashedPassword = await bcrypt.hash('password123', 10);
+                
+                const testUser = await prisma.user.create({
+                  data: {
+                    email: 'test@datizmo.com',
+                    password: hashedPassword,
+                    name: 'Test User',
+                    role: 'SUPER_ADMIN',
+                    status: 'ACTIVE'
+                  }
+                });
+                console.log('Test user created:', testUser.email);
+                console.log('Login with: test@datizmo.com / password123');
+              }
+            } catch (error) {
+              console.error('Database error:', error);
+            } finally {
+              await prisma.\$disconnect();
+            }
+          }
+          checkUsers();
+          "
+          
+          echo "=== Checking PM2 services ==="
+          pm2 status
+          
+          echo "=== Testing backend API directly ==="
+          curl -X POST http://localhost:3001/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"test@datizmo.com","password":"password123"}' || echo "Backend API test failed" 
