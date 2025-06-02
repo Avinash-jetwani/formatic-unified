@@ -28,11 +28,45 @@ rm -rf /etc/letsencrypt /var/lib/letsencrypt /var/log/letsencrypt || echo "No ex
 rm -f /etc/ssl/certs/$DOMAIN.* /etc/ssl/private/$DOMAIN.* || echo "No existing SSL files"
 
 echo "=== Installing Let's Encrypt ==="
-# Install EPEL repository if not already installed
-yum install -y epel-release
+# Install certbot (handle different Amazon Linux versions)
+echo "Attempting to install certbot..."
 
-# Install certbot
-yum install -y certbot python3-certbot-nginx
+# Method 1: Direct installation (Amazon Linux 2023)
+if yum install -y certbot python3-certbot-nginx 2>/dev/null; then
+    echo "✅ Certbot installed directly from default repos"
+else
+    echo "Direct installation failed, trying alternative methods..."
+    
+    # Method 2: Try with dnf (Amazon Linux 2023 might use dnf)
+    if command -v dnf >/dev/null 2>&1; then
+        echo "Trying dnf installation..."
+        if dnf install -y certbot python3-certbot-nginx; then
+            echo "✅ Certbot installed via dnf"
+        else
+            echo "DNF installation failed"
+        fi
+    fi
+    
+    # Method 3: Try EPEL (Amazon Linux 2)
+    if ! command -v certbot >/dev/null 2>&1; then
+        echo "Trying EPEL installation..."
+        if yum install -y epel-release 2>/dev/null || amazon-linux-extras install epel 2>/dev/null; then
+            yum install -y certbot python3-certbot-nginx
+            echo "✅ Certbot installed via EPEL"
+        fi
+    fi
+    
+    # Method 4: Snap installation as last resort
+    if ! command -v certbot >/dev/null 2>&1; then
+        echo "Trying snap installation as last resort..."
+        if yum install -y snapd 2>/dev/null; then
+            systemctl enable --now snapd.socket
+            snap install certbot --classic
+            ln -sf /snap/bin/certbot /usr/bin/certbot
+            echo "✅ Certbot installed via snap"
+        fi
+    fi
+fi
 
 # Verify installation
 certbot --version

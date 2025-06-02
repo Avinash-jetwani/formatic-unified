@@ -277,14 +277,55 @@ jobs:
           sudo rm -rf /etc/letsencrypt /var/lib/letsencrypt /var/log/letsencrypt || echo "No existing certbot files"
           sudo rm -f /etc/ssl/certs/$DOMAIN.* /etc/ssl/private/$DOMAIN.* || echo "No existing SSL files"
           
-          # Install EPEL repository (needed for certbot)
-          sudo yum install -y epel-release
+          # Install certbot (handle different Amazon Linux versions)
+          echo "Attempting to install certbot..."
           
-          # Install certbot and nginx plugin
-          sudo yum install -y certbot python3-certbot-nginx
+          # Method 1: Direct installation (Amazon Linux 2023)
+          if sudo yum install -y certbot python3-certbot-nginx 2>/dev/null; then
+            echo "✅ Certbot installed directly from default repos"
+          else
+            echo "Direct installation failed, trying alternative methods..."
+            
+            # Method 2: Try with dnf (Amazon Linux 2023 might use dnf)
+            if command -v dnf >/dev/null 2>&1; then
+              echo "Trying dnf installation..."
+              if sudo dnf install -y certbot python3-certbot-nginx; then
+                echo "✅ Certbot installed via dnf"
+              else
+                echo "DNF installation failed"
+              fi
+            fi
+            
+            # Method 3: Try EPEL (Amazon Linux 2)
+            if ! command -v certbot >/dev/null 2>&1; then
+              echo "Trying EPEL installation..."
+              if sudo yum install -y epel-release 2>/dev/null || sudo amazon-linux-extras install epel 2>/dev/null; then
+                sudo yum install -y certbot python3-certbot-nginx
+                echo "✅ Certbot installed via EPEL"
+              fi
+            fi
+            
+            # Method 4: Snap installation as last resort
+            if ! command -v certbot >/dev/null 2>&1; then
+              echo "Trying snap installation as last resort..."
+              if sudo yum install -y snapd 2>/dev/null; then
+                sudo systemctl enable --now snapd.socket
+                sudo snap install certbot --classic
+                sudo ln -sf /snap/bin/certbot /usr/bin/certbot
+                echo "✅ Certbot installed via snap"
+              fi
+            fi
+          fi
           
           # Verify certbot installation
-          sudo certbot --version
+          if command -v certbot >/dev/null 2>&1; then
+            echo "✅ Certbot installation verified"
+            sudo certbot --version
+          else
+            echo "❌ Failed to install certbot via all methods"
+            echo "Proceeding with self-signed certificate only..."
+            CERTBOT_FAILED=true
+          fi
           
           echo "=== Configuring Nginx for HTTP first (for certbot verification) ==="
           sudo tee /etc/nginx/conf.d/formatic.conf << EOF
@@ -359,19 +400,30 @@ jobs:
           fi
           
           echo "=== Obtaining SSL certificates with Let's Encrypt ==="
-          # Stop nginx temporarily for standalone mode
-          sudo systemctl stop nginx
           
-          # Get SSL certificate using standalone mode (more reliable)
-          sudo certbot certonly --standalone \
-            --non-interactive \
-            --agree-tos \
-            --email admin@$DOMAIN \
-            --domains $DOMAIN,www.$DOMAIN \
-            --expand \
-            --renew-by-default
+          # Skip Let's Encrypt if certbot installation failed
+          if [ "$CERTBOT_FAILED" = "true" ]; then
+            echo "⚠️  Skipping Let's Encrypt due to certbot installation failure"
+            CERTBOT_SUCCESS=false
+          else
+            # Stop nginx temporarily for standalone mode
+            sudo systemctl stop nginx
+            
+            # Get SSL certificate using standalone mode (more reliable)
+            if sudo certbot certonly --standalone \
+              --non-interactive \
+              --agree-tos \
+              --email admin@$DOMAIN \
+              --domains $DOMAIN,www.$DOMAIN \
+              --expand \
+              --renew-by-default; then
+              CERTBOT_SUCCESS=true
+            else
+              CERTBOT_SUCCESS=false
+            fi
+          fi
           
-          if [ $? -eq 0 ]; then
+          if [ "$CERTBOT_SUCCESS" = "true" ]; then
             echo "✅ SSL certificates obtained successfully"
             
             echo "=== Updating Nginx Configuration with SSL ==="
