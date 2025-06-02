@@ -1,7 +1,7 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
 // Define the backend API URL - in production this might be different
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
   baseURL: '/', // Use relative URLs for browser requests

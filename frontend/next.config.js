@@ -46,7 +46,7 @@ const nextConfig = {
     // In production, Nginx handles /api routing, so we don't need rewrites
     // In development, we need to proxy to the backend
     if (process.env.NODE_ENV === 'development') {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       return [
         {
           source: '/api/:path*',
