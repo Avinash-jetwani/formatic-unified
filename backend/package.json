@@ -12,7 +12,7 @@
     "start:dev": "nest start --watch",
     "start:dev:fast": "nest start --watch --preserveWatchOutput --watchOptions.fallbackPolling=1000",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/src/main",
     "prebuild": "npx prisma generate",
     "prestart:prod": "npx prisma generate",
     "prisma:generate": "npx prisma generate",
