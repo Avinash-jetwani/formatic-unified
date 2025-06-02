@@ -43,12 +43,18 @@ const nextConfig = {
   output: 'standalone',
   // Allow API requests to backend
   async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: process.env.NEXT_PUBLIC_API_URL + '/:path*',
-      },
-    ];
+    // In production, Nginx handles /api routing, so we don't need rewrites
+    // In development, we need to proxy to the backend
+    if (process.env.NODE_ENV === 'development') {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+      return [
+        {
+          source: '/api/:path*',
+          destination: `${backendUrl}/api/:path*`,
+        },
+      ];
+    }
+    return [];
   },
 }
 

@@ -47,7 +47,7 @@ jobs:
     - name: Build Frontend
       working-directory: ./frontend
       env:
-        NEXT_PUBLIC_API_URL: ${{ secrets.API_URL || 'https://www.datizmo.com/api' }}
+        NEXT_PUBLIC_API_URL: ${{ secrets.API_URL || 'https://www.datizmo.com' }}
         NEXTAUTH_URL: ${{ secrets.FRONTEND_URL || 'https://www.datizmo.com' }}
       run: |
         npm ci
@@ -56,7 +56,7 @@ jobs:
         # Create production environment file
         cat > .env.production << EOF
         NODE_ENV=production
-        NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_API_URL=${NEXTAUTH_URL}
         NEXTAUTH_URL=${NEXTAUTH_URL}
         NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET || 'change-this-in-production' }}
         NEXT_PUBLIC_S3_PUBLIC_URL=https://formatic-uploads-dev.s3.amazonaws.com
@@ -224,7 +224,7 @@ jobs:
             echo "Creating basic .env.production file..."
             cat > .env.production << EOF
           NODE_ENV=production
-          NEXT_PUBLIC_API_URL=$API_URL
+          NEXT_PUBLIC_API_URL=$FRONTEND_URL
           NEXTAUTH_URL=$FRONTEND_URL
           NEXTAUTH_SECRET=your-secret-key-here
           NEXT_PUBLIC_S3_PUBLIC_URL=https://formatic-uploads-dev.s3.amazonaws.com
@@ -234,7 +234,7 @@ jobs:
           else
             echo ".env.production file found in frontend directory."
             # Update existing file with correct URLs
-            sed -i "s|NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=$API_URL|g" .env.production
+            sed -i "s|NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=$FRONTEND_URL|g" .env.production
             sed -i "s|NEXTAUTH_URL=.*|NEXTAUTH_URL=$FRONTEND_URL|g" .env.production
           fi
 

@@ -1,10 +1,10 @@
 import axios, { AxiosRequestConfig } from 'axios';
 
-// Define the backend API URL
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+// Define the backend API URL - in production this might be different
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: '/', // Use relative URLs for browser requests
   headers: {
     'Content-Type': 'application/json',
     'Cache-Control': 'no-cache',
@@ -44,22 +44,19 @@ export const fetchApi = async <T>(
     // Ensure credentials are included
     options.withCredentials = true;
     
-    // Handle URL routing to ensure we're calling the Next.js API routes
+    // URL construction for browser requests (Next.js will handle rewrites)
     let finalUrl = url;
     
-    // Check if we're in a browser environment (client-side)
     if (typeof window !== 'undefined') {
-      if (url.startsWith('/api')) {
-        // Already has /api prefix, use as is for client-side requests
-        finalUrl = url;
-      } else {
-        // Add /api prefix for client-side requests
+      // Client-side: Always prefix with /api - Next.js rewrites will handle routing
+      if (!url.startsWith('/api/')) {
         finalUrl = `/api${url.startsWith('/') ? '' : '/'}${url}`;
       }
     } else {
-      // Server-side requests should go directly to the backend API
+      // Server-side: Direct backend calls with full URL
       if (!url.startsWith('http')) {
-        finalUrl = `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+        const backendUrl = API_URL.endsWith('/api') ? API_URL : `${API_URL}/api`;
+        finalUrl = `${backendUrl}${url.startsWith('/') ? '' : '/'}${url}`;
       }
     }
 
