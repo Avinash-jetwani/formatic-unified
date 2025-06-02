@@ -20,9 +20,18 @@ async function bootstrap() {
   const isDev = process.env.NODE_ENV !== 'production';
   logger.log(`Application running in ${isDev ? 'development' : 'production'} mode`);
   
-  // Enable CORS with specific config - expanded for development
+  // Enable CORS with specific config - expanded for both development and production
+  const corsOrigins = isDev 
+    ? ['http://localhost:3000', 'http://localhost:3001']
+    : [
+        'https://datizmo.com', 
+        'https://www.datizmo.com',
+        process.env.FRONTEND_URL,
+        process.env.NEXTAUTH_URL
+      ].filter(Boolean);
+
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:3001'],
+    origin: corsOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
@@ -53,8 +62,10 @@ async function bootstrap() {
   // Set global prefix (optional)
   app.setGlobalPrefix('api');
   
-  const port = process.env.PORT || 4000;
+  const port = process.env.PORT || (isDev ? 4000 : 3001);
   await app.listen(port);
   logger.log(`Application listening on port ${port}`);
+  logger.log(`CORS enabled for origins: ${corsOrigins.join(', ')}`);
 }
+
 bootstrap();

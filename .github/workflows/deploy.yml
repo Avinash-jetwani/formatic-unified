@@ -46,9 +46,24 @@ jobs:
 
     - name: Build Frontend
       working-directory: ./frontend
+      env:
+        NEXT_PUBLIC_API_URL: ${{ secrets.API_URL || 'https://www.datizmo.com/api' }}
+        NEXTAUTH_URL: ${{ secrets.FRONTEND_URL || 'https://www.datizmo.com' }}
       run: |
         npm ci
         npx prisma generate # Generate Prisma client before build
+        
+        # Create production environment file
+        cat > .env.production << EOF
+        NODE_ENV=production
+        NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+        NEXTAUTH_URL=${NEXTAUTH_URL}
+        NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET || 'change-this-in-production' }}
+        NEXT_PUBLIC_S3_PUBLIC_URL=https://formatic-uploads-dev.s3.amazonaws.com
+        NEXT_PUBLIC_AWS_REGION=eu-west-2
+        NEXT_PUBLIC_S3_BUCKET_NAME=formatic-uploads-dev
+        EOF
+        
         npm run build
         # Verify build succeeded
         if [ ! -d ".next" ]; then
@@ -61,7 +76,7 @@ jobs:
         # Create a tarball of the frontend build and production node_modules
         # The .next directory contains the built static assets in .next/static
         # The public directory is at the root of the frontend workspace (if it exists)
-        tar -czf frontend-build.tar.gz .next node_modules package.json package-lock.json next.config.js # Add other necessary files
+        tar -czf frontend-build.tar.gz .next node_modules package.json package-lock.json next.config.js .env.production # Add other necessary files
         # Verify tarball was created
         if [ ! -f "frontend-build.tar.gz" ]; then
           echo "ERROR: Failed to create frontend-build.tar.gz"
@@ -90,6 +105,15 @@ jobs:
         target: "/home/ec2-user/formatic-unified/"
         strip_components: 1
 
+    - name: Copy Password Reset Script to EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ec2-user
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "backend/scripts/reset-user-passwords.js"
+        target: "/home/ec2-user/formatic-unified/backend/"
+        strip_components: 2
 
         
     - name: Execute Deployment Commands on EC2
@@ -104,8 +128,14 @@ jobs:
           BACKEND_DIR="$APP_DIR/backend"
           FRONTEND_DIR="$APP_DIR/frontend"
           NVM_DIR="/home/ec2-user/.nvm"
+          DOMAIN="${{ secrets.DOMAIN || 'datizmo.com' }}"
+          API_URL="${{ secrets.API_URL || 'https://www.datizmo.com/api' }}"
+          FRONTEND_URL="${{ secrets.FRONTEND_URL || 'https://www.datizmo.com' }}"
 
           echo "=== Starting deployment on server as $(whoami) ==="
+          echo "Domain: $DOMAIN"
+          echo "API URL: $API_URL"
+          echo "Frontend URL: $FRONTEND_URL"
           
           echo "=== Sourcing NVM for PM2 and Node commands ==="
           export NVM_DIR="$NVM_DIR"
@@ -179,21 +209,33 @@ jobs:
           echo "=== Regenerating Prisma client ==="
           npx prisma generate || { echo "Prisma generation failed"; exit 1; }
 
+          echo "=== Running password reset script ==="
+          if [ -f "scripts/reset-user-passwords.js" ]; then
+            echo "Running password reset for admin and test users..."
+            node scripts/reset-user-passwords.js || echo "Password reset script failed, continuing deployment..."
+          else
+            echo "Password reset script not found, skipping..."
+          fi
+
           echo "=== Ensuring frontend .env.production file exists ==="
           cd $FRONTEND_DIR # Change to frontend dir for .env check
           if [ ! -f .env.production ]; then
             echo "WARNING: .env.production file not found in $FRONTEND_DIR."
             echo "Creating basic .env.production file..."
-            cat > .env.production << 'ENVEOF'
+            cat > .env.production << EOF
           NODE_ENV=production
-          NEXT_PUBLIC_API_URL=https://datizmo.com/api
-          NEXTAUTH_URL=https://datizmo.com
+          NEXT_PUBLIC_API_URL=$API_URL
+          NEXTAUTH_URL=$FRONTEND_URL
           NEXTAUTH_SECRET=your-secret-key-here
-          ENVEOF
+          NEXT_PUBLIC_S3_PUBLIC_URL=https://formatic-uploads-dev.s3.amazonaws.com
+          NEXT_PUBLIC_AWS_REGION=eu-west-2
+          NEXT_PUBLIC_S3_BUCKET_NAME=formatic-uploads-dev
+          EOF
           else
             echo ".env.production file found in frontend directory."
-            # Update existing file with correct API URL
-            sed -i 's|NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=https://datizmo.com/api|g' .env.production
+            # Update existing file with correct URLs
+            sed -i "s|NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=$API_URL|g" .env.production
+            sed -i "s|NEXTAUTH_URL=.*|NEXTAUTH_URL=$FRONTEND_URL|g" .env.production
           fi
 
           echo "=== Starting services with PM2 ==="
@@ -226,31 +268,31 @@ jobs:
           echo "=== Checking PM2 status ==="
           pm2 status
 
-                    echo "=== Setting up SSL certificates ==="
+          echo "=== Setting up SSL certificates ==="
           # Create SSL directory if it doesn't exist
           sudo mkdir -p /etc/ssl/certs /etc/ssl/private
           
           # Generate self-signed certificate for now (you can replace with real certificates later)
           sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-            -keyout /etc/ssl/private/datizmo.com.key \
-            -out /etc/ssl/certs/datizmo.com.crt \
-            -subj "/C=US/ST=State/L=City/O=Organization/OU=OrgUnit/CN=datizmo.com"
+            -keyout /etc/ssl/private/$DOMAIN.key \
+            -out /etc/ssl/certs/$DOMAIN.crt \
+            -subj "/C=US/ST=State/L=City/O=Organization/OU=OrgUnit/CN=$DOMAIN"
           
           echo "=== Updating Nginx Configuration with SSL ==="
-          sudo tee /etc/nginx/conf.d/datizmo.conf << 'EOF'
+          sudo tee /etc/nginx/conf.d/formatic.conf << EOF
           server {
               listen 80;
-              server_name datizmo.com www.datizmo.com;
-              return 301 https://$server_name$request_uri;
+              server_name $DOMAIN www.$DOMAIN;
+              return 301 https://\$server_name\$request_uri;
           }
           
           server {
               listen 443 ssl;
-              server_name datizmo.com www.datizmo.com;
+              server_name $DOMAIN www.$DOMAIN;
               
               # SSL configuration
-              ssl_certificate /etc/ssl/certs/datizmo.com.crt;
-              ssl_certificate_key /etc/ssl/private/datizmo.com.key;
+              ssl_certificate /etc/ssl/certs/$DOMAIN.crt;
+              ssl_certificate_key /etc/ssl/private/$DOMAIN.key;
               ssl_protocols TLSv1.2 TLSv1.3;
               ssl_ciphers HIGH:!aNULL:!MD5;
               ssl_prefer_server_ciphers on;
@@ -262,15 +304,15 @@ jobs:
               
               # API routes
               location /api/ {
-                  proxy_pass http://127.0.0.1:3001/api/;
+                  proxy_pass http://127.0.0.1:3001;
                   proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Upgrade \$http_upgrade;
                   proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-                  proxy_cache_bypass $http_upgrade;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+                  proxy_cache_bypass \$http_upgrade;
               }
               
               # Next.js static files
@@ -292,20 +334,20 @@ jobs:
               location / {
                   proxy_pass http://127.0.0.1:3000;
                   proxy_http_version 1.1;
-                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Upgrade \$http_upgrade;
                   proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host $host;
-                  proxy_set_header X-Real-IP $remote_addr;
-                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto $scheme;
-                  proxy_cache_bypass $http_upgrade;
+                  proxy_set_header Host \$host;
+                  proxy_set_header X-Real-IP \$remote_addr;
+                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto \$scheme;
+                  proxy_cache_bypass \$http_upgrade;
               }
           }
           EOF
           
           echo "=== Testing and Starting Nginx ==="
           echo "Current config check:"
-          sudo cat /etc/nginx/conf.d/datizmo.conf | grep -A 2 "proxy_pass"
+          sudo cat /etc/nginx/conf.d/formatic.conf | grep -A 2 "proxy_pass"
           sudo nginx -t
           if [ $? -eq 0 ]; then
             echo "✅ Nginx config valid - starting/restarting nginx"
@@ -318,10 +360,19 @@ jobs:
             exit 1
           fi
 
-                    echo "=== Final health checks ==="
+          echo "=== Final health checks ==="
           sleep 10
           
           echo "Testing HTTPS access..."
-          curl -s -k --head https://datizmo.com | grep -E 'HTTP|200' || echo "HTTPS test failed"
+          curl -s -k --head https://$DOMAIN | grep -E 'HTTP|200' || echo "HTTPS test failed"
           
-          echo "=== Deployment completed! Your app should be available at https://datizmo.com ==="
+          echo "=== Deployment completed! Your app should be available at https://$DOMAIN ==="
+          echo ""
+          echo "📋 USER CREDENTIALS RESET:"
+          echo "========================="
+          echo "Email: admin@formatic.com"
+          echo "Password: NewAdmin2024!"
+          echo "-------------------------"
+          echo "Email: john@doe.com"
+          echo "Password: JohnDoe2024!"
+          echo "========================="
