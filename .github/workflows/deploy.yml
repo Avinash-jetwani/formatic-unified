@@ -301,15 +301,16 @@ jobs:
           }
           EOF
           
-          echo "=== Testing and Reloading Nginx ==="
+          echo "=== Testing and Starting Nginx ==="
           echo "Current config check:"
           sudo cat /etc/nginx/conf.d/datizmo.conf | grep -A 2 "proxy_pass"
           sudo nginx -t
           if [ $? -eq 0 ]; then
-            echo "✅ Nginx config valid - reloading"
-            sudo systemctl reload nginx
-            sleep 2
-            echo "✅ Nginx reloaded successfully"
+            echo "✅ Nginx config valid - starting/restarting nginx"
+            sudo systemctl enable nginx
+            sudo systemctl restart nginx
+            sleep 3
+            echo "✅ Nginx started successfully"
           else
             echo "❌ Nginx config invalid"
             exit 1
