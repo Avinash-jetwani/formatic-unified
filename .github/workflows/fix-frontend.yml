@@ -1,0 +1,93 @@
+name: Fix Frontend
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fix-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Fix Frontend Startup
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ec2-user
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          echo "=== Frontend Fix ==="
+          
+          # Source NVM
+          export NVM_DIR="/home/ec2-user/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          
+          APP_DIR="/home/ec2-user/formatic-unified"
+          FRONTEND_DIR="$APP_DIR/frontend"
+          
+          echo "=== Stopping frontend PM2 process ==="
+          pm2 delete frontend || echo "Frontend not running"
+          
+          echo "=== Checking frontend directory ==="
+          cd $FRONTEND_DIR
+          pwd
+          ls -la
+          
+          echo "=== Checking package.json ==="
+          if [ -f "package.json" ]; then
+            echo "✅ package.json exists"
+            echo "Scripts in package.json:"
+            cat package.json | grep -A 10 '"scripts"'
+          else
+            echo "❌ package.json missing"
+            exit 1
+          fi
+          
+          echo "=== Creating frontend .env.production ==="
+          echo 'NODE_ENV=production' > .env.production
+          echo 'NEXT_PUBLIC_API_URL=https://datizmo.com/api' >> .env.production
+          echo 'NEXTAUTH_URL=https://datizmo.com' >> .env.production
+          echo 'NEXTAUTH_SECRET=your-secret-key-here' >> .env.production
+          
+          echo "=== Testing npm start command manually ==="
+          timeout 10 npm run start || echo "npm start test completed"
+          
+          echo "=== Starting frontend with PM2 using absolute path ==="
+          pm2 start "npm run start" --name frontend --cwd "$FRONTEND_DIR"
+          
+          echo "=== Waiting for frontend ==="
+          sleep 10
+          
+          echo "=== Checking PM2 status ==="
+          pm2 status
+          
+          echo "=== Checking frontend logs ==="
+          pm2 logs frontend --lines 15
+          
+          echo "=== Testing frontend response ==="
+          for i in {1..5}; do
+            echo "Test attempt $i..."
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 | grep -q "200"; then
+              echo "✅ Frontend responding!"
+              break
+            else
+              echo "❌ Frontend not ready yet, waiting..."
+              sleep 5
+            fi
+          done
+          
+          echo "=== Final status ==="
+          pm2 status
+          pm2 save
+          
+          echo "=== Testing full application ==="
+          echo "Backend API test:"
+          curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/auth/session
+          echo ""
+          echo "Frontend test:"
+          curl -s -o /dev/null -w "%{http_code}" http://localhost:3000
+          echo ""
+          
+          echo "=== Reloading Nginx ==="
+          sudo systemctl reload nginx
+          
+          echo "=== Frontend fix completed! ===" 
