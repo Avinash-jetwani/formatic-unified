@@ -88,10 +88,16 @@ jobs:
 
           echo "Node version: $(node -v)"
           echo "NPM version: $(npm -v)"
-          echo "PM2 version: $(pm2 --version)" # Use --version for PM2
+          
+          # Check if PM2 is installed, install if not
+          if ! command -v pm2 &> /dev/null; then
+            echo "PM2 not found, installing globally..."
+            npm install -g pm2
+          fi
+          echo "PM2 version: $(pm2 --version)"
 
           echo "=== Stopping existing services ==="
-          sudo pm2 stop all || echo "No PM2 processes running"
+          pm2 stop all || echo "No PM2 processes running"
 
           echo "=== Checking for build artifacts in $APP_DIR ==="
           cd $APP_DIR
@@ -166,23 +172,23 @@ jobs:
           cd $APP_DIR # PM2 ecosystem file is likely in APP_DIR
           if [ -f "ecosystem.config.js" ]; then
             echo "Using PM2 ecosystem file to start services..."
-            sudo pm2 start ecosystem.config.js --env production
+            pm2 start ecosystem.config.js --env production
             echo "Waiting for services to stabilize..."
             sleep 5
-            sudo pm2 restart all --env production
+            pm2 restart all --env production
           else
             echo "PM2 ecosystem file not found. Starting services directly..."
             # Start backend
-            sudo pm2 start $BACKEND_DIR/dist/main.js --name backend --cwd $BACKEND_DIR --env production
-            # Start frontend
-            sudo pm2 start npm --name frontend -- run start --cwd $FRONTEND_DIR --env production
+            pm2 start $BACKEND_DIR/dist/main.js --name backend --cwd $BACKEND_DIR --env production
+            # Start frontend  
+            pm2 start npm --name frontend -- run start --cwd $FRONTEND_DIR --env production
           fi
           
           echo "=== Saving PM2 process list ==="
-          sudo pm2 save
+          pm2 save
 
           echo "=== Checking PM2 status ==="
-          sudo pm2 status
+          pm2 status
 
           echo "=== Reloading Nginx ==="
           sudo systemctl reload nginx || echo "Nginx reload failed, but continuing..."
