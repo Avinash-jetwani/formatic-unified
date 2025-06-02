@@ -60,5 +60,5 @@ export function createId(length: number = 8): string {
  * @returns API base URL
  */
 export function getApiUrl(): string {
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 } 

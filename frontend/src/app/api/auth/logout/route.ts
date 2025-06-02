@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 export async function POST(request: NextRequest) {
   try {
     // Call backend logout endpoint if needed
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/auth/logout`, {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/logout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
