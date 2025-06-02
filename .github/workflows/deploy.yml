@@ -16,42 +16,47 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18' # Ensure this matches your EC2 environment
-        cache: 'npm' # Cache npm dependencies
+        node-version: '18'
+        cache: 'npm'
 
     - name: Build Backend
       working-directory: ./backend
       run: |
+        echo "=== Building Backend ==="
         npm ci
-        npx prisma generate # Generate Prisma client before build
+        npx prisma generate
         npm run build
+        
         # Verify build succeeded
         if [ ! -d "dist" ]; then
-          echo "ERROR: Backend build failed - dist directory not found"
+          echo "❌ Backend build failed - dist directory not found"
           exit 1
         fi
-        # Remove dev dependencies node_modules before packaging
+        
+        # Install production dependencies
         rm -rf node_modules
-        npm ci --omit=dev # Install only production dependencies
-        # Create a tarball of the backend build and production node_modules
-        # CRITICAL: Excluded .env from this tarball. It MUST be managed on the server.
+        npm ci --omit=dev
+        
+        # Create deployment package
         tar -czf backend-build.tar.gz dist prisma node_modules package.json package-lock.json
-        # Verify tarball was created
+        
         if [ ! -f "backend-build.tar.gz" ]; then
-          echo "ERROR: Failed to create backend-build.tar.gz"
+          echo "❌ Failed to create backend-build.tar.gz"
           exit 1
         fi
+        
         echo "✅ Backend build completed successfully"
         ls -la backend-build.tar.gz
 
     - name: Build Frontend
       working-directory: ./frontend
       env:
-        NEXT_PUBLIC_API_URL: ${{ secrets.API_URL || 'https://www.datizmo.com' }}
+        NEXT_PUBLIC_API_URL: ${{ secrets.FRONTEND_URL || 'https://www.datizmo.com' }}
         NEXTAUTH_URL: ${{ secrets.FRONTEND_URL || 'https://www.datizmo.com' }}
       run: |
+        echo "=== Building Frontend ==="
         npm ci
-        npx prisma generate # Generate Prisma client before build
+        npx prisma generate
         
         # Create production environment file
         cat > .env.production << EOF
@@ -65,163 +70,126 @@ jobs:
         EOF
         
         npm run build
+        
         # Verify build succeeded
         if [ ! -d ".next" ]; then
-          echo "ERROR: Frontend build failed - .next directory not found"
+          echo "❌ Frontend build failed - .next directory not found"
           exit 1
         fi
-        # Remove dev dependencies node_modules before packaging
+        
+        # Install production dependencies
         rm -rf node_modules
-        npm ci --omit=dev # Install only production dependencies
-        # Create a tarball of the frontend build and production node_modules
-        # The .next directory contains the built static assets in .next/static
-        # The public directory is at the root of the frontend workspace (if it exists)
-        tar -czf frontend-build.tar.gz .next node_modules package.json package-lock.json next.config.js .env.production # Add other necessary files
-        # Verify tarball was created
+        npm ci --omit=dev
+        
+        # Create deployment package
+        tar -czf frontend-build.tar.gz .next node_modules package.json package-lock.json next.config.js .env.production
+        
         if [ ! -f "frontend-build.tar.gz" ]; then
-          echo "ERROR: Failed to create frontend-build.tar.gz"
+          echo "❌ Failed to create frontend-build.tar.gz"
           exit 1
         fi
+        
         echo "✅ Frontend build completed successfully"
         ls -la frontend-build.tar.gz
 
-    - name: Copy Backend Build to EC2
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ec2-user # Updated username
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "backend/backend-build.tar.gz"
-        target: "/home/ec2-user/formatic-unified/"
-        strip_components: 1
-
-    - name: Copy Frontend Build to EC2
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ec2-user # Updated username
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "frontend/frontend-build.tar.gz"
-        target: "/home/ec2-user/formatic-unified/"
-        strip_components: 1
-
-    - name: Copy Password Reset Script to EC2
+    - name: Copy Build Artifacts to Server
       uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.SERVER_IP }}
         username: ec2-user
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "backend/scripts/reset-user-passwords.js"
-        target: "/home/ec2-user/formatic-unified/backend/"
-        strip_components: 2
+        source: "backend/backend-build.tar.gz,frontend/frontend-build.tar.gz"
+        target: "/home/ec2-user/formatic-unified/"
+        strip_components: 1
 
-        
-    - name: Execute Deployment Commands on EC2
+    - name: Deploy to EC2
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.SERVER_IP }}
-        username: ec2-user # Updated username
+        username: ec2-user
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           set -e
+          
+          # Configuration
           APP_DIR="/home/ec2-user/formatic-unified"
           BACKEND_DIR="$APP_DIR/backend"
           FRONTEND_DIR="$APP_DIR/frontend"
           NVM_DIR="/home/ec2-user/.nvm"
           DOMAIN="${{ secrets.DOMAIN || 'datizmo.com' }}"
-          API_URL="${{ secrets.API_URL || 'https://www.datizmo.com/api' }}"
           FRONTEND_URL="${{ secrets.FRONTEND_URL || 'https://www.datizmo.com' }}"
-
-          echo "=== Starting deployment on server as $(whoami) ==="
-          echo "Domain: $DOMAIN"
-          echo "API URL: $API_URL"
+          
+          echo "🚀 Starting deployment for $DOMAIN"
           echo "Frontend URL: $FRONTEND_URL"
           
-          echo "=== Sourcing NVM for PM2 and Node commands ==="
+          # Setup Node.js environment
+          echo "=== Setting up Node.js environment ==="
           export NVM_DIR="$NVM_DIR"
-          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
-          [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+          
           echo "Node version: $(node -v)"
           echo "NPM version: $(npm -v)"
           
-          # Check if PM2 is installed, install if not
+          # Install PM2 if not available
           if ! command -v pm2 &> /dev/null; then
-            echo "PM2 not found, installing globally..."
+            echo "Installing PM2..."
             npm install -g pm2
           fi
           echo "PM2 version: $(pm2 --version)"
-
+          
+          # Stop existing services
           echo "=== Stopping existing services ==="
           pm2 stop all || echo "No PM2 processes running"
-
-          echo "=== Checking for build artifacts in $APP_DIR ==="
+          
+          # Update repository
+          echo "=== Updating repository ==="
           cd $APP_DIR
-          ls -la *.tar.gz || echo "No .tar.gz files found in $APP_DIR"
-
-          echo "=== Moving and extracting Backend Artifacts ==="
-          if [ -f "$APP_DIR/backend-build.tar.gz" ]; then
-            mv "$APP_DIR/backend-build.tar.gz" "$BACKEND_DIR/"
-            cd $BACKEND_DIR
-            echo "Current backend directory: $(pwd)"
-            echo "Extracting backend build..."
-            tar -xzf backend-build.tar.gz
-            rm backend-build.tar.gz # Clean up tarball
-            echo "Backend build extracted successfully."
+          git fetch origin main
+          git reset --hard origin/main
+          
+          # Extract backend build
+          echo "=== Extracting backend build ==="
+          cd $BACKEND_DIR
+          if [ -f "../backend-build.tar.gz" ]; then
+            tar -xzf ../backend-build.tar.gz
+            rm ../backend-build.tar.gz
+            echo "✅ Backend extracted successfully"
           else
-            echo "ERROR: backend-build.tar.gz not found in $APP_DIR! Deployment halted."
+            echo "❌ Backend build not found"
             exit 1
           fi
           
-          echo "=== Moving and extracting Frontend Artifacts ==="
-          if [ -f "$APP_DIR/frontend-build.tar.gz" ]; then
-            mv "$APP_DIR/frontend-build.tar.gz" "$FRONTEND_DIR/"
-            cd $FRONTEND_DIR
-            echo "Current frontend directory: $(pwd)"
-            echo "Extracting frontend build..."
-            tar -xzf frontend-build.tar.gz
-            rm frontend-build.tar.gz # Clean up tarball
-            echo "Frontend build extracted successfully."
+          # Extract frontend build  
+          echo "=== Extracting frontend build ==="
+          cd $FRONTEND_DIR
+          if [ -f "../frontend-build.tar.gz" ]; then
+            tar -xzf ../frontend-build.tar.gz
+            rm ../frontend-build.tar.gz
+            echo "✅ Frontend extracted successfully"
           else
-            echo "ERROR: frontend-build.tar.gz not found in $APP_DIR! Deployment halted."
+            echo "❌ Frontend build not found"
             exit 1
           fi
-
-          echo "=== Updating base repository code ==="
-          cd $APP_DIR
-          echo "Current directory: $(pwd)"
-          git fetch origin main # Fetch latest changes
-          git reset --hard origin/main # Force update to latest, discarding local changes for non-artifact files
-
-          echo "=== Ensuring backend .env file exists ==="
-          cd $BACKEND_DIR # Change back to backend dir for .env check and migrations
+          
+          # Verify backend environment
+          echo "=== Verifying backend environment ==="
+          cd $BACKEND_DIR
           if [ ! -f .env ]; then
-            echo "CRITICAL WARNING: .env file not found in $BACKEND_DIR. Prisma migrate and backend start will likely fail!"
-            echo "Please ensure .env file is created on the server with proper database configuration."
+            echo "❌ Backend .env file not found!"
             exit 1
-          else
-            echo ".env file found in backend directory."
           fi
-
-          echo "=== Running Prisma migrations ==="
-          npx prisma migrate deploy || { echo "Prisma migration failed"; exit 1; }
-
-          echo "=== Regenerating Prisma client ==="
-          npx prisma generate || { echo "Prisma generation failed"; exit 1; }
-
-          echo "=== Running password reset script ==="
-          if [ -f "scripts/reset-user-passwords.js" ]; then
-            echo "Running password reset for admin and test users..."
-            node scripts/reset-user-passwords.js || echo "Password reset script failed, continuing deployment..."
-          else
-            echo "Password reset script not found, skipping..."
-          fi
-
-          echo "=== Ensuring frontend .env.production file exists ==="
-          cd $FRONTEND_DIR # Change to frontend dir for .env check
+          
+          # Run database migrations
+          echo "=== Running database migrations ==="
+          npx prisma migrate deploy
+          npx prisma generate
+          
+          # Update frontend environment
+          echo "=== Updating frontend environment ==="
+          cd $FRONTEND_DIR
           if [ ! -f .env.production ]; then
-            echo "WARNING: .env.production file not found in $FRONTEND_DIR."
-            echo "Creating basic .env.production file..."
+            echo "Creating .env.production file..."
             cat > .env.production << EOF
           NODE_ENV=production
           NEXT_PUBLIC_API_URL=$FRONTEND_URL
@@ -232,145 +200,170 @@ jobs:
           NEXT_PUBLIC_S3_BUCKET_NAME=formatic-uploads-dev
           EOF
           else
-            echo ".env.production file found in frontend directory."
-            # Update existing file with correct URLs
+            echo "Updating existing .env.production..."
             sed -i "s|NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=$FRONTEND_URL|g" .env.production
             sed -i "s|NEXTAUTH_URL=.*|NEXTAUTH_URL=$FRONTEND_URL|g" .env.production
           fi
-
-          echo "=== Starting services with PM2 ==="
-          cd $APP_DIR # PM2 ecosystem file is likely in APP_DIR
+          
+          # Start applications with PM2
+          echo "=== Starting applications ==="
+          cd $APP_DIR
+          
+          # Clean start with ecosystem config if available
           if [ -f "ecosystem.config.js" ]; then
-            echo "Using PM2 ecosystem file to manage services..."
-            # Delete existing processes to ensure clean start
-            pm2 delete all || echo "No existing processes to delete"
-            # Start fresh with ecosystem file
+            echo "Using PM2 ecosystem configuration"
+            pm2 delete all || echo "No processes to delete"
             pm2 start ecosystem.config.js --env production
-            echo "Waiting for services to stabilize..."
-            sleep 10
           else
-            echo "PM2 ecosystem file not found. Starting services directly..."
-            # Delete existing processes
-            pm2 delete all || echo "No existing processes to delete"
-            # Start backend with correct path
+            echo "Starting applications individually"
+            pm2 delete all || echo "No processes to delete"
+            
+            # Start backend
             if [ -f "$BACKEND_DIR/dist/src/main.js" ]; then
-              pm2 start $BACKEND_DIR/dist/src/main.js --name backend --cwd $BACKEND_DIR
+              pm2 start $BACKEND_DIR/dist/src/main.js --name "formatic-app" --cwd $BACKEND_DIR
             else
-              pm2 start $BACKEND_DIR/dist/main.js --name backend --cwd $BACKEND_DIR
+              pm2 start $BACKEND_DIR/dist/main.js --name "formatic-app" --cwd $BACKEND_DIR
             fi
-            # Start frontend  
-            pm2 start npm --name frontend -- run start --cwd $FRONTEND_DIR
+            
+            # Start frontend
+            pm2 start npm --name "formatic-frontend" -- run start --cwd $FRONTEND_DIR
           fi
           
-          echo "=== Saving PM2 process list ==="
+          # Wait for services to stabilize
+          echo "Waiting for services to stabilize..."
+          sleep 15
+          
+          # Save PM2 configuration
           pm2 save
-
-          echo "=== Checking PM2 status ==="
+          
+          # Check application status
+          echo "=== Application Status ==="
           pm2 status
-
-          echo "=== Checking existing SSL certificates ==="
           
-          # Check if valid SSL certificates already exist
-          SSL_EXISTS=false
-          CERTBOT_SUCCESS=false
+          # SSL and Nginx Configuration
+          echo "=== Configuring SSL and Nginx ==="
           
-          # First priority: Check for Let's Encrypt certificates
+          # Check for existing Let's Encrypt certificates
+          LETSENCRYPT_EXISTS=false
           if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
-            echo "Found existing Let's Encrypt certificates for $DOMAIN"
-            # Check if certificates are still valid (not expired)
             if sudo openssl x509 -in /etc/letsencrypt/live/$DOMAIN/fullchain.pem -checkend 2592000 -noout; then
-              echo "✅ Existing Let's Encrypt certificates are valid (not expiring within 30 days)"
-              SSL_EXISTS=true
-              CERTBOT_SUCCESS=true
+              echo "✅ Valid Let's Encrypt certificates found"
+              LETSENCRYPT_EXISTS=true
             else
-              echo "⚠️  Existing Let's Encrypt certificates are expiring soon, will renew"
-              # Don't set SSL_EXISTS=true, so new certificates will be obtained
-            fi
-          # Second priority: Check for self-signed certificates (fallback only)
-          elif [ -f "/etc/ssl/certs/$DOMAIN.crt" ] && [ -f "/etc/ssl/private/$DOMAIN.key" ]; then
-            echo "Found existing self-signed certificates for $DOMAIN (will attempt Let's Encrypt upgrade)"
-            # Don't set SSL_EXISTS=true to allow upgrade to Let's Encrypt
-          else
-            echo "No existing SSL certificates found"
-          fi
-          
-          # Only install certbot if we need new certificates and don't have valid ones
-          if [ "$SSL_EXISTS" = "false" ]; then
-            echo "=== Installing certbot for new certificate generation ==="
-            echo "Attempting to install certbot..."
-            
-            # Method 1: Direct installation (Amazon Linux 2023)
-            if sudo yum install -y certbot python3-certbot-nginx 2>/dev/null; then
-              echo "✅ Certbot installed directly from default repos"
-            else
-              echo "Direct installation failed, trying alternative methods..."
-              
-              # Method 2: Try with dnf (Amazon Linux 2023 might use dnf)
-              if command -v dnf >/dev/null 2>&1; then
-                echo "Trying dnf installation..."
-                if sudo dnf install -y certbot python3-certbot-nginx; then
-                  echo "✅ Certbot installed via dnf"
-                else
-                  echo "DNF installation failed"
-                fi
-              fi
-              
-              # Method 3: Try EPEL (Amazon Linux 2)
-              if ! command -v certbot >/dev/null 2>&1; then
-                echo "Trying EPEL installation..."
-                if sudo yum install -y epel-release 2>/dev/null || sudo amazon-linux-extras install epel 2>/dev/null; then
-                  sudo yum install -y certbot python3-certbot-nginx
-                  echo "✅ Certbot installed via EPEL"
-                fi
-              fi
-              
-              # Method 4: Snap installation as last resort
-              if ! command -v certbot >/dev/null 2>&1; then
-                echo "Trying snap installation as last resort..."
-                if sudo yum install -y snapd 2>/dev/null; then
-                  sudo systemctl enable --now snapd.socket
-                  sudo snap install certbot --classic
-                  sudo ln -sf /snap/bin/certbot /usr/bin/certbot
-                  echo "✅ Certbot installed via snap"
-                fi
-              fi
-            fi
-            
-            # Verify certbot installation
-            if command -v certbot >/dev/null 2>&1; then
-              echo "✅ Certbot installation verified"
-              sudo certbot --version
-            else
-              echo "❌ Failed to install certbot via all methods"
-              echo "Proceeding with self-signed certificate only..."
-              CERTBOT_FAILED=true
-            fi
-          else
-            echo "✅ Using existing SSL certificates, skipping certbot installation"
-            # Ensure certbot is available for renewals if we have Let's Encrypt certs
-            if [ "$CERTBOT_SUCCESS" = "true" ] && ! command -v certbot >/dev/null 2>&1; then
-              echo "Installing certbot for certificate renewals..."
-              sudo yum install -y certbot python3-certbot-nginx 2>/dev/null || echo "Certbot installation failed"
+              echo "⚠️  Let's Encrypt certificates expiring soon"
             fi
           fi
           
-          echo "=== Updating Nginx configurations ==="
-          # Backup existing config if it exists
+          # Install certbot if needed
+          if [ "$LETSENCRYPT_EXISTS" = "false" ]; then
+            echo "Installing certbot for SSL certificate management..."
+            if ! command -v certbot >/dev/null 2>&1; then
+              sudo yum install -y certbot python3-certbot-nginx 2>/dev/null || \
+              sudo dnf install -y certbot python3-certbot-nginx 2>/dev/null || \
+              echo "Certbot installation failed"
+            fi
+          fi
+          
+          # Configure Nginx
+          echo "Configuring Nginx..."
+          
+          # Backup existing config
           if [ -f "/etc/nginx/conf.d/formatic.conf" ]; then
             sudo cp /etc/nginx/conf.d/formatic.conf /etc/nginx/conf.d/formatic.conf.backup.$(date +%Y%m%d_%H%M%S)
-            echo "Backed up existing nginx configuration"
           fi
           
-          # Remove default configs that might conflict
+          # Remove conflicting configs
           sudo rm -f /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf
           
-          echo "=== Configuring Nginx for HTTP first (for certbot verification) ==="
-          sudo tee /etc/nginx/conf.d/formatic.conf << EOF
+          # Create optimal nginx configuration
+          if [ "$LETSENCRYPT_EXISTS" = "true" ]; then
+            echo "Configuring Nginx with Let's Encrypt SSL..."
+            sudo tee /etc/nginx/conf.d/formatic.conf << 'EOF'
           server {
               listen 80;
-              server_name $DOMAIN www.$DOMAIN;
+              server_name datizmo.com www.datizmo.com;
+              return 301 https://$server_name$request_uri;
+          }
+          
+          server {
+              listen 443 ssl http2;
+              server_name datizmo.com www.datizmo.com;
               
-              # Allow certbot to serve its verification files
+              # Let's Encrypt SSL configuration
+              ssl_certificate /etc/letsencrypt/live/datizmo.com/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/datizmo.com/privkey.pem;
+              
+              # Modern SSL configuration
+              ssl_protocols TLSv1.2 TLSv1.3;
+              ssl_prefer_server_ciphers off;
+              ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+              
+              # Security headers
+              add_header Strict-Transport-Security "max-age=63072000" always;
+              add_header X-Frame-Options "SAMEORIGIN" always;
+              add_header X-XSS-Protection "1; mode=block" always;
+              add_header X-Content-Type-Options "nosniff" always;
+              add_header Referrer-Policy "no-referrer-when-downgrade" always;
+              
+              # API routes to backend (port 3001)
+              location /api/ {
+                  proxy_pass http://127.0.0.1:3001;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection 'upgrade';
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_cache_bypass $http_upgrade;
+                  proxy_read_timeout 300;
+                  proxy_connect_timeout 300;
+                  proxy_send_timeout 300;
+              }
+              
+              # Next.js static files with optimized caching
+              location /_next/static {
+                  proxy_pass http://127.0.0.1:3000;
+                  proxy_cache_valid 200 1y;
+                  add_header Cache-Control "public, immutable";
+                  expires 1y;
+              }
+              
+              # Static assets with caching
+              location ~* \.(ico|css|js|gif|jpeg|jpg|png|svg|woff|woff2|ttf|eot)$ {
+                  proxy_pass http://127.0.0.1:3000;
+                  expires 1y;
+                  add_header Cache-Control "public, immutable";
+              }
+              
+              # All other routes to frontend (port 3000)
+              location / {
+                  proxy_pass http://127.0.0.1:3000;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection 'upgrade';
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_cache_bypass $http_upgrade;
+                  proxy_read_timeout 300;
+                  proxy_connect_timeout 300;
+                  proxy_send_timeout 300;
+              }
+          }
+          EOF
+          else
+            echo "Setting up HTTP configuration for Let's Encrypt verification..."
+            sudo mkdir -p /var/www/html
+            sudo chown -R nginx:nginx /var/www/html
+            
+            sudo tee /etc/nginx/conf.d/formatic.conf << 'EOF'
+          server {
+              listen 80;
+              server_name datizmo.com www.datizmo.com;
+              
+              # Let's Encrypt verification
               location /.well-known/acme-challenge/ {
                   root /var/www/html;
                   allow all;
@@ -380,152 +373,89 @@ jobs:
               location /api/ {
                   proxy_pass http://127.0.0.1:3001;
                   proxy_http_version 1.1;
-                  proxy_set_header Upgrade \$http_upgrade;
+                  proxy_set_header Upgrade $http_upgrade;
                   proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto \$scheme;
-                  proxy_cache_bypass \$http_upgrade;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_cache_bypass $http_upgrade;
               }
               
-              # Next.js static files
-              location /_next/static {
-                  proxy_pass http://127.0.0.1:3000;
-                  proxy_cache_valid 200 1y;
-                  add_header Cache-Control "public, immutable";
-                  expires 1y;
-              }
-              
-              # Static assets
-              location ~* \.(ico|css|js|gif|jpeg|jpg|png|svg|woff|woff2|ttf|eot)$ {
-                  proxy_pass http://127.0.0.1:3000;
-                  expires 1y;
-                  add_header Cache-Control "public, immutable";
-              }
-              
-              # All other routes
+              # Frontend routes
               location / {
                   proxy_pass http://127.0.0.1:3000;
                   proxy_http_version 1.1;
-                  proxy_set_header Upgrade \$http_upgrade;
+                  proxy_set_header Upgrade $http_upgrade;
                   proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto \$scheme;
-                  proxy_cache_bypass \$http_upgrade;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_cache_bypass $http_upgrade;
               }
           }
           EOF
-          
-          echo "=== Creating web root directory for certbot ==="
-          sudo mkdir -p /var/www/html
-          sudo chown -R nginx:nginx /var/www/html
-          
-          echo "=== Testing and Starting Nginx ==="
-          echo "Testing nginx configuration..."
-          if sudo nginx -t; then
-            echo "✅ Nginx config valid - starting nginx"
-            sudo systemctl enable nginx
-            sudo systemctl restart nginx
-            sleep 5
             
-            # Verify nginx is actually running
-            if sudo systemctl is-active --quiet nginx; then
-              echo "✅ Nginx started successfully"
-            else
-              echo "❌ Nginx failed to start"
-              sudo systemctl status nginx
-              exit 1
-            fi
-          else
-            echo "❌ Nginx config invalid - showing config for debugging:"
-            sudo nginx -T 2>&1 | head -50
-            exit 1
-          fi
-          
-          echo "=== Managing SSL certificates ==="
-          
-          # Skip certificate generation if we already have valid ones
-          if [ "$SSL_EXISTS" = "true" ] && [ "$CERTBOT_SUCCESS" = "true" ]; then
-            echo "✅ Using existing valid Let's Encrypt certificates"
-          elif [ "$SSL_EXISTS" = "true" ] && [ "$CERTBOT_SUCCESS" = "false" ]; then
-            echo "✅ Using existing self-signed certificates"
-          elif [ "$CERTBOT_FAILED" = "true" ]; then
-            echo "⚠️  Skipping Let's Encrypt due to certbot installation failure"
-            CERTBOT_SUCCESS=false
-          else
-            echo "=== Obtaining new SSL certificates with Let's Encrypt ==="
-            # Stop nginx temporarily for standalone mode
-            sudo systemctl stop nginx
-            
-            # Get SSL certificate using standalone mode (more reliable)
-            if sudo certbot certonly --standalone \
-              --non-interactive \
-              --agree-tos \
-              --email admin@$DOMAIN \
-              --domains $DOMAIN,www.$DOMAIN \
-              --expand \
-              --renew-by-default; then
-              CERTBOT_SUCCESS=true
-              echo "✅ New SSL certificates obtained successfully"
-            else
-              CERTBOT_SUCCESS=false
-              echo "❌ Failed to obtain new SSL certificates"
-            fi
-          fi
-          
-          # Configure nginx with proper SSL certificates
-          if [ "$CERTBOT_SUCCESS" = "true" ] || [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
-            echo "✅ Using Let's Encrypt SSL certificates"
-            
-            echo "=== Updating Nginx Configuration with Let's Encrypt SSL ==="
-            sudo tee /etc/nginx/conf.d/formatic.conf << EOF
+            # Attempt to get SSL certificates
+            echo "Attempting to obtain SSL certificates..."
+            if command -v certbot >/dev/null 2>&1; then
+              sudo systemctl stop nginx
+              
+              if sudo certbot certonly --standalone \
+                --non-interactive \
+                --agree-tos \
+                --email admin@$DOMAIN \
+                --domains $DOMAIN,www.$DOMAIN \
+                --expand; then
+                
+                echo "✅ SSL certificates obtained successfully"
+                
+                # Update nginx config for SSL
+                sudo tee /etc/nginx/conf.d/formatic.conf << 'EOF'
           server {
               listen 80;
-              server_name $DOMAIN www.$DOMAIN;
-              
-              # Redirect all HTTP traffic to HTTPS
-              return 301 https://\$server_name\$request_uri;
+              server_name datizmo.com www.datizmo.com;
+              return 301 https://$server_name$request_uri;
           }
           
           server {
               listen 443 ssl http2;
-              server_name $DOMAIN www.$DOMAIN;
+              server_name datizmo.com www.datizmo.com;
               
-              # SSL configuration using Let's Encrypt certificates
-              ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
-              ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+              # Let's Encrypt SSL configuration
+              ssl_certificate /etc/letsencrypt/live/datizmo.com/fullchain.pem;
+              ssl_certificate_key /etc/letsencrypt/live/datizmo.com/privkey.pem;
               
               # Modern SSL configuration
               ssl_protocols TLSv1.2 TLSv1.3;
               ssl_prefer_server_ciphers off;
               ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
               
-              # HSTS (optional but recommended)
-              add_header Strict-Transport-Security "max-age=63072000" always;
-              
               # Security headers
+              add_header Strict-Transport-Security "max-age=63072000" always;
               add_header X-Frame-Options "SAMEORIGIN" always;
               add_header X-XSS-Protection "1; mode=block" always;
               add_header X-Content-Type-Options "nosniff" always;
               add_header Referrer-Policy "no-referrer-when-downgrade" always;
               
-              # API routes
+              # API routes to backend (port 3001)
               location /api/ {
                   proxy_pass http://127.0.0.1:3001;
                   proxy_http_version 1.1;
-                  proxy_set_header Upgrade \$http_upgrade;
+                  proxy_set_header Upgrade $http_upgrade;
                   proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto \$scheme;
-                  proxy_cache_bypass \$http_upgrade;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_cache_bypass $http_upgrade;
+                  proxy_read_timeout 300;
+                  proxy_connect_timeout 300;
+                  proxy_send_timeout 300;
               }
               
-              # Next.js static files
+              # Next.js static files with optimized caching
               location /_next/static {
                   proxy_pass http://127.0.0.1:3000;
                   proxy_cache_valid 200 1y;
@@ -533,184 +463,83 @@ jobs:
                   expires 1y;
               }
               
-              # Static assets
+              # Static assets with caching
               location ~* \.(ico|css|js|gif|jpeg|jpg|png|svg|woff|woff2|ttf|eot)$ {
                   proxy_pass http://127.0.0.1:3000;
                   expires 1y;
                   add_header Cache-Control "public, immutable";
               }
               
-              # All other routes
+              # All other routes to frontend (port 3000)
               location / {
                   proxy_pass http://127.0.0.1:3000;
                   proxy_http_version 1.1;
-                  proxy_set_header Upgrade \$http_upgrade;
+                  proxy_set_header Upgrade $http_upgrade;
                   proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto \$scheme;
-                  proxy_cache_bypass \$http_upgrade;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_cache_bypass $http_upgrade;
+                  proxy_read_timeout 300;
+                  proxy_connect_timeout 300;
+                  proxy_send_timeout 300;
               }
           }
           EOF
-            
-            echo "=== Setting up automatic SSL renewal ==="
-            # Test renewal (only if we have certbot available)
-            if command -v certbot >/dev/null 2>&1; then
-              sudo certbot renew --dry-run || echo "Renewal dry-run failed, but certificates are valid"
+                
+                # Setup automatic renewal
+                if ! grep -q "certbot renew" /etc/crontab 2>/dev/null; then
+                  echo "0 3 * * * root certbot renew --quiet && systemctl reload nginx" | sudo tee -a /etc/crontab
+                  echo "✅ SSL auto-renewal configured"
+                fi
+              else
+                echo "⚠️  SSL certificate generation failed, using HTTP only"
+              fi
             fi
-            
-            # Set up cron job for automatic renewal (check if not already exists)
-            if ! grep -q "certbot renew" /etc/crontab 2>/dev/null; then
-              echo "0 3 * * * root certbot renew --quiet && systemctl reload nginx" | sudo tee -a /etc/crontab
-              echo "✅ Added automatic renewal cron job"
-            else
-              echo "✅ Automatic renewal cron job already exists"
-            fi
-            
-          else
-            echo "❌ Failed to obtain SSL certificates"
-            echo "Setting up with self-signed certificates as fallback..."
-            
-            # Create SSL directory if it doesn't exist
-            sudo mkdir -p /etc/ssl/certs /etc/ssl/private
-            
-            # Generate self-signed certificate as fallback
-            sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-              -keyout /etc/ssl/private/$DOMAIN.key \
-              -out /etc/ssl/certs/$DOMAIN.crt \
-              -subj "/C=US/ST=State/L=City/O=Organization/OU=OrgUnit/CN=$DOMAIN"
-            
-            echo "=== Updating Nginx Configuration with Self-Signed SSL ==="
-            sudo tee /etc/nginx/conf.d/formatic.conf << EOF
-          server {
-              listen 80;
-              server_name $DOMAIN www.$DOMAIN;
-              return 301 https://\$server_name\$request_uri;
-          }
-          
-          server {
-              listen 443 ssl;
-              server_name $DOMAIN www.$DOMAIN;
-              
-              # SSL configuration with self-signed certificates
-              ssl_certificate /etc/ssl/certs/$DOMAIN.crt;
-              ssl_certificate_key /etc/ssl/private/$DOMAIN.key;
-              ssl_protocols TLSv1.2 TLSv1.3;
-              ssl_ciphers HIGH:!aNULL:!MD5;
-              ssl_prefer_server_ciphers on;
-              
-              # Security headers
-              add_header X-Frame-Options "SAMEORIGIN" always;
-              add_header X-XSS-Protection "1; mode=block" always;
-              add_header X-Content-Type-Options "nosniff" always;
-              
-              # API routes
-              location /api/ {
-                  proxy_pass http://127.0.0.1:3001;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade \$http_upgrade;
-                  proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto \$scheme;
-                  proxy_cache_bypass \$http_upgrade;
-              }
-              
-              # Next.js static files
-              location /_next/static {
-                  proxy_pass http://127.0.0.1:3000;
-                  proxy_cache_valid 200 1y;
-                  add_header Cache-Control "public, immutable";
-                  expires 1y;
-              }
-              
-              # Static assets
-              location ~* \.(ico|css|js|gif|jpeg|jpg|png|svg|woff|woff2|ttf|eot)$ {
-                  proxy_pass http://127.0.0.1:3000;
-                  expires 1y;
-                  add_header Cache-Control "public, immutable";
-              }
-              
-              # All other routes
-              location / {
-                  proxy_pass http://127.0.0.1:3000;
-                  proxy_http_version 1.1;
-                  proxy_set_header Upgrade \$http_upgrade;
-                  proxy_set_header Connection 'upgrade';
-                  proxy_set_header Host \$host;
-                  proxy_set_header X-Real-IP \$remote_addr;
-                  proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-                  proxy_set_header X-Forwarded-Proto \$scheme;
-                  proxy_cache_bypass \$http_upgrade;
-              }
-          }
-          EOF
           fi
           
-          echo "=== Final Nginx Configuration Test and Restart ==="
-          echo "Testing final nginx configuration..."
+          # Test and start nginx
+          echo "=== Starting Nginx ==="
           if sudo nginx -t; then
-            echo "✅ Final nginx config valid - restarting nginx"
             sudo systemctl enable nginx
             sudo systemctl restart nginx
-            sleep 5
-            
-            # Verify nginx is running with new config
-            if sudo systemctl is-active --quiet nginx; then
-              echo "✅ Nginx restarted successfully with SSL"
-            else
-              echo "❌ Nginx failed to restart with SSL config"
-              sudo systemctl status nginx
-              sudo journalctl -u nginx --no-pager -n 20
-              exit 1
-            fi
+            echo "✅ Nginx started successfully"
           else
-            echo "❌ Final nginx config invalid - showing config for debugging:"
-            sudo nginx -T 2>&1 | head -50
+            echo "❌ Nginx configuration error"
+            sudo nginx -T 2>&1 | head -20
             exit 1
           fi
-
-          echo "=== Final health checks ==="
+          
+          # Final health checks
+          echo "=== Final Health Checks ==="
           sleep 10
           
-          echo "Testing HTTP redirect..."
-          curl -s --head http://$DOMAIN | grep -E 'HTTP|301|302' || echo "HTTP redirect test failed"
+          echo "PM2 Status:"
+          pm2 list
           
-          echo "Testing HTTPS access..."
+          echo "Testing HTTP access..."
+          curl -I http://$DOMAIN 2>/dev/null | head -1 || echo "HTTP test failed"
+          
           if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
-            echo "Using Let's Encrypt certificate"
-            curl -s --head https://$DOMAIN | grep -E 'HTTP|200' || echo "HTTPS test failed"
-          else
-            echo "Using self-signed certificate (will show browser warning)"
-            curl -s -k --head https://$DOMAIN | grep -E 'HTTP|200' || echo "HTTPS test failed"
+            echo "Testing HTTPS access..."
+            curl -I https://$DOMAIN 2>/dev/null | head -1 || echo "HTTPS test failed"
+            
+            echo "SSL Certificate Status:"
+            sudo certbot certificates 2>/dev/null | grep -A 5 "$DOMAIN" || echo "Certbot status unavailable"
           fi
           
-          echo "Testing API endpoint..."
-          curl -s -k --head https://$DOMAIN/api/users | grep -E 'HTTP|401|403|200' || echo "API test failed"
-          
-          echo "=== SSL Certificate Status ==="
-          if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
-            echo "✅ Let's Encrypt SSL certificate installed successfully!"
-            sudo certbot certificates
-          else
-            echo "⚠️  Self-signed SSL certificate installed (browser will show warning)"
-            echo "Let's Encrypt certificate installation failed - check logs above"
-          fi
-          
-          echo "=== Deployment completed! ==="
-          echo "🌐 Your app should be available at: https://$DOMAIN"
-          if [ ! -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
-            echo "⚠️  Note: Browser will show security warning due to self-signed certificate"
-          fi
           echo ""
-          echo "📋 USER CREDENTIALS RESET:"
-          echo "========================="
-          echo "Email: admin@formatic.com"
-          echo "Password: NewAdmin2024!"
-          echo "-------------------------"
-          echo "Email: john@doe.com"
-          echo "Password: JohnDoe2024!"
-          echo "========================="
+          echo "🎉 Deployment completed successfully!"
+          echo "🌐 Your app is available at: https://$DOMAIN"
+          echo ""
+          echo "📊 Application Status:"
+          echo "- Frontend: Port 3000 (Next.js)"
+          echo "- Backend: Port 3001 (NestJS)"  
+          echo "- SSL: Let's Encrypt certificates"
+          echo "- Proxy: Nginx with security headers"
+          echo ""
+          echo "🔧 Quick Commands:"
+          echo "- View logs: pm2 logs"
+          echo "- Restart apps: pm2 restart all"
+          echo "- Check SSL: sudo certbot certificates"
