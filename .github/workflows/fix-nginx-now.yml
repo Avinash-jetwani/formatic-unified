@@ -27,10 +27,10 @@ jobs:
           echo "Files in /etc/nginx/conf.d/:"
           sudo ls -la /etc/nginx/conf.d/
           
-          echo "=== Removing any conflicting configs ==="
-          sudo rm -f /etc/nginx/conf.d/datizmo.com.conf
-          sudo rm -f /etc/nginx/conf.d/default.conf
+          echo "=== Removing ALL nginx configs to start fresh ==="
+          sudo rm -f /etc/nginx/conf.d/*.conf
           sudo rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
+          sudo rm -f /etc/nginx/sites-available/default 2>/dev/null || true
           
           echo "=== Creating fixed Nginx configuration ==="
           sudo tee /etc/nginx/conf.d/datizmo.conf << 'EOF'
