@@ -102,10 +102,25 @@ jobs:
           echo "=== Verifying the fix ==="
           sleep 3
           
-          echo "Testing API endpoint directly on server:"
-          curl -s http://localhost:3001/api/auth/session || echo "Backend not responding"
+          echo "=== Testing services directly ==="
+          echo "Backend test (should show HTML or JSON):"
+          curl -s http://localhost:3001/api/auth/session | head -3 || echo "Backend not responding"
           
-          echo "Testing through Nginx proxy:"
-          curl -s -w "HTTP Status: %{http_code}\\n" http://localhost/api/auth/session || echo "Proxy test failed"
+          echo "Frontend test (should show HTML):"
+          curl -s http://localhost:3000 | head -3 || echo "Frontend not responding"
           
-          echo "=== Fix completed! API should now work ===" 
+          echo "=== Testing through Nginx proxy ==="
+          echo "Testing frontend through nginx:"
+          curl -s -w "HTTP Status: %{http_code}\\n" http://localhost/ | head -1 || echo "Frontend proxy test failed"
+          
+          echo "Testing API through nginx:"
+          curl -s -w "HTTP Status: %{http_code}\\n" http://localhost/api/auth/session || echo "API proxy test failed"
+          
+          echo "=== Checking nginx error logs ==="
+          sudo tail -10 /var/log/nginx/error.log 2>/dev/null || echo "No nginx error logs"
+          
+          echo "=== Verifying nginx is actually running ==="
+          sudo systemctl status nginx || echo "Nginx status check failed"
+          
+          echo "=== Fix completed! Testing external access... ==="
+          curl -s -I http://datizmo.com | head -1 || echo "External access test failed" 

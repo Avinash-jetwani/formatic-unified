@@ -41,4 +41,11 @@ jobs:
           curl -s -I http://localhost:3000 | head -1 || echo "Frontend not responding"
           
           echo "=== External test ==="
-          curl -s -I http://datizmo.com | head -1 || echo "External access not working" 
+          curl -s -I http://datizmo.com | head -1 || echo "External access not working"
+          
+          echo "=== If external test failed, restarting nginx ==="
+          sudo systemctl restart nginx
+          sleep 5
+          
+          echo "=== Final external test ==="
+          curl -s -I http://datizmo.com | head -1 || echo "Still having issues - check nginx logs" 
