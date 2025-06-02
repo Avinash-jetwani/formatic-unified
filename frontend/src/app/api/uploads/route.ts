@@ -3,8 +3,6 @@ import { nanoid } from 'nanoid';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Upload API route called');
-    
     // Parse form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -12,16 +10,7 @@ export async function POST(request: NextRequest) {
     const submissionId = formData.get('submissionId') as string;
     const fieldId = formData.get('fieldId') as string;
     
-    console.log('Upload request data:', { 
-      hasFile: !!file, 
-      formId, 
-      submissionId, 
-      fieldId,
-      fileName: file?.name 
-    });
-    
     if (!file || !fieldId) {
-      console.log('Missing required fields');
       return NextResponse.json(
         { error: 'Missing required fields: file, fieldId' },
         { status: 400 }
@@ -35,13 +24,11 @@ export async function POST(request: NextRequest) {
     let uploadUrl;
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     
-    console.log('Backend URL:', backendUrl);
-    
     if (formId === 'test-form-id' && submissionId === 'test-submission-id') {
       // This is a test upload, use the authenticated endpoint which doesn't require a valid form
       uploadUrl = `${backendUrl}/api/uploads/authenticated/test`;
     } else if (formId) {
-      // Regular form submission upload - FIXED: Added /api prefix to match backend configuration
+      // Regular form submission upload
       uploadUrl = `${backendUrl}/api/uploads/form/${formId}/submission/${effectiveSubmissionId}`;
     } else {
       // No form ID provided, use authenticated test endpoint as fallback
