@@ -23,8 +23,8 @@ jobs:
       working-directory: ./backend
       run: |
         npm ci
+        npx prisma generate # Generate Prisma client before build
         npm run build
-        npx prisma generate # Generate Prisma client
         # Remove dev dependencies node_modules before packaging
         rm -rf node_modules
         npm ci --omit=dev # Install only production dependencies
@@ -36,6 +36,7 @@ jobs:
       working-directory: ./frontend
       run: |
         npm ci
+        npx prisma generate # Generate Prisma client before build
         npm run build
         # Remove dev dependencies node_modules before packaging
         rm -rf node_modules
@@ -72,15 +73,15 @@ jobs:
         username: ec2-user # Updated username
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          set -e # Exit immediately if a command exits with a non-zero status.
+          set -e
           APP_DIR="/home/ec2-user/formatic-unified"
           BACKEND_DIR="$APP_DIR/backend"
           FRONTEND_DIR="$APP_DIR/frontend"
           NVM_DIR="/home/ec2-user/.nvm"
 
-          echo "Executing deployment on server as $(whoami)..."
+          echo "=== Starting deployment on server as $(whoami) ==="
           
-          echo "Sourcing NVM for PM2 and Node commands..."
+          echo "=== Sourcing NVM for PM2 and Node commands ==="
           export NVM_DIR="$NVM_DIR"
           [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
           [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
@@ -89,11 +90,14 @@ jobs:
           echo "NPM version: $(npm -v)"
           echo "PM2 version: $(pm2 --version)" # Use --version for PM2
 
-          echo "Checking for build artifacts in $APP_DIR..."
+          echo "=== Stopping existing services ==="
+          sudo pm2 stop all || echo "No PM2 processes running"
+
+          echo "=== Checking for build artifacts in $APP_DIR ==="
           cd $APP_DIR
           ls -la *.tar.gz || echo "No .tar.gz files found in $APP_DIR"
 
-          echo "Moving and extracting Backend Artifacts..."
+          echo "=== Moving and extracting Backend Artifacts ==="
           if [ -f "$APP_DIR/backend-build.tar.gz" ]; then
             mv "$APP_DIR/backend-build.tar.gz" "$BACKEND_DIR/"
             cd $BACKEND_DIR
@@ -107,7 +111,7 @@ jobs:
             exit 1
           fi
           
-          echo "Moving and extracting Frontend Artifacts..."
+          echo "=== Moving and extracting Frontend Artifacts ==="
           if [ -f "$APP_DIR/frontend-build.tar.gz" ]; then
             mv "$APP_DIR/frontend-build.tar.gz" "$FRONTEND_DIR/"
             cd $FRONTEND_DIR
@@ -121,63 +125,82 @@ jobs:
             exit 1
           fi
 
-          echo "Updating base repository code (if necessary)..."
+          echo "=== Updating base repository code ==="
           cd $APP_DIR
           echo "Current directory: $(pwd)"
           git fetch origin main # Fetch latest changes
           git reset --hard origin/main # Force update to latest, discarding local changes for non-artifact files
 
-          echo "Ensuring backend .env file exists... (MUST be pre-configured by user on server)"
+          echo "=== Ensuring backend .env file exists ==="
           cd $BACKEND_DIR # Change back to backend dir for .env check and migrations
           if [ ! -f .env ]; then
             echo "CRITICAL WARNING: .env file not found in $BACKEND_DIR. Prisma migrate and backend start will likely fail!"
+            echo "Please ensure .env file is created on the server with proper database configuration."
+            exit 1
           else
             echo ".env file found in backend directory."
           fi
 
-          echo "Running Prisma migrations..."
-          npx prisma migrate deploy
+          echo "=== Running Prisma migrations ==="
+          npx prisma migrate deploy || { echo "Prisma migration failed"; exit 1; }
 
-          echo "Regenerating Prisma client..."
-          npx prisma generate
+          echo "=== Regenerating Prisma client ==="
+          npx prisma generate || { echo "Prisma generation failed"; exit 1; }
 
-          echo "Restarting backend service with PM2..."
-          cd $APP_DIR # PM2 ecosystem file is likely in APP_DIR
-          if [ -f "ecosystem.config.js" ]; then # Check relative to current APP_DIR
-            echo "Using PM2 ecosystem file to restart backend..."
-            sudo pm2 reload ecosystem.config.js --env production --only backend || sudo pm2 start ecosystem.config.js --env production --only backend
-          else
-            echo "PM2 ecosystem file not found. Starting backend directly from $BACKEND_DIR..."
-            # Ensure PM2 knows where the backend's entry point is if not using ecosystem file
-            # This assumes your backend's package.json has a start script or you target main.js
-            sudo pm2 restart backend || sudo pm2 start $BACKEND_DIR/dist/main.js --name backend --cwd $BACKEND_DIR --time
-          fi
-          
-          echo "Ensuring frontend .env.production file exists... (MUST be pre-configured by user on server)"
+          echo "=== Ensuring frontend .env.production file exists ==="
           cd $FRONTEND_DIR # Change to frontend dir for .env check
           if [ ! -f .env.production ]; then
-            echo "WARNING: .env.production file not found in $FRONTEND_DIR. Frontend might not have all necessary NEXT_PUBLIC variables or NEXTAUTH_SECRET!"
+            echo "WARNING: .env.production file not found in $FRONTEND_DIR."
+            echo "Creating basic .env.production file..."
+            cat > .env.production << 'ENVEOF'
+          NODE_ENV=production
+          NEXT_PUBLIC_API_URL=http://localhost:3001
+          NEXTAUTH_URL=https://datizmo.com
+          NEXTAUTH_SECRET=your-secret-key-here
+          ENVEOF
           else
             echo ".env.production file found in frontend directory."
           fi
 
-          echo "Restarting frontend service with PM2..."
+          echo "=== Starting services with PM2 ==="
           cd $APP_DIR # PM2 ecosystem file is likely in APP_DIR
-          if [ -f "ecosystem.config.js" ]; then # Check relative to current APP_DIR
-            echo "Using PM2 ecosystem file to restart frontend..."
-            sudo pm2 reload ecosystem.config.js --env production --only frontend || sudo pm2 start ecosystem.config.js --env production --only frontend
+          if [ -f "ecosystem.config.js" ]; then
+            echo "Using PM2 ecosystem file to start services..."
+            sudo pm2 start ecosystem.config.js --env production
+            echo "Waiting for services to stabilize..."
+            sleep 5
+            sudo pm2 restart all --env production
           else
-            echo "PM2 ecosystem file not found. Starting frontend directly from $FRONTEND_DIR..."
-            # Assumes 'npm run start' is defined in frontend/package.json (e.g., next start -p 3000)
-            sudo pm2 restart frontend || sudo pm2 start npm --name frontend -- run start --cwd $FRONTEND_DIR --time
+            echo "PM2 ecosystem file not found. Starting services directly..."
+            # Start backend
+            sudo pm2 start $BACKEND_DIR/dist/main.js --name backend --cwd $BACKEND_DIR --env production
+            # Start frontend
+            sudo pm2 start npm --name frontend -- run start --cwd $FRONTEND_DIR --env production
           fi
           
-          sudo pm2 save # Save current PM2 process list
+          echo "=== Saving PM2 process list ==="
+          sudo pm2 save
 
-          echo "Reloading Nginx to apply any potential changes..."
-          sudo systemctl reload nginx
+          echo "=== Checking PM2 status ==="
+          sudo pm2 status
 
-          echo "Deployment seemingly successful! Performing health check..."
-          # Health check (wait a few seconds for apps to be fully up)
-          sleep 10 
-          curl -s --head https://datizmo.com | grep '200 OK' && echo 'SUCCESS: datizmo.com is responding with 200 OK.' || echo 'ERROR: datizmo.com health check failed!'
+          echo "=== Reloading Nginx ==="
+          sudo systemctl reload nginx || echo "Nginx reload failed, but continuing..."
+
+          echo "=== Performing health checks ==="
+          # Wait for services to be fully up
+          sleep 15 
+          
+          # Check if backend is responding
+          echo "Checking backend health..."
+          curl -s http://localhost:3001/api/auth/session || echo "Backend health check failed"
+          
+          # Check if frontend is responding
+          echo "Checking frontend health..."
+          curl -s http://localhost:3000 || echo "Frontend health check failed"
+          
+          # Check main domain
+          echo "Checking main domain..."
+          curl -s --head https://datizmo.com | grep '200 OK' && echo 'SUCCESS: datizmo.com is responding with 200 OK.' || echo 'WARNING: datizmo.com health check failed - may need time to propagate'
+
+          echo "=== Deployment completed! ==="

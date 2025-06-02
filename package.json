@@ -9,7 +9,7 @@
     "@radix-ui/react-dialog": "^1.1.11",
     "@radix-ui/react-select": "^2.2.2",
     "nanoid": "^5.1.5",
-    "next": "^15.3.1",
+    "next": "^14.1.0",
     "sharp": "^0.34.1",
     "slugify": "^1.6.6",
     "uuid": "^11.1.0"
@@ -18,8 +18,18 @@
     "start:frontend": "cd frontend && npm run dev",
     "start:backend": "cd backend && npm run start:dev:fast",
     "start:both": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "build:frontend": "cd frontend && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build:all": "npm run build:backend && npm run build:frontend",
+    "start:prod:frontend": "cd frontend && npm run start",
+    "start:prod:backend": "cd backend && npm run start:prod",
+    "prisma:generate": "cd backend && npx prisma generate && cd ../frontend && npx prisma generate",
+    "prisma:migrate": "cd backend && npx prisma migrate deploy",
+    "prisma:seed": "cd backend && npm run seed",
+    "setup:prod": "npm run prisma:generate && npm run prisma:migrate && npm run build:all",
     "clear:cache": "cd frontend && rm -rf .next/cache && cd ../backend && rm -rf node_modules/.cache",
-    "restart:all": "npm run clear:cache && kill -9 $(lsof -t -i:3000) $(lsof -t -i:4000) 2>/dev/null || true && npm run start:both"
+    "restart:all": "npm run clear:cache && kill -9 $(lsof -t -i:3000) $(lsof -t -i:4000) 2>/dev/null || true && npm run start:both",
+    "postinstall": "cd backend && npm install && cd ../frontend && npm install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
