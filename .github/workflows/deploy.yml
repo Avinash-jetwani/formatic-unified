@@ -186,12 +186,14 @@ jobs:
             echo "Creating basic .env.production file..."
             cat > .env.production << 'ENVEOF'
           NODE_ENV=production
-          NEXT_PUBLIC_API_URL=http://localhost:3001
+          NEXT_PUBLIC_API_URL=https://datizmo.com/api
           NEXTAUTH_URL=https://datizmo.com
           NEXTAUTH_SECRET=your-secret-key-here
           ENVEOF
           else
             echo ".env.production file found in frontend directory."
+            # Update existing file with correct API URL
+            sed -i 's|NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=https://datizmo.com/api|g' .env.production
           fi
 
           echo "=== Starting services with PM2 ==="

@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     if (authToken) {
       // Forward the request to the backend with the token
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/auth/profile`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/profile`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${authToken}`,
