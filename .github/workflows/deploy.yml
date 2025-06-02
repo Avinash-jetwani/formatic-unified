@@ -599,9 +599,9 @@ jobs:
                   proxy_set_header X-Forwarded-Proto \$scheme;
                   proxy_cache_bypass \$http_upgrade;
               }
-                      }
-            EOF
-            fi
+          }
+          EOF
+          fi
           
           echo "=== Final Nginx Configuration Test and Restart ==="
           echo "Testing final nginx configuration..."
