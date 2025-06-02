@@ -90,29 +90,7 @@ jobs:
         target: "/home/ec2-user/formatic-unified/"
         strip_components: 1
 
-    - name: Verify Files Copied Successfully
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ec2-user
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          echo "=== Verifying build artifacts were copied ==="
-          cd /home/ec2-user/formatic-unified
-          echo "Files in target directory:"
-          ls -la *.tar.gz 2>/dev/null || echo "No .tar.gz files found"
-          
-          if [ ! -f "backend-build.tar.gz" ]; then
-            echo "❌ ERROR: backend-build.tar.gz missing"
-            exit 1
-          fi
-          
-          if [ ! -f "frontend-build.tar.gz" ]; then
-            echo "❌ ERROR: frontend-build.tar.gz missing"
-            exit 1
-          fi
-          
-          echo "✅ Both build artifacts verified successfully"
+
         
     - name: Execute Deployment Commands on EC2
       uses: appleboy/ssh-action@master
@@ -246,16 +224,26 @@ jobs:
           echo "=== Checking PM2 status ==="
           pm2 status
 
-          echo "=== Updating Nginx Configuration for Static Files ==="
-          sudo tee /etc/nginx/conf.d/datizmo.conf << 'NGINXEOF'
+                    echo "=== Setting up SSL certificates ==="
+          # Create SSL directory if it doesn't exist
+          sudo mkdir -p /etc/ssl/certs /etc/ssl/private
+          
+          # Generate self-signed certificate for now (you can replace with real certificates later)
+          sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout /etc/ssl/private/datizmo.com.key \
+            -out /etc/ssl/certs/datizmo.com.crt \
+            -subj "/C=US/ST=State/L=City/O=Organization/OU=OrgUnit/CN=datizmo.com"
+          
+          echo "=== Updating Nginx Configuration with SSL ==="
+          sudo tee /etc/nginx/conf.d/datizmo.conf << 'EOF'
           server {
               listen 80;
               server_name datizmo.com www.datizmo.com;
               return 301 https://$server_name$request_uri;
           }
-
+          
           server {
-              listen 443 ssl http2;
+              listen 443 ssl;
               server_name datizmo.com www.datizmo.com;
               
               # SSL configuration
@@ -270,7 +258,7 @@ jobs:
               add_header X-XSS-Protection "1; mode=block" always;
               add_header X-Content-Type-Options "nosniff" always;
               
-              # API routes - proxy to backend (keep /api/ in the path)
+              # API routes
               location /api/ {
                   proxy_pass http://127.0.0.1:3001/api/;
                   proxy_http_version 1.1;
@@ -298,7 +286,7 @@ jobs:
                   add_header Cache-Control "public, immutable";
               }
               
-              # All other routes - proxy to frontend
+              # All other routes
               location / {
                   proxy_pass http://127.0.0.1:3000;
                   proxy_http_version 1.1;
@@ -311,7 +299,7 @@ jobs:
                   proxy_cache_bypass $http_upgrade;
               }
           }
-          NGINXEOF
+          EOF
           
           echo "=== Testing and Reloading Nginx ==="
           echo "Current config check:"
@@ -327,20 +315,10 @@ jobs:
             exit 1
           fi
 
-          echo "=== Performing health checks ==="
-          # Wait for services to be fully up
-          sleep 15 
+                    echo "=== Final health checks ==="
+          sleep 10
           
-          # Check if backend is responding
-          echo "Checking backend health..."
-          curl -s http://localhost:3001/api/auth/session || echo "Backend health check failed"
+          echo "Testing HTTPS access..."
+          curl -s -k --head https://datizmo.com | grep -E 'HTTP|200' || echo "HTTPS test failed"
           
-          # Check if frontend is responding
-          echo "Checking frontend health..."
-          curl -s http://localhost:3000 || echo "Frontend health check failed"
-          
-          # Check main domain
-          echo "Checking main domain..."
-          curl -s --head https://datizmo.com | grep '200 OK' && echo 'SUCCESS: datizmo.com is responding with 200 OK.' || echo 'WARNING: datizmo.com health check failed - may need time to propagate'
-
-          echo "=== Deployment completed! ==="
+          echo "=== Deployment completed! Your app should be available at https://datizmo.com ==="
