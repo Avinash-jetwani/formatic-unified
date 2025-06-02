@@ -272,20 +272,24 @@ jobs:
           
           # Check if valid SSL certificates already exist
           SSL_EXISTS=false
+          CERTBOT_SUCCESS=false
+          
+          # First priority: Check for Let's Encrypt certificates
           if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
             echo "Found existing Let's Encrypt certificates for $DOMAIN"
             # Check if certificates are still valid (not expired)
             if sudo openssl x509 -in /etc/letsencrypt/live/$DOMAIN/fullchain.pem -checkend 2592000 -noout; then
-              echo "✅ Existing SSL certificates are valid (not expiring within 30 days)"
+              echo "✅ Existing Let's Encrypt certificates are valid (not expiring within 30 days)"
               SSL_EXISTS=true
               CERTBOT_SUCCESS=true
             else
-              echo "⚠️  Existing SSL certificates are expiring soon, will renew"
+              echo "⚠️  Existing Let's Encrypt certificates are expiring soon, will renew"
+              # Don't set SSL_EXISTS=true, so new certificates will be obtained
             fi
+          # Second priority: Check for self-signed certificates (fallback only)
           elif [ -f "/etc/ssl/certs/$DOMAIN.crt" ] && [ -f "/etc/ssl/private/$DOMAIN.key" ]; then
-            echo "Found existing self-signed certificates for $DOMAIN"
-            SSL_EXISTS=true
-            CERTBOT_SUCCESS=false
+            echo "Found existing self-signed certificates for $DOMAIN (will attempt Let's Encrypt upgrade)"
+            # Don't set SSL_EXISTS=true to allow upgrade to Let's Encrypt
           else
             echo "No existing SSL certificates found"
           fi
@@ -472,10 +476,11 @@ jobs:
             fi
           fi
           
-          if [ "$CERTBOT_SUCCESS" = "true" ]; then
-            echo "✅ SSL certificates obtained successfully"
+          # Configure nginx with proper SSL certificates
+          if [ "$CERTBOT_SUCCESS" = "true" ] || [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
+            echo "✅ Using Let's Encrypt SSL certificates"
             
-            echo "=== Updating Nginx Configuration with SSL ==="
+            echo "=== Updating Nginx Configuration with Let's Encrypt SSL ==="
             sudo tee /etc/nginx/conf.d/formatic.conf << EOF
           server {
               listen 80;
