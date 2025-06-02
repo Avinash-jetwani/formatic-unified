@@ -23,8 +23,17 @@ jobs:
           
           echo "=== Installing certbot if needed ==="
           sudo yum update -y
-          sudo yum install -y epel-release
-          sudo yum install -y certbot
+          
+          # Check Amazon Linux version and install certbot accordingly
+          if grep -q "Amazon Linux 2023" /etc/os-release; then
+            echo "Detected Amazon Linux 2023"
+            sudo yum install -y python3-pip
+            sudo pip3 install certbot
+          else
+            echo "Detected Amazon Linux 2"
+            sudo yum install -y epel-release
+            sudo yum install -y certbot
+          fi
           
           echo "=== Stopping nginx for standalone mode ==="
           sudo systemctl stop nginx
