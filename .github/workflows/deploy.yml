@@ -266,7 +266,18 @@ jobs:
           NGINXEOF
           
           echo "=== Testing and Reloading Nginx ==="
-          sudo nginx -t && sudo systemctl reload nginx || echo "Nginx reload failed"
+          echo "Current config check:"
+          sudo cat /etc/nginx/conf.d/datizmo.conf | grep -A 2 "proxy_pass"
+          sudo nginx -t
+          if [ $? -eq 0 ]; then
+            echo "✅ Nginx config valid - reloading"
+            sudo systemctl reload nginx
+            sleep 2
+            echo "✅ Nginx reloaded successfully"
+          else
+            echo "❌ Nginx config invalid"
+            exit 1
+          fi
 
           echo "=== Performing health checks ==="
           # Wait for services to be fully up
