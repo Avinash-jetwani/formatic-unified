@@ -222,9 +222,9 @@ jobs:
               add_header X-XSS-Protection "1; mode=block" always;
               add_header X-Content-Type-Options "nosniff" always;
               
-              # API routes - proxy to backend
+              # API routes - proxy to backend (keep /api/ in the path)
               location /api/ {
-                  proxy_pass http://127.0.0.1:3001/;
+                  proxy_pass http://127.0.0.1:3001/api/;
                   proxy_http_version 1.1;
                   proxy_set_header Upgrade $http_upgrade;
                   proxy_set_header Connection 'upgrade';
