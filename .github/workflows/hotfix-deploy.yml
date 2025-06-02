@@ -1,0 +1,194 @@
+name: Hotfix Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  hotfix-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Rebuild Backend with Debug
+      working-directory: ./backend
+      run: |
+        echo "=== Installing backend dependencies ==="
+        npm ci
+        
+        echo "=== Generating Prisma client ==="
+        npx prisma generate
+        
+        echo "=== Building backend ==="
+        npm run build
+        
+        echo "=== Checking build output ==="
+        ls -la dist/
+        
+        echo "=== Checking main.js exists ==="
+        if [ -f "dist/main.js" ]; then
+          echo "✅ main.js found"
+          head -5 dist/main.js
+        else
+          echo "❌ main.js NOT found - listing all files in dist/"
+          find dist/ -type f
+        fi
+        
+        echo "=== Installing production dependencies ==="
+        rm -rf node_modules
+        npm ci --omit=dev
+        
+        echo "=== Creating backend tarball ==="
+        tar -czf backend-build.tar.gz dist prisma node_modules package.json package-lock.json
+
+    - name: Rebuild Frontend
+      working-directory: ./frontend
+      run: |
+        echo "=== Installing frontend dependencies ==="
+        npm ci
+        
+        echo "=== Generating Prisma client ==="
+        npx prisma generate
+        
+        echo "=== Building frontend ==="
+        npm run build
+        
+        echo "=== Checking frontend build ==="
+        ls -la .next/
+        
+        echo "=== Installing production dependencies ==="
+        rm -rf node_modules
+        npm ci --omit=dev
+        
+        echo "=== Creating frontend tarball ==="
+        tar -czf frontend-build.tar.gz .next node_modules package.json package-lock.json next.config.js
+
+    - name: Deploy Backend to EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ec2-user
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "backend/backend-build.tar.gz"
+        target: "/home/ec2-user/formatic-unified/"
+        strip_components: 1
+
+    - name: Deploy Frontend to EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ec2-user
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "frontend/frontend-build.tar.gz"
+        target: "/home/ec2-user/formatic-unified/"
+        strip_components: 1
+
+    - name: Execute Hotfix Deployment on EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ec2-user
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          set -e
+          APP_DIR="/home/ec2-user/formatic-unified"
+          BACKEND_DIR="$APP_DIR/backend"
+          FRONTEND_DIR="$APP_DIR/frontend"
+
+          echo "=== Hotfix Deployment Starting ==="
+          
+          # Source NVM
+          export NVM_DIR="/home/ec2-user/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+          echo "=== Stopping all PM2 processes ==="
+          pm2 delete all || echo "No processes to delete"
+
+          echo "=== Extracting Backend Build ==="
+          cd $BACKEND_DIR
+          if [ -f "../backend-build.tar.gz" ]; then
+            tar -xzf ../backend-build.tar.gz
+            rm ../backend-build.tar.gz
+            echo "✅ Backend extracted"
+            
+            echo "=== Verifying backend dist files ==="
+            ls -la dist/
+            if [ -f "dist/main.js" ]; then
+              echo "✅ main.js found in backend"
+            else
+              echo "❌ main.js still missing!"
+              exit 1
+            fi
+          else
+            echo "❌ backend-build.tar.gz not found"
+            exit 1
+          fi
+
+          echo "=== Extracting Frontend Build ==="
+          cd $FRONTEND_DIR
+          if [ -f "../frontend-build.tar.gz" ]; then
+            tar -xzf ../frontend-build.tar.gz
+            rm ../frontend-build.tar.gz
+            echo "✅ Frontend extracted"
+          else
+            echo "❌ frontend-build.tar.gz not found"
+            exit 1
+          fi
+
+          echo "=== Ensuring environment files exist ==="
+          if [ ! -f "$BACKEND_DIR/.env" ]; then
+            echo "❌ Backend .env missing"
+            exit 1
+          fi
+          
+          if [ ! -f "$FRONTEND_DIR/.env.production" ]; then
+            echo "Creating frontend .env.production"
+            cat > "$FRONTEND_DIR/.env.production" << 'EOF'
+          NODE_ENV=production
+          NEXT_PUBLIC_API_URL=https://datizmo.com/api
+          NEXTAUTH_URL=https://datizmo.com
+          NEXTAUTH_SECRET=your-secret-key-here
+          EOF
+          fi
+
+          echo "=== Running Prisma migrations ==="
+          cd $BACKEND_DIR
+          npx prisma migrate deploy
+          npx prisma generate
+
+          echo "=== Starting services with PM2 ==="
+          cd $APP_DIR
+          
+          # Start backend first
+          pm2 start $BACKEND_DIR/dist/main.js --name backend --cwd $BACKEND_DIR
+          
+          # Wait a moment
+          sleep 3
+          
+          # Start frontend
+          pm2 start npm --name frontend -- run start --cwd $FRONTEND_DIR
+          
+          # Save PM2 config
+          pm2 save
+
+          echo "=== Checking services ==="
+          sleep 5
+          pm2 status
+          
+          echo "=== Testing backend locally ==="
+          curl -i http://localhost:3001/api/auth/session || echo "Backend test failed"
+          
+          echo "=== Testing frontend locally ==="
+          curl -i http://localhost:3000 || echo "Frontend test failed"
+
+          echo "=== Reloading Nginx ==="
+          sudo systemctl reload nginx
+
+          echo "=== Hotfix deployment completed! ===" 
