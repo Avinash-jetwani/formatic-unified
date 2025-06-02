@@ -1,0 +1,140 @@
+name: Debug Authentication Issues
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug-auth:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Debug Database and Fix Authentication
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ec2-user
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          cd /home/ec2-user/formatic-unified/backend
+          
+          echo "=== 1. CHECKING DATABASE CONNECTION ==="
+          node -e "
+          const { PrismaClient } = require('@prisma/client');
+          async function testDB() {
+            const prisma = new PrismaClient();
+            try {
+              await prisma.\$connect();
+              console.log('✅ Database connected successfully');
+              await prisma.\$disconnect();
+            } catch (error) {
+              console.error('❌ Database connection failed:', error);
+            }
+          }
+          testDB();
+          "
+          
+          echo "=== 2. CHECKING EXISTING USERS ==="
+          node -e "
+          const { PrismaClient } = require('@prisma/client');
+          async function checkUsers() {
+            const prisma = new PrismaClient();
+            try {
+              const users = await prisma.user.findMany({
+                select: { id: true, email: true, name: true, role: true, status: true, password: true }
+              });
+              console.log('📋 Current users in database:');
+              users.forEach(user => {
+                console.log(\`- \${user.email} (ID: \${user.id}, Role: \${user.role}, Status: \${user.status})\`);
+                console.log(\`  Password hash exists: \${user.password ? 'YES' : 'NO'}\`);
+              });
+              
+              if (users.length === 0) {
+                console.log('❌ NO USERS FOUND IN DATABASE!');
+              }
+            } catch (error) {
+              console.error('❌ Error checking users:', error);
+            } finally {
+              await prisma.\$disconnect();
+            }
+          }
+          checkUsers();
+          "
+          
+          echo "=== 3. CREATING/UPDATING TEST USER ==="
+          node -e "
+          const { PrismaClient } = require('@prisma/client');
+          const bcrypt = require('bcrypt');
+          
+          async function createTestUser() {
+            const prisma = new PrismaClient();
+            try {
+              // Delete existing test user if exists
+              await prisma.user.deleteMany({
+                where: { email: 'test@datizmo.com' }
+              });
+              console.log('🗑️ Deleted any existing test user');
+              
+              // Create new test user with proper hash
+              const password = 'password123';
+              const saltRounds = 10;
+              const hashedPassword = await bcrypt.hash(password, saltRounds);
+              
+              console.log('🔐 Generated password hash:', hashedPassword);
+              
+              const testUser = await prisma.user.create({
+                data: {
+                  email: 'test@datizmo.com',
+                  password: hashedPassword,
+                  name: 'Test User',
+                  role: 'SUPER_ADMIN',
+                  status: 'ACTIVE'
+                }
+              });
+              
+              console.log('✅ Test user created successfully:');
+              console.log('   Email: test@datizmo.com');
+              console.log('   Password: password123');
+              console.log('   ID:', testUser.id);
+              
+              // Test password verification
+              const isValid = await bcrypt.compare('password123', hashedPassword);
+              console.log('🔍 Password verification test:', isValid ? 'PASSED' : 'FAILED');
+              
+            } catch (error) {
+              console.error('❌ Error creating test user:', error);
+            } finally {
+              await prisma.\$disconnect();
+            }
+          }
+          createTestUser();
+          "
+          
+          echo "=== 4. TESTING BACKEND API DIRECTLY ==="
+          echo "Testing login endpoint..."
+          curl -X POST http://localhost:3001/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"test@datizmo.com","password":"password123"}' \
+            -v || echo "❌ Backend API test failed"
+          
+          echo ""
+          echo "=== 5. CHECKING PM2 STATUS ==="
+          pm2 status
+          
+          echo ""
+          echo "=== 6. CHECKING BACKEND LOGS ==="
+          echo "Last 20 lines of backend logs:"
+          pm2 logs backend --lines 20 --nostream
+          
+          echo ""
+          echo "=== 7. RESTARTING BACKEND SERVICE ==="
+          pm2 restart backend
+          pm2 status
+          
+          echo ""
+          echo "=== 8. FINAL API TEST ==="
+          sleep 5
+          echo "Testing login after restart..."
+          curl -X POST http://localhost:3001/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"test@datizmo.com","password":"password123"}' \
+            -v 
