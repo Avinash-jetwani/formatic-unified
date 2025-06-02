@@ -97,6 +97,22 @@ sudo certbot certificates
 - Backend API base: `/api/*`
 - Check for hardcoded localhost URLs
 
+5. **SSL Certificate Issues**
+   ```bash
+   # Check SSL certificate status
+   sudo certbot certificates
+   
+   # Check nginx SSL configuration
+   sudo nginx -t
+   openssl s_client -connect datizmo.com:443 -servername datizmo.com < /dev/null 2>/dev/null | openssl x509 -noout -dates
+   
+   # If CI/CD defaulted to self-signed instead of Let's Encrypt
+   # Update nginx config to use proper certificates:
+   sudo nano /etc/nginx/conf.d/formatic.conf
+   # Change ssl_certificate paths from /etc/ssl/certs/ to /etc/letsencrypt/live/
+   sudo systemctl restart nginx
+   ```
+
 ### 📝 Important Commands
 
 #### Git Workflow
