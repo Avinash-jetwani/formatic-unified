@@ -298,7 +298,14 @@ const FieldEditorDialog = ({
         ...field,
         config: parsedConfig 
       });
-      setShowConditions(!!(field.conditions && field.conditions.rules && field.conditions.rules.length > 0));
+      // Check if field has valid conditions
+      const hasValidConditions = field.conditions && 
+                                 field.conditions.rules && 
+                                 field.conditions.rules.length > 0 &&
+                                 field.conditions.rules.some(rule => 
+                                   rule.fieldId && rule.operator && rule.value !== undefined && rule.value !== ''
+                                 );
+      setShowConditions(!!hasValidConditions);
     } else {
       setEditedField(null);
       setShowConditions(false);
@@ -569,13 +576,32 @@ const FieldEditorDialog = ({
   // Handle save button click
   const handleSave = () => {
     if (editedField.label.trim()) {
+      // Prepare the field for saving
+      const fieldToSave = { ...editedField };
+      
       // If conditions are not being used, remove them
-      if (!showConditions && editedField.conditions) {
-        const { conditions, ...fieldWithoutConditions } = editedField;
-        onSave(fieldWithoutConditions as FormField);
+      if (!showConditions) {
+        delete fieldToSave.conditions;
       } else {
-        onSave(editedField);
+        // Ensure conditions have the proper structure
+        if (!fieldToSave.conditions) {
+          fieldToSave.conditions = { logicOperator: 'AND', rules: [] };
+        }
+        
+        // Clean up any empty or invalid rules
+        if (fieldToSave.conditions.rules) {
+          fieldToSave.conditions.rules = fieldToSave.conditions.rules.filter(rule => 
+            rule.fieldId && rule.operator && rule.value !== undefined && rule.value !== ''
+          );
+        }
+        
+        // Remove conditions entirely if no valid rules exist
+        if (!fieldToSave.conditions.rules || fieldToSave.conditions.rules.length === 0) {
+          delete fieldToSave.conditions;
+        }
       }
+      
+      onSave(fieldToSave);
       onOpenChange(false);
     }
   };
@@ -1858,6 +1884,11 @@ const FormBuilderPage = () => {
           // If parsing fails, use an empty object
           fieldToSave.config = {};
         }
+      }
+      
+      // Ensure conditions is in the correct format for the API
+      if (fieldToSave.conditions) {
+        console.log('Saving field with conditions:', JSON.stringify(fieldToSave.conditions, null, 2));
       }
       
       // For file upload fields, ensure config has the correct properties
