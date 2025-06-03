@@ -173,13 +173,20 @@ jobs:
             exit 1
           fi
           
-          # Verify backend environment
+          # Verify and update backend environment
           echo "=== Verifying backend environment ==="
           cd $BACKEND_DIR
           if [ ! -f .env ]; then
             echo "❌ Backend .env file not found!"
             exit 1
           fi
+          
+          # Update AWS configuration for production
+          echo "Updating AWS S3 configuration..."
+          sed -i "s|AWS_REGION=.*|AWS_REGION=eu-west-2|g" .env
+          sed -i "s|AWS_ACCESS_KEY_ID=.*|AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}|g" .env
+          sed -i "s|AWS_SECRET_ACCESS_KEY=.*|AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}|g" .env
+          sed -i "s|S3_BUCKET_NAME=.*|S3_BUCKET_NAME=formatic-uploads-dev|g" .env
           
           # Run database migrations
           echo "=== Running database migrations ==="
