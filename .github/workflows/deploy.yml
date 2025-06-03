@@ -63,7 +63,7 @@ jobs:
         NODE_ENV=production
         NEXT_PUBLIC_API_URL=http://127.0.0.1:3001
         BACKEND_URL=http://127.0.0.1:3001
-        NEXTAUTH_URL=${NEXTAUTH_URL}
+        NEXTAUTH_URL=http://127.0.0.1:3000
         NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET || 'change-this-in-production' }}
         NEXT_PUBLIC_S3_PUBLIC_URL=https://formatic-uploads-dev.s3.amazonaws.com
         NEXT_PUBLIC_AWS_REGION=eu-west-2
@@ -202,7 +202,7 @@ jobs:
           NODE_ENV=production
           NEXT_PUBLIC_API_URL=http://127.0.0.1:3001
           BACKEND_URL=http://127.0.0.1:3001
-          NEXTAUTH_URL=$FRONTEND_URL
+          NEXTAUTH_URL=http://127.0.0.1:3000
           NEXTAUTH_SECRET=your-secret-key-here
           NEXT_PUBLIC_S3_PUBLIC_URL=https://formatic-uploads-dev.s3.amazonaws.com
           NEXT_PUBLIC_AWS_REGION=eu-west-2
@@ -212,7 +212,7 @@ jobs:
             echo "Updating existing .env.production..."
             sed -i "s|NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=http://127.0.0.1:3001|g" .env.production
             sed -i "s|BACKEND_URL=.*|BACKEND_URL=http://127.0.0.1:3001|g" .env.production
-            sed -i "s|NEXTAUTH_URL=.*|NEXTAUTH_URL=$FRONTEND_URL|g" .env.production
+            sed -i "s|NEXTAUTH_URL=.*|NEXTAUTH_URL=http://127.0.0.1:3000|g" .env.production
           fi
           
           # Start applications with PM2
