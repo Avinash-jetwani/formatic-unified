@@ -424,12 +424,7 @@ export default function HomePage() {
         <section className="py-16 md:py-20 lg:py-28 bg-gradient-to-b from-background to-primary/5 overflow-hidden">
           <div className="container-content">
             <div className="flex flex-col lg:flex-row items-center gap-8 md:gap-12">
-              <motion.div 
-                className="flex-1 space-y-6 text-center lg:text-left"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
+              <div className="flex-1 space-y-6 text-center lg:text-left">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
                   Create Powerful Forms with <span className="text-primary dark:text-blue-400 dark:glow-text">Ease</span>
                 </h1>
@@ -452,17 +447,12 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Check className="h-4 w-4 text-primary" />
-                    <span>14-day free trial</span>
-                  </div>
+                                      <span>14-day free trial</span>
                 </div>
-              </motion.div>
+              </div>
+            </div>
               
-              <motion.div 
-                className="w-full lg:flex-1 relative max-w-md mx-auto lg:max-w-lg mt-8 lg:mt-0"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
+              <div className="w-full lg:flex-1 relative max-w-md mx-auto lg:max-w-lg mt-8 lg:mt-0">
                 <div className="relative w-full mx-auto aspect-[5/4] sm:aspect-[4/3] overflow-hidden rounded-xl border border-gray-200 dark:border-slate-700/50 bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:to-slate-800 shadow-lg dark:shadow-xl">
                   <div className="absolute inset-0 bg-grid-pattern opacity-5 dark:opacity-10"></div>
                   
@@ -630,7 +620,7 @@ export default function HomePage() {
                 <div className="absolute top-1/4 -left-3 sm:-left-6 h-10 w-10 sm:h-12 sm:w-12 bg-primary/40 dark:bg-primary/60 rounded-full flex items-center justify-center animate-float-strong delay-700 shadow-lg border-2 border-white/30 dark:border-slate-700/60">
                   <Bell className="h-5 w-5 text-primary-foreground dark:text-white" />
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         </section>
