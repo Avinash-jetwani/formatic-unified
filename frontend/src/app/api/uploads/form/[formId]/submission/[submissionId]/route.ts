@@ -26,8 +26,8 @@ export async function POST(
       );
     }
     
-    // Forward to backend API
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Use internal backend URL for server-side requests
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:3001';
     const uploadUrl = `${backendUrl}/api/uploads/form/${formId}/submission/${submissionId}`;
     
     // Prepare form data for the backend request

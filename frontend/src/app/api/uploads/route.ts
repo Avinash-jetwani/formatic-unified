@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     
     // For the test page, use a special URL pattern
     let uploadUrl;
-    const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:3001';
     
     if (formId === 'test-form-id' && submissionId === 'test-submission-id') {
       // This is a test upload, use the authenticated endpoint which doesn't require a valid form
