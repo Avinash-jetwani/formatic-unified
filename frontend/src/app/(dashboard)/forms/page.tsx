@@ -74,6 +74,7 @@ import {
   Badge 
 } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { fetchApi } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
@@ -293,11 +294,12 @@ const FormsPage = () => {
     if (!formToDelete) return;
     
     console.log('Attempting to delete form:', formToDelete);
+    const formIdToDelete = formToDelete;
     
     try {
       // First attempt to delete the form
       try {
-        await fetchApi(`/forms/${formToDelete}`, { 
+        await fetchApi(`/forms/${formIdToDelete}`, { 
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
@@ -310,7 +312,7 @@ const FormsPage = () => {
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Second attempt
-        await fetchApi(`/forms/${formToDelete}`, { 
+        await fetchApi(`/forms/${formIdToDelete}`, { 
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
@@ -319,15 +321,29 @@ const FormsPage = () => {
       }
       
       console.log('Successfully deleted form on server');
-      setForms(forms.filter(form => form.id !== formToDelete));
+      
+      // Update state in a more stable way to prevent React key issues
+      setForms(prevForms => {
+        const newForms = prevForms.filter(form => form.id !== formIdToDelete);
+        console.log('Updated forms list, remaining forms:', newForms.length);
+        return newForms;
+      });
+      
+      // Clean up state
       setFormToDelete(null);
       setIsDeleteOpen(false);
+      
       toast({
         title: "Success",
         description: "Form deleted successfully",
       });
     } catch (error) {
       console.error('Failed to delete form:', error);
+      
+      // Clean up state even on error
+      setFormToDelete(null);
+      setIsDeleteOpen(false);
+      
       toast({
         title: "Error",
         description: "Failed to delete form. Please try again or delete from the form detail page.",
@@ -481,7 +497,8 @@ const FormsPage = () => {
   ) : [];
 
   return (
-    <div className="space-y-8">
+    <ErrorBoundary>
+      <div className="space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Forms</h1>
@@ -583,8 +600,8 @@ const FormsPage = () => {
                 {!tagFilter && <Check className="mr-2 h-4 w-4" />}
                 All Tags
               </DropdownMenuItem>
-              {uniqueTags.map(tag => (
-                <DropdownMenuItem key={tag} onClick={() => setTagFilter(tag)}>
+              {uniqueTags.map((tag, index) => (
+                <DropdownMenuItem key={`unique-tag-${index}-${tag}`} onClick={() => setTagFilter(tag)}>
                   {tagFilter === tag && <Check className="mr-2 h-4 w-4" />}
                   {tag}
                 </DropdownMenuItem>
@@ -784,8 +801,8 @@ const FormsPage = () => {
                         {form.category}
                       </Badge>
                     )}
-                    {form.tags && form.tags.map(tag => (
-                      <Badge key={tag} variant="outline" className="text-xs">
+                    {Array.isArray(form.tags) && form.tags.map((tag, index) => (
+                      <Badge key={`${form.id}-tag-${index}-${tag}`} variant="outline" className="text-xs">
                         {tag}
                       </Badge>
                     ))}
@@ -1002,6 +1019,7 @@ const FormsPage = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </ErrorBoundary>
   );
 };
 

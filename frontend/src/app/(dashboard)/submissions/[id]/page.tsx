@@ -1573,9 +1573,9 @@ export default function SubmissionDetailPage() {
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {tags.length > 0 ? (
-                  tags.map(tag => (
+                  tags.map((tag, index) => (
                     <Badge 
-                      key={tag} 
+                      key={`submission-tag-${index}-${tag}`} 
                       variant="secondary"
                       className="flex items-center gap-1 cursor-pointer hover:bg-destructive/20 transition-colors"
                       onClick={() => removeTag(tag)}
