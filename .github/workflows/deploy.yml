@@ -168,6 +168,16 @@ jobs:
             tar -xzf ../frontend-build.tar.gz
             rm ../frontend-build.tar.gz
             echo "✅ Frontend extracted successfully"
+            
+            # Ensure static files are copied for Next.js standalone build
+            echo "=== Copying static files for standalone build ==="
+            if [ -d ".next/static" ] && [ -d ".next/standalone" ]; then
+              mkdir -p .next/standalone/.next
+              cp -r .next/static .next/standalone/.next/
+              echo "✅ Static files copied successfully"
+            else
+              echo "⚠️  Static files copy skipped - directories not found"
+            fi
           else
             echo "❌ Frontend build not found"
             exit 1
