@@ -409,6 +409,130 @@ const FieldEditorDialog = ({
       }
     });
   };
+
+  // Get available operators based on field type
+  const getOperatorsForField = (fieldId: string) => {
+    const targetField = availableFields.find(f => f.id === fieldId);
+    if (!targetField) return ['equals', 'notEquals'];
+    
+    const operators = ['equals', 'notEquals'];
+    
+    // Add type-specific operators
+    switch (targetField.type) {
+      case 'TEXT':
+      case 'LONG_TEXT':
+      case 'EMAIL':
+      case 'PHONE':
+      case 'URL':
+        operators.push('contains');
+        break;
+      case 'NUMBER':
+      case 'RATING':
+      case 'SLIDER':
+      case 'SCALE':
+      case 'DATE':
+      case 'TIME':
+      case 'DATETIME':
+        operators.push('greaterThan', 'lessThan');
+        break;
+      case 'CHECKBOX':
+      case 'RADIO':
+      case 'DROPDOWN':
+        // For options-based fields, only equals/notEquals make sense
+        break;
+    }
+    
+    return operators;
+  };
+
+  // Get value input for condition rule based on field type
+  const renderConditionValueInput = (rule: any, index: number, targetField?: FormField) => {
+    if (!targetField) {
+      return (
+        <Input
+          value={rule.value}
+          onChange={(e) => updateConditionRule(index, 'value', e.target.value)}
+          placeholder="Value"
+        />
+      );
+    }
+
+    // For fields with options, show a dropdown
+    if ((targetField.type === 'DROPDOWN' || targetField.type === 'RADIO' || targetField.type === 'CHECKBOX') && targetField.options?.length > 0) {
+      return (
+        <Select 
+          value={rule.value} 
+          onValueChange={(value) => updateConditionRule(index, 'value', value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select value" />
+          </SelectTrigger>
+          <SelectContent>
+            {targetField.options.map(option => (
+              <SelectItem key={option} value={option}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+
+    // For date/time fields, show date input
+    if (targetField.type === 'DATE') {
+      return (
+        <Input
+          type="date"
+          value={rule.value}
+          onChange={(e) => updateConditionRule(index, 'value', e.target.value)}
+          placeholder="Select date"
+        />
+      );
+    }
+
+    if (targetField.type === 'TIME') {
+      return (
+        <Input
+          type="time"
+          value={rule.value}
+          onChange={(e) => updateConditionRule(index, 'value', e.target.value)}
+          placeholder="Select time"
+        />
+      );
+    }
+
+    if (targetField.type === 'DATETIME') {
+      return (
+        <Input
+          type="datetime-local"
+          value={rule.value}
+          onChange={(e) => updateConditionRule(index, 'value', e.target.value)}
+          placeholder="Select date and time"
+        />
+      );
+    }
+
+    // For number fields, show number input
+    if (targetField.type === 'NUMBER' || targetField.type === 'RATING' || targetField.type === 'SLIDER' || targetField.type === 'SCALE') {
+      return (
+        <Input
+          type="number"
+          value={rule.value}
+          onChange={(e) => updateConditionRule(index, 'value', e.target.value)}
+          placeholder="Enter number"
+        />
+      );
+    }
+
+    // Default text input
+    return (
+      <Input
+        value={rule.value}
+        onChange={(e) => updateConditionRule(index, 'value', e.target.value)}
+        placeholder="Value"
+      />
+    );
+  };
   
   // Function to update configuration values
   const updateConfig = (key: string, value: any) => {
@@ -1317,64 +1441,113 @@ const FieldEditorDialog = ({
                   </div>
                   
                   {editedField.conditions?.rules && editedField.conditions.rules.length > 0 ? (
-                    <div className="space-y-2 border rounded-md p-3">
-                      {editedField.conditions.rules.map((rule, index) => (
-                        <div key={index} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
-                          <Select 
-                            value={rule.fieldId} 
-                            onValueChange={(value) => updateConditionRule(index, 'fieldId', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select field" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {availableFields
-                                .filter(f => f.id !== editedField.id) // Can't reference self
-                                .map(field => (
-                                  <SelectItem key={field.id} value={field.id}>
-                                    {field.label}
-                                  </SelectItem>
-                                ))
-                              }
-                            </SelectContent>
-                          </Select>
-                          
-                          <Select 
-                            value={rule.operator} 
-                            onValueChange={(value) => updateConditionRule(index, 'operator', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Operator" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="equals">Equals</SelectItem>
-                              <SelectItem value="notEquals">Not Equals</SelectItem>
-                              <SelectItem value="contains">Contains</SelectItem>
-                              <SelectItem value="greaterThan">Greater Than</SelectItem>
-                              <SelectItem value="lessThan">Less Than</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          
-                          <Input
-                            value={rule.value}
-                            onChange={(e) => updateConditionRule(index, 'value', e.target.value)}
-                            placeholder="Value"
-                          />
-                          
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeConditionRule(index)}
-                            className="h-8 w-8 sm:mt-0 mt-1"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
+                    <div className="space-y-3 border rounded-md p-3">
+                      {editedField.conditions.rules.map((rule, index) => {
+                        const targetField = availableFields.find(f => f.id === rule.fieldId);
+                        const availableOperators = getOperatorsForField(rule.fieldId);
+                        
+                        return (
+                          <div key={index} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                            <div className="space-y-1">
+                              <Select 
+                                value={rule.fieldId} 
+                                onValueChange={(value) => updateConditionRule(index, 'fieldId', value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select field" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableFields
+                                    .filter(f => f.id !== editedField.id) // Can't reference self
+                                    .map(field => (
+                                      <SelectItem key={field.id} value={field.id}>
+                                        {field.label} ({field.type})
+                                      </SelectItem>
+                                    ))
+                                  }
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <Select 
+                                value={rule.operator} 
+                                onValueChange={(value) => updateConditionRule(index, 'operator', value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Operator" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableOperators.map(op => (
+                                    <SelectItem key={op} value={op}>
+                                      {op === 'equals' ? 'Equals' :
+                                       op === 'notEquals' ? 'Not Equals' :
+                                       op === 'contains' ? 'Contains' :
+                                       op === 'greaterThan' ? 'Greater Than' :
+                                       op === 'lessThan' ? 'Less Than' : op}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="space-y-1">
+                              {renderConditionValueInput(rule, index, targetField)}
+                            </div>
+                            
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeConditionRule(index)}
+                              className="h-8 w-8 sm:mt-0 mt-1"
+                              title="Remove condition"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-sm text-muted-foreground italic border rounded-md p-3">
                       No conditions added yet. Click "Add Rule" to create a condition.
+                    </div>
+                  )}
+                  
+                  {/* Condition explanation */}
+                  {editedField.conditions?.rules && editedField.conditions.rules.length > 0 && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <h4 className="text-sm font-medium text-blue-900 mb-2">How this condition works:</h4>
+                      <p className="text-sm text-blue-800">
+                        This field will be shown when{' '}
+                        <strong>{editedField.conditions.logicOperator === 'AND' ? 'ALL' : 'ANY'}</strong>{' '}
+                        of the following conditions are met:
+                      </p>
+                      <ul className="mt-2 space-y-1 text-sm text-blue-700">
+                        {editedField.conditions.rules.map((rule, index) => {
+                          const targetField = availableFields.find(f => f.id === rule.fieldId);
+                          const operatorText = 
+                            rule.operator === 'equals' ? 'equals' :
+                            rule.operator === 'notEquals' ? 'does not equal' :
+                            rule.operator === 'contains' ? 'contains' :
+                            rule.operator === 'greaterThan' ? 'is greater than' :
+                            rule.operator === 'lessThan' ? 'is less than' : rule.operator;
+                          
+                          return (
+                            <li key={index} className="flex items-center">
+                              <span className="mr-2">•</span>
+                              <span>
+                                <strong>{targetField?.label || 'Unknown field'}</strong> 
+                                <span className="text-blue-600"> ({targetField?.type || 'Unknown'})</span>{' '}
+                                {operatorText} "{rule.value}"
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <div className="mt-2 pt-2 border-t border-blue-200 text-xs text-blue-600">
+                        💡 <strong>Supported everywhere:</strong> This works in preview mode, published forms, and embedded forms
+                      </div>
                     </div>
                   )}
                 </div>

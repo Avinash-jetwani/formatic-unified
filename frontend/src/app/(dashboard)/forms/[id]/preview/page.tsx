@@ -46,6 +46,14 @@ interface FormField {
   config: any;
   order: number;
   page: number;
+  conditions?: {
+    logicOperator?: 'AND' | 'OR';
+    rules?: {
+      fieldId: string;
+      operator: string;
+      value: any;
+    }[];
+  };
 }
 
 const FormPreviewPage = () => {
@@ -57,6 +65,7 @@ const FormPreviewPage = () => {
   const [form, setForm] = useState<Form | null>(null);
   const [loading, setLoading] = useState(true);
   const [formValues, setFormValues] = useState<Record<string, any>>({});
+  const [fieldsVisible, setFieldsVisible] = useState<Record<string, boolean>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
   
@@ -66,6 +75,19 @@ const FormPreviewPage = () => {
       loadForm();
     }
   }, [formId]);
+
+  // Update field visibility whenever form values change
+  useEffect(() => {
+    if (!form) return;
+    
+    const newVisibility: Record<string, boolean> = {};
+    
+    form.fields.forEach(field => {
+      newVisibility[field.id] = evaluateCondition(field);
+    });
+    
+    setFieldsVisible(newVisibility);
+  }, [form, formValues]);
   
   // Function to load form data
   const loadForm = async () => {
@@ -103,6 +125,46 @@ const FormPreviewPage = () => {
     }
   };
   
+  // Function to evaluate conditional logic for field visibility
+  const evaluateCondition = (field: FormField): boolean => {
+    // If no conditions, field is always visible
+    if (!field.conditions || !field.conditions.rules || field.conditions.rules.length === 0) {
+      return true;
+    }
+
+    const { logicOperator, rules } = field.conditions;
+    
+    // Evaluate each rule
+    const results = rules.map(rule => {
+      const { fieldId, operator, value } = rule;
+      const fieldValue = formValues[fieldId];
+      
+      switch (operator) {
+        case 'equals':
+          return fieldValue === value;
+        case 'notEquals':
+          return fieldValue !== value;
+        case 'contains':
+          return fieldValue && typeof fieldValue === 'string' 
+            ? fieldValue.includes(value) 
+            : Array.isArray(fieldValue) 
+              ? fieldValue.includes(value) 
+              : false;
+        case 'greaterThan':
+          return parseFloat(fieldValue) > parseFloat(value);
+        case 'lessThan':
+          return parseFloat(fieldValue) < parseFloat(value);
+        default:
+          return false;
+      }
+    });
+    
+    // Apply logic operator
+    return logicOperator === 'AND' 
+      ? results.every(result => result) 
+      : results.some(result => result);
+  };
+
   // Function to handle input changes
   const handleInputChange = (fieldId: string, value: any) => {
     setFormValues(prev => ({
@@ -405,6 +467,7 @@ const FormPreviewPage = () => {
     if (!form?.fields) return [];
     return form.fields
       .filter(field => (field.page || 1) === currentPage)
+      .filter(field => fieldsVisible[field.id] !== false) // Only show visible fields
       .sort((a, b) => a.order - b.order);
   };
   
@@ -470,6 +533,58 @@ const FormPreviewPage = () => {
           <CardHeader>
             <CardTitle>{form?.title || 'Untitled Form'}</CardTitle>
             {form?.description && <CardDescription>{form.description}</CardDescription>}
+            
+            {/* Conditions Debug Panel */}
+            {form?.fields && form.fields.some(f => f.conditions?.rules && f.conditions.rules.length > 0) && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <details className="group">
+                  <summary className="cursor-pointer text-sm font-medium text-blue-900 group-open:mb-2">
+                    🔍 Conditional Logic Preview (Debug Mode)
+                  </summary>
+                  <div className="space-y-2 text-xs text-blue-800">
+                    {form.fields
+                      .filter(f => f.conditions?.rules && f.conditions.rules.length > 0)
+                      .map(field => {
+                        const isVisible = fieldsVisible[field.id] !== false;
+                        return (
+                          <div key={field.id} className={`p-2 rounded border ${isVisible ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                            <div className="font-medium">
+                              {field.label} - {isVisible ? '✅ Visible' : '❌ Hidden'}
+                            </div>
+                            <div className="mt-1">
+                              Logic: {field.conditions?.logicOperator === 'AND' ? 'ALL' : 'ANY'} conditions must be met:
+                            </div>
+                            {field.conditions?.rules?.map((rule, idx) => {
+                              const targetField = form.fields.find(f => f.id === rule.fieldId);
+                              const currentValue = formValues[rule.fieldId];
+                              const ruleResult = field.conditions?.logicOperator === 'AND' 
+                                ? evaluateCondition(field) 
+                                : field.conditions?.rules?.some(r => {
+                                    const fVal = formValues[r.fieldId];
+                                    switch (r.operator) {
+                                      case 'equals': return fVal === r.value;
+                                      case 'notEquals': return fVal !== r.value;
+                                      case 'contains': return fVal && String(fVal).includes(String(r.value));
+                                      case 'greaterThan': return parseFloat(fVal) > parseFloat(r.value);
+                                      case 'lessThan': return parseFloat(fVal) < parseFloat(r.value);
+                                      default: return false;
+                                    }
+                                  });
+                              return (
+                                <div key={idx} className="ml-4 text-xs">
+                                  • {targetField?.label || 'Unknown'} {rule.operator} "{rule.value}" 
+                                  (current: "{currentValue}") 
+                                  {rule === field.conditions?.rules?.[idx] && evaluateCondition({...field, conditions: {logicOperator: 'AND', rules: [rule]}}) ? '✅' : '❌'}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                  </div>
+                </details>
+              </div>
+            )}
             
             {/* Page indicator for multi-page forms */}
             {form?.multiPageEnabled && maxPage > 1 && (
