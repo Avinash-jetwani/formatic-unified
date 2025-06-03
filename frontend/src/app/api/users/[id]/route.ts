@@ -17,7 +17,7 @@ export async function GET(
     }
     
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/users/${params.id}`,
+      `${process.env.BACKEND_URL || 'http://127.0.0.1:3001'}/api/users/${params.id}`,
       {
         method: 'GET',
         headers: {
@@ -65,7 +65,7 @@ export async function PATCH(
     console.log('Updating user with data:', requestData);
     
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/users/${params.id}`,
+      `${process.env.BACKEND_URL || 'http://127.0.0.1:3001'}/api/users/${params.id}`,
       {
         method: 'PATCH',
         headers: {

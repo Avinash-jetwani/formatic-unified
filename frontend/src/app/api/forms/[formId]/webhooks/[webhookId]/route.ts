@@ -20,7 +20,7 @@ export async function GET(
     }
     
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/forms/${formId}/webhooks/${webhookId}`,
+      `${process.env.BACKEND_URL || 'http://127.0.0.1:3001'}/api/forms/${formId}/webhooks/${webhookId}`,
       {
         method: 'GET',
         headers: {
@@ -71,7 +71,7 @@ export async function PATCH(
     console.log('Updating webhook with data:', requestData);
     
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/forms/${formId}/webhooks/${webhookId}`,
+      `${process.env.BACKEND_URL || 'http://127.0.0.1:3001'}/api/forms/${formId}/webhooks/${webhookId}`,
       {
         method: 'PATCH',
         headers: {
@@ -120,7 +120,7 @@ export async function DELETE(
     }
     
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/forms/${formId}/webhooks/${webhookId}`,
+      `${process.env.BACKEND_URL || 'http://127.0.0.1:3001'}/api/forms/${formId}/webhooks/${webhookId}`,
       {
         method: 'DELETE',
         headers: {

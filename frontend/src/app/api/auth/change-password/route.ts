@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     console.log('Changing password with data:', requestData);
     
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/auth/change-password`,
+      `${process.env.BACKEND_URL || 'http://127.0.0.1:3001'}/api/auth/change-password`,
       {
         method: 'POST',
         headers: {

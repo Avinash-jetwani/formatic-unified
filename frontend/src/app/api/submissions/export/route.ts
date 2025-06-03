@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Build the backend URL with query parameters
-    const url = new URL(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/submissions/export`);
+    const url = new URL(`${process.env.BACKEND_URL || 'http://127.0.0.1:3001'}/api/submissions/export`);
     url.searchParams.set('format', format);
     url.searchParams.set('searchTerm', searchTerm);
     url.searchParams.set('formFilter', formFilter);

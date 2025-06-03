@@ -235,8 +235,8 @@ jobs:
               pm2 start $BACKEND_DIR/dist/main.js --name "formatic-app" --cwd $BACKEND_DIR
             fi
             
-            # Start frontend
-            pm2 start npm --name "formatic-frontend" -- run start --cwd $FRONTEND_DIR
+            # Start frontend using standalone server (required for output: standalone)
+            pm2 start node --name "formatic-frontend" -- .next/standalone/server.js --cwd $FRONTEND_DIR
           fi
           
           # Wait for services to stabilize

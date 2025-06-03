@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       console.log('Sending to backend API:', apiRequest);
       
       // Make sure to use the correct backend API URL
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const backendUrl = process.env.BACKEND_URL || 'http://127.0.0.1:3001';
       const response = await axios.post(`${backendUrl}/api/submissions`, apiRequest);
       
       console.log('Backend API response:', response.data);
