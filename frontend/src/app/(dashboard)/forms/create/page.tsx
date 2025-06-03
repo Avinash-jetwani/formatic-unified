@@ -36,7 +36,7 @@ import { fetchApi } from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
 import slugify from 'slugify';
 import clsx from 'clsx';
-import { utcToLocalInputFormat, localInputToUTC, createFutureDateForInput } from '@/lib/date-utils';
+import { utcToLocalInputFormat, localInputToUTC, createFutureDateForInput, utcToLocalDateTimeFormat, localDateTimeToUTC, createFutureDateTimeForInput } from '@/lib/date-utils';
 
 // Drag and drop libraries
 import { DndContext, DragEndEvent, DragStartEvent, closestCenter } from '@dnd-kit/core';
@@ -293,7 +293,7 @@ const FormCreatePage: React.FC = () => {
     
     try {
       // Convert local expirationDate to UTC for storing on the server
-      const expirationDateUTC = localInputToUTC(expirationDate);
+      const expirationDateUTC = localDateTimeToUTC(expirationDate);
 
       const response = await fetchApi<{id: string}>('/forms', {
         method: 'POST',
@@ -618,7 +618,7 @@ const FormCreatePage: React.FC = () => {
                         setExpirationDate(undefined);
                       } else {
                         // Set default expiration to 30 days from now
-                        setExpirationDate(createFutureDateForInput(30));
+                        setExpirationDate(createFutureDateTimeForInput(30));
                       }
                     }}
                   />

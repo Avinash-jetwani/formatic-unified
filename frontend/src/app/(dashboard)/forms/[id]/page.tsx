@@ -48,7 +48,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { utcToLocalInputFormat, localInputToUTC, createFutureDateForInput } from '@/lib/date-utils';
+import { utcToLocalInputFormat, localInputToUTC, createFutureDateForInput, utcToLocalDateTimeFormat, localDateTimeToUTC, createFutureDateTimeForInput } from '@/lib/date-utils';
 import { PasswordStrengthIndicator } from '@/components/ui/PasswordStrengthIndicator';
 
 // Form and field interfaces
@@ -168,7 +168,7 @@ const FormEditPage = () => {
       
       // Set new settings if they exist
       if (data.expirationDate) {
-        setExpirationDate(utcToLocalInputFormat(data.expirationDate));
+        setExpirationDate(utcToLocalDateTimeFormat(data.expirationDate));
       }
       setMaxSubmissions(data.maxSubmissions !== undefined ? data.maxSubmissions : null);
       setRequireConsent(data.requireConsent || false);
@@ -382,7 +382,7 @@ const FormEditPage = () => {
       }
 
       // Convert local expirationDate to UTC for storing on the server
-      const expirationDateUTC = localInputToUTC(expirationDate);
+      const expirationDateUTC = localDateTimeToUTC(expirationDate);
       
       // If hasRedirectUrl is false, explicitly set to null to clear existing value in database
       const finalSuccessRedirectUrl = hasRedirectUrl ? successRedirectUrl : null;
@@ -1059,7 +1059,7 @@ const FormEditPage = () => {
                             setExpirationDate(undefined);
                           } else {
                             // Set default expiration to 30 days from now
-                            setExpirationDate(createFutureDateForInput(30));
+                            setExpirationDate(createFutureDateTimeForInput(30));
                           }
                         }}
                       />
