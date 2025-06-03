@@ -98,7 +98,7 @@ jobs:
         host: ${{ secrets.SERVER_IP }}
         username: ec2-user
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "backend/backend-build.tar.gz,frontend/frontend-build.tar.gz"
+        source: "backend/backend-build.tar.gz,frontend/frontend-build.tar.gz,nginx-deploy.conf"
         target: "/home/ec2-user/formatic-unified/"
         strip_components: 1
 
@@ -243,6 +243,10 @@ jobs:
           # SSL and Nginx Configuration
           echo "=== Configuring SSL and Nginx ==="
           
+          # Copy our working nginx configuration
+          echo "Copying nginx configuration..."
+          sudo cp nginx-deploy.conf /etc/nginx/conf.d/formatic.conf
+          
           # Check for existing Let's Encrypt certificates
           LETSENCRYPT_EXISTS=false
           if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
@@ -264,9 +268,6 @@ jobs:
             fi
           fi
           
-          # Configure Nginx
-          echo "Configuring Nginx..."
-          
           # Backup existing config
           if [ -f "/etc/nginx/conf.d/formatic.conf" ]; then
             sudo cp /etc/nginx/conf.d/formatic.conf /etc/nginx/conf.d/formatic.conf.backup.$(date +%Y%m%d_%H%M%S)
@@ -275,10 +276,13 @@ jobs:
           # Remove conflicting configs
           sudo rm -f /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf
           
-          # Create optimal nginx configuration
+          # SSL certificates already exist, config already copied
           if [ "$LETSENCRYPT_EXISTS" = "true" ]; then
-            echo "Configuring Nginx with Let's Encrypt SSL..."
-            sudo tee /etc/nginx/conf.d/formatic.conf << 'EOF'
+            echo "✅ Using existing SSL certificates with copied nginx config"
+          else
+            echo "⚠️  No SSL certificates found. The copied config will work with HTTP only."
+            echo "    SSL certificates should be configured manually if needed."
+          fi
           server {
               listen 80;
               server_name datizmo.com www.datizmo.com;
