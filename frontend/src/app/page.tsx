@@ -1252,6 +1252,9 @@ export default function HomePage() {
             <p className="text-sm text-muted-foreground">
               &copy; {new Date().getFullYear()} Datizmo. All rights reserved.
             </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Designed and developed by Avinash Jetwani
+            </p>
           </div>
         </div>
       </footer>
