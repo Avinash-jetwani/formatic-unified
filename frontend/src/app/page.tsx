@@ -431,7 +431,7 @@ export default function HomePage() {
                 transition={{ duration: 0.5 }}
               >
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-                  Create Powerful Forms with <span className="text-primary dark:text-blue-400 dark:glow-text">Ease</span>
+                  Create Powerful Forms with <span className="text-primary dark:text-blue-400 dark:glow-text">Ease</span> v2.0
                 </h1>
                 <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0">
                   Build, manage, and analyze forms with our intuitive platform. Collect submissions, integrate with your tools, and gain actionable insights.
