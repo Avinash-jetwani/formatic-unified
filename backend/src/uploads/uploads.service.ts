@@ -1,15 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { s3Client, S3_BUCKET_NAME, S3_PUBLIC_URL } from '../config/aws.config';
 import { v4 as uuidv4 } from 'uuid';
 import * as sharp from 'sharp';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class UploadsService {
   private readonly logger = new Logger(UploadsService.name);
+  private readonly uploadsDir = '/home/ec2-user/formatic-unified/uploads';
 
-  // Generate a unique key for S3 storage
+  constructor() {
+    // Ensure uploads directory exists
+    if (!fs.existsSync(this.uploadsDir)) {
+      fs.mkdirSync(this.uploadsDir, { recursive: true });
+    }
+  }
+
+  // Generate a unique key for local storage
   private generateKey(formId: string, submissionId: string, fileName: string): string {
     const extension = fileName.split('.').pop()?.toLowerCase() || 'bin';
     const uniqueId = uuidv4();
@@ -40,7 +47,7 @@ export class UploadsService {
     }
   }
 
-  // Upload file to S3
+  // Upload file to local storage
   async uploadFile(
     formId: string,
     submissionId: string,
@@ -57,68 +64,60 @@ export class UploadsService {
     }
     
     const key = this.generateKey(formId, submissionId, fileName);
+    const filePath = path.join(this.uploadsDir, key);
     
     try {
-      await s3Client.send(
-        new PutObjectCommand({
-          Bucket: S3_BUCKET_NAME,
-          Key: key,
-          Body: processedBuffer,
-          ContentType: mimeType,
-          // Removed ACL 'public-read' since the bucket has Block Public Access enabled
-        })
-      );
+      // Ensure directory exists
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
       
-      // Generate a signed URL for accessing the private object
-      // Set expiry time to 7 days (can be adjusted)
-      const command = new GetObjectCommand({
-        Bucket: S3_BUCKET_NAME,
-        Key: key,
-      });
+      // Write file to local storage
+      fs.writeFileSync(filePath, processedBuffer);
       
-      const signedUrl = await getSignedUrl(s3Client, command, { 
-        expiresIn: 60 * 60 * 24 * 7 // 7 days in seconds
-      });
+      // Generate URL for accessing the file
+      const url = `https://datizmo.com/uploads/${key}`;
       
       return {
-        url: signedUrl,
+        url: url,
         key: key,
         size: processedBuffer.length,
       };
     } catch (error) {
-      this.logger.error(`S3 upload error: ${error}`);
+      this.logger.error(`Local upload error: ${error}`);
       throw new Error('Failed to upload file to storage');
     }
   }
 
-  // Get a signed URL for an existing file
+  // Get a URL for an existing file (for local storage, just return the URL)
   async getSignedUrl(key: string, expiresInSeconds: number = 60 * 60): Promise<string> {
     try {
-      const command = new GetObjectCommand({
-        Bucket: S3_BUCKET_NAME,
-        Key: key,
-      });
+      const filePath = path.join(this.uploadsDir, key);
       
-      return await getSignedUrl(s3Client, command, { 
-        expiresIn: expiresInSeconds 
-      });
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        throw new Error('File not found');
+      }
+      
+      // For local storage, return the direct URL
+      return `https://datizmo.com/uploads/${key}`;
     } catch (error) {
-      this.logger.error(`Failed to generate signed URL: ${error}`);
+      this.logger.error(`Failed to generate file URL: ${error}`);
       throw new Error('Failed to generate file access URL');
     }
   }
 
-  // Delete file from S3
+  // Delete file from local storage
   async deleteFile(key: string): Promise<void> {
     try {
-      await s3Client.send(
-        new DeleteObjectCommand({
-          Bucket: S3_BUCKET_NAME,
-          Key: key,
-        })
-      );
+      const filePath = path.join(this.uploadsDir, key);
+      
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     } catch (error) {
-      this.logger.error(`S3 delete error: ${error}`);
+      this.logger.error(`Local delete error: ${error}`);
       throw new Error('Failed to delete file from storage');
     }
   }
