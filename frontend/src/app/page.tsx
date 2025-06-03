@@ -365,14 +365,10 @@ export default function HomePage() {
         </div>
         
         {/* Mobile Navigation Menu */}
-        <motion.div 
-          className={`md:hidden absolute top-16 inset-x-0 z-50 bg-background border-b shadow-lg`}
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ 
-            opacity: mobileMenuOpen ? 1 : 0,
-            height: mobileMenuOpen ? 'auto' : 0,
-          }}
-          transition={{ duration: 0.3 }}
+        <div 
+          className={`md:hidden absolute top-16 inset-x-0 z-50 bg-background border-b shadow-lg transition-all duration-300 ${
+            mobileMenuOpen ? 'opacity-100 max-h-96' : 'opacity-0 max-h-0 overflow-hidden'
+          }`}
         >
           {mobileMenuOpen && (
             <div className="container-content py-4 px-4 space-y-4 flex flex-col">
@@ -416,7 +412,7 @@ export default function HomePage() {
               </div>
             </div>
           )}
-        </motion.div>
+        </div>
       </header>
 
       <main className="flex-1">
@@ -447,10 +443,10 @@ export default function HomePage() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Check className="h-4 w-4 text-primary" />
-                                      <span>14-day free trial</span>
+                    <span>14-day free trial</span>
+                  </div>
                 </div>
               </div>
-            </div>
               
               <div className="w-full lg:flex-1 relative max-w-md mx-auto lg:max-w-lg mt-8 lg:mt-0">
                 <div className="relative w-full mx-auto aspect-[5/4] sm:aspect-[4/3] overflow-hidden rounded-xl border border-gray-200 dark:border-slate-700/50 bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:to-slate-800 shadow-lg dark:shadow-xl">
@@ -465,15 +461,10 @@ export default function HomePage() {
                     }`}
                   ></div>
                   
-                  <AnimatePresence mode="wait">
-                    <motion.div 
-                      key={formExamples[activeForm].id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.3 }}
-                      className="absolute inset-0 p-4 sm:p-6 flex flex-col"
-                    >
+                  <div 
+                    key={formExamples[activeForm].id}
+                    className="absolute inset-0 p-4 sm:p-6 flex flex-col"
+                  >
                       {/* Header with logo */}
                       <div className="flex items-center mb-4 sm:mb-6">
                         <div className="flex items-center">
@@ -579,8 +570,7 @@ export default function HomePage() {
                           </button>
                         </div>
                       </div>
-                    </motion.div>
-                  </AnimatePresence>
+                    </div>
                 </div>
                 
                 {/* Form switcher dots */}
@@ -628,12 +618,7 @@ export default function HomePage() {
         {/* Use Cases Section */}
         <section id="use-cases" className="py-16 bg-gradient-to-b from-background to-primary/5">
           <div className="container-content space-y-12">
-            <motion.div 
-              className="text-center space-y-4"
-              variants={fadeIn}
-              initial="hidden"
-              animate={isVisible.useCases ? "visible" : "hidden"}
-            >
+            <div className="text-center space-y-4">
               <div className="inline-block mb-2">
                 <div className="flex items-center justify-center space-x-2 bg-primary/10 px-3 py-1 rounded-full">
                   <Layers className="h-4 w-4 text-primary" />
@@ -646,23 +631,13 @@ export default function HomePage() {
               <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
                 From simple contact forms to complex multi-page applications, Datizmo adapts to your specific needs
               </p>
-            </motion.div>
+            </div>
             
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-              variants={staggerContainer}
-              initial="hidden"
-              animate={isVisible.useCases ? "visible" : "hidden"}
-            >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {formUseCases.map((useCase, index) => (
-                <motion.div
+                <div
                   key={index}
-                  variants={fadeIn}
-                  className="group bg-card rounded-xl border p-6 text-center hover:shadow-xl transition-all duration-300 relative overflow-hidden"
-                  whileHover={{ 
-                    y: -10,
-                    transition: { duration: 0.3 }
-                  }}
+                  className="group bg-card rounded-xl border p-6 text-center hover:shadow-xl transition-all duration-300 relative overflow-hidden hover:-translate-y-2"
                 >
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300" 
                     style={{ 
@@ -685,38 +660,33 @@ export default function HomePage() {
                       <li key={i} className="text-muted-foreground group-hover:text-foreground/90 transition-colors duration-300">{caseItem}</li>
                     ))}
                   </ul>
-                </motion.div>
+                </div>
               ))}
-            </motion.div>
+            </div>
           </div>
         </section>
 
         {/* Stats Section */}
         <section id="stats" className="py-12 bg-gradient-to-r from-primary/5 to-secondary/10">
           <div className="container-content">
-            <motion.div 
-              className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center"
-              variants={staggerContainer}
-              initial="hidden"
-              animate={isVisible.stats ? "visible" : "hidden"}
-            >
-              <motion.div variants={fadeIn} className="p-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="p-4">
                 <div className="text-3xl md:text-4xl font-bold text-primary mb-1">10k+</div>
                 <div className="text-sm text-muted-foreground">Forms Created</div>
-              </motion.div>
-              <motion.div variants={fadeIn} className="p-4">
+              </div>
+              <div className="p-4">
                 <div className="text-3xl md:text-4xl font-bold text-primary mb-1">1M+</div>
                 <div className="text-sm text-muted-foreground">Submissions</div>
-              </motion.div>
-              <motion.div variants={fadeIn} className="p-4">
+              </div>
+              <div className="p-4">
                 <div className="text-3xl md:text-4xl font-bold text-primary mb-1">5k+</div>
                 <div className="text-sm text-muted-foreground">Happy Users</div>
-              </motion.div>
-              <motion.div variants={fadeIn} className="p-4">
+              </div>
+              <div className="p-4">
                 <div className="text-3xl md:text-4xl font-bold text-primary mb-1">99.9%</div>
                 <div className="text-sm text-muted-foreground">Uptime</div>
-              </motion.div>
-            </motion.div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -724,12 +694,7 @@ export default function HomePage() {
         <section id="features" className="py-20 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full bg-grid-pattern opacity-5 pointer-events-none"></div>
           <div className="container-content space-y-16 relative z-10">
-            <motion.div 
-              className="text-center space-y-4"
-              variants={fadeIn}
-              initial="hidden"
-              animate={isVisible.features ? "visible" : "hidden"}
-            >
+            <div className="text-center space-y-4">
               <div className="inline-block mb-2">
                 <div className="flex items-center justify-center space-x-2 bg-primary/10 px-3 py-1 rounded-full">
                   <Sparkles className="h-4 w-4 text-primary" />
@@ -742,7 +707,7 @@ export default function HomePage() {
               <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
                 Datizmo provides all the tools you need to create, share, and analyze forms efficiently.
               </p>
-            </motion.div>
+            </div>
             
             <motion.div 
               className="grid grid-cols-1 gap-8 md:grid-cols-3"
