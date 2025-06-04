@@ -111,6 +111,20 @@ const FIELD_TYPE_LIST = Object.entries(fieldTypes).map(([type, def]) => ({
 const FormCreatePage: React.FC = () => {
   const router = useRouter();
   const { toast } = useToast();
+
+  // Check authentication on component load
+  useEffect(() => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to create forms.",
+        variant: "destructive"
+      });
+      router.push('/login');
+      return;
+    }
+  }, [router, toast]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [fields, setFields] = useState<FormField[]>([]);
@@ -237,6 +251,18 @@ const FormCreatePage: React.FC = () => {
       return;
     }
 
+    // Check authentication status
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (!token) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to create forms. Please log in and try again.",
+        variant: "destructive"
+      });
+      router.push('/login');
+      return;
+    }
+
     // Validate URL if provided
     if (successRedirectUrl) {
       try {
@@ -295,12 +321,35 @@ const FormCreatePage: React.FC = () => {
       // Convert local expirationDate to UTC for storing on the server
       const expirationDateUTC = localDateTimeToUTC(expirationDate);
 
+      console.log('Creating form with data:', {
+        title,
+        description,
+        slug: slugify(title, { lower: true, strict: true }) || `form-${Date.now()}`,
+        published: false,
+        submissionMessage,
+        category,
+        tags,
+        isTemplate: false,
+        successRedirectUrl,
+        multiPageEnabled,
+        expirationDate: expirationDateUTC,
+        maxSubmissions,
+        requireConsent,
+        consentText,
+        accessRestriction, 
+        accessPassword,
+        allowedEmails,
+        emailNotifications,
+        notificationEmails,
+        notificationType
+      });
+
       const response = await fetchApi<{id: string}>('/forms', {
         method: 'POST',
         data: {
           title,
           description,
-          slug: slugify(title) || undefined,
+          slug: slugify(title, { lower: true, strict: true }) || `form-${Date.now()}`,
           published: false,
           submissionMessage,
           category,
@@ -320,6 +369,8 @@ const FormCreatePage: React.FC = () => {
           notificationType
         }
       });
+
+      console.log('Form creation response:', response);
       
       if (!response) {
         throw new Error('Failed to create form');
@@ -353,9 +404,28 @@ const FormCreatePage: React.FC = () => {
       router.push(`/forms/${response.id}/builder`);
     } catch (error) {
       console.error('Error creating form:', error);
+      
+      // Provide more specific error messaging
+      let errorMessage = "Failed to create form. Please try again.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+          errorMessage = "Authentication failed. Please log in again.";
+          router.push('/login');
+        } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+          errorMessage = "You don't have permission to create forms.";
+        } else if (error.message.includes('400') || error.message.includes('Bad Request')) {
+          errorMessage = "Invalid form data. Please check your inputs and try again.";
+        } else if (error.message.includes('Network') || error.message.includes('Failed to fetch')) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to create form. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
