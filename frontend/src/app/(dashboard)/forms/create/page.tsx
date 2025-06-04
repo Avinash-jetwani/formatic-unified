@@ -11,7 +11,26 @@ import {
   EyeIcon,
   Grip,
   PencilIcon,
-  X 
+  X,
+  GripVertical,
+  Pencil,
+  Type,
+  AlignLeft,
+  Mail,
+  Phone,
+  Link,
+  Hash,
+  Calendar,
+  Clock,
+  CalendarClock,
+  Star,
+  Sliders,
+  BarChart3,
+  ChevronDown,
+  CheckSquare,
+  Circle,
+  Upload,
+  MousePointer
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -101,7 +120,30 @@ interface FieldTypeDefinition {
   description: string;
 }
 
-
+// Icon mapping function
+const getFieldIcon = (iconName: string) => {
+  const iconMap: Record<string, React.ComponentType<any>> = {
+    'text': Type,
+    'paragraph': AlignLeft,
+    'mail': Mail,
+    'phone': Phone,
+    'link': Link,
+    'number': Hash,
+    'calendar': Calendar,
+    'clock': Clock,
+    'calendar-clock': CalendarClock,
+    'star': Star,
+    'slider': Sliders,
+    'scale': BarChart3,
+    'dropdown': ChevronDown,
+    'checkbox': CheckSquare,
+    'radio': Circle,
+    'upload': Upload,
+  };
+  
+  const IconComponent = iconMap[iconName] || MousePointer;
+  return <IconComponent className="h-4 w-4" />;
+};
 
 // Form create page component
 const FormCreatePage: React.FC = () => {
@@ -502,8 +544,8 @@ const FormCreatePage: React.FC = () => {
         
         <TabsContent value="build" className="space-y-6">
           {/* Existing build tab content */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card className="md:col-span-1">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <Card className="lg:col-span-1">
               <CardHeader>
                 <CardTitle>Field Types</CardTitle>
                 <CardDescription>
@@ -512,19 +554,27 @@ const FormCreatePage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <ScrollArea className="h-[calc(100vh-300px)]">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {Object.entries(fieldTypes).filter(([key]) => key === key.toUpperCase()).map(([fieldTypeKey, fieldTypeInfo]) => (
                       <div
                         key={fieldTypeKey}
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData('fieldType', fieldTypeKey);
+                          e.dataTransfer.effectAllowed = 'copy';
+                        }}
                         onClick={() => handleAddField(fieldTypeKey as FieldType)}
-                        className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
+                        className="flex items-center space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-accent/50 cursor-pointer transition-all duration-200 group"
                       >
-                        <div className="h-8 w-8 flex items-center justify-center rounded-md bg-muted">
-                          <span className="text-sm">{fieldTypeInfo.icon || "+"}</span>
+                        <div className="h-10 w-10 flex items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                          {getFieldIcon(fieldTypeInfo.icon)}
                         </div>
-                        <div>
-                          <div className="font-medium">{fieldTypeInfo.label}</div>
-                          <div className="text-xs text-muted-foreground">{fieldTypeInfo.description}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm group-hover:text-primary transition-colors">{fieldTypeInfo.label}</div>
+                          <div className="text-xs text-muted-foreground line-clamp-2">{fieldTypeInfo.description}</div>
+                        </div>
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <GripVertical className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </div>
                     ))}
@@ -533,7 +583,7 @@ const FormCreatePage: React.FC = () => {
               </CardContent>
             </Card>
             
-            <Card className="md:col-span-3">
+            <Card className="lg:col-span-3">
               <CardHeader>
                 <CardTitle>{fields.length > 0 ? 'Form Preview' : 'Add fields to your form'}</CardTitle>
                 <CardDescription>
@@ -543,14 +593,37 @@ const FormCreatePage: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="min-h-[300px] border rounded-md border-dashed p-4">
+                <div 
+                  className="min-h-[400px] border-2 rounded-lg border-dashed border-border p-6 transition-colors"
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('border-primary', 'bg-primary/5');
+                  }}
+                  onDragLeave={(e) => {
+                    e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('border-primary', 'bg-primary/5');
+                    const fieldType = e.dataTransfer.getData('fieldType');
+                    if (fieldType) {
+                      handleAddField(fieldType as FieldType);
+                    }
+                  }}
+                >
                   {fields.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground p-8">
-                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                        <Plus className="h-6 w-6" />
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
+                        <MousePointer className="h-8 w-8" />
                       </div>
-                      <h3 className="mt-4 text-lg font-semibold">No fields added</h3>
-                      <p className="mb-4 mt-2 text-sm">Add fields from the left panel to get started</p>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">Drag & Drop to Build Your Form</h3>
+                      <p className="text-sm mb-4 max-w-md">
+                        Drag field types from the left panel and drop them here, or click on field types to add them instantly
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <GripVertical className="h-4 w-4" />
+                        <span>Drag fields to reorder them after adding</span>
+                      </div>
                     </div>
                   ) : (
                     <DndContext 
