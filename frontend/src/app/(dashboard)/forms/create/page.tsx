@@ -97,7 +97,7 @@ interface FormField {
 interface FieldTypeDefinition {
   type: FieldType;
   label: string;
-  icon: React.ReactNode;
+  icon: string;
   description: string;
 }
 
@@ -444,7 +444,7 @@ const FormCreatePage: React.FC = () => {
                         className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
                       >
                         <div className="h-8 w-8 flex items-center justify-center rounded-md bg-muted">
-                          {fieldType.icon || <Plus size={16} />}
+                          <span className="text-sm">{fieldType.icon || "+"}</span>
                         </div>
                         <div>
                           <div className="font-medium">{fieldType.label}</div>
