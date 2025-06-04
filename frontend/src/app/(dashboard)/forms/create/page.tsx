@@ -47,6 +47,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -58,8 +59,8 @@ import clsx from 'clsx';
 import { utcToLocalInputFormat, localInputToUTC, createFutureDateForInput, utcToLocalDateTimeFormat, localDateTimeToUTC, createFutureDateTimeForInput } from '@/lib/date-utils';
 
 // Drag and drop libraries
-import { DndContext, DragEndEvent, DragStartEvent, closestCenter } from '@dnd-kit/core';
-import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { DndContext, DragEndEvent, DragStartEvent, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 import { fieldTypes } from '@/lib/fieldTypes';
@@ -155,6 +156,14 @@ const FormCreatePage: React.FC = () => {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Setup drag sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
 
   const [title, setTitle] = useState('');
@@ -573,9 +582,7 @@ const FormCreatePage: React.FC = () => {
                           <div className="font-medium text-sm group-hover:text-primary transition-colors">{fieldTypeInfo.label}</div>
                           <div className="text-xs text-muted-foreground line-clamp-2">{fieldTypeInfo.description}</div>
                         </div>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        </div>
+
                       </div>
                     ))}
                   </div>
@@ -627,7 +634,7 @@ const FormCreatePage: React.FC = () => {
                     </div>
                   ) : (
                     <DndContext 
-                      sensors={[]} 
+                      sensors={sensors} 
                       collisionDetection={closestCenter}
                       onDragStart={handleDragStart}
                       onDragEnd={handleDragEnd}
@@ -994,60 +1001,84 @@ interface SortableFieldProps {
 }
 
 const SortableField: React.FC<SortableFieldProps> = ({ field, isActive, isEditing, onEdit, onDelete }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: field.id,
   });
   
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const fieldTypeInfo = fieldTypes[field.type] || {
+    label: 'Unknown',
+    description: 'Unknown field type',
+    icon: <span>?</span>,
+    hasOptions: false,
+    hasPlaceholder: false,
   };
   
   return (
-    <div 
-      ref={setNodeRef} 
-      style={style} 
-      className={`border rounded-md p-4 bg-card ${isActive ? 'ring-2 ring-primary' : ''} ${isEditing ? 'ring-2 ring-primary' : ''}`}
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="mb-3"
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div 
-            {...attributes} 
-            {...listeners}
-            className="cursor-grab touch-none p-1 rounded hover:bg-muted"
-          >
-            <Grip className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div>
+      <Card className="relative group hover:border-primary/50 hover:bg-accent/50 transition-all duration-200">
+        {/* Drag handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute left-3 top-1/2 -translate-y-1/2 cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
+        </div>
+        
+        <CardHeader className="py-3 pl-10">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <p className="font-medium">{field.label}</p>
-              {field.required && <span className="text-destructive text-sm">*</span>}
+              <Badge variant="outline" className="text-xs font-normal">
+                {fieldTypeInfo.label}
+              </Badge>
+              <CardTitle className="text-base">
+                {field.label || 'Untitled Field'}
+              </CardTitle>
+              {field.required && (
+                <Badge variant="destructive" className="text-xs font-normal">
+                  Required
+                </Badge>
+              )}
+              <Badge variant="secondary" className="text-xs font-normal ml-2">
+                Page {field.page || 1}
+              </Badge>
             </div>
-            <p className="text-sm text-muted-foreground">{getFieldTypeLabel(field.type)}</p>
+            
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onEdit}
+                className="h-8 w-8"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onDelete}
+                className="h-8 w-8"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={onEdit}
-          >
-            <PencilIcon className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={onDelete}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-      
-      {/* Field preview */}
-      <div className="mt-3 pl-9">
-        {renderFieldPreview(field)}
-      </div>
+        </CardHeader>
+        
+        <CardContent className="py-2">
+          {renderFieldPreview(field)}
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -193,14 +193,14 @@ const SortableField = ({ field, onEdit, onDelete, onDuplicate, availableFields }
       style={style}
       className="mb-3"
     >
-      <Card className="relative group">
+      <Card className="relative group hover:border-primary/50 hover:bg-accent/50 transition-all duration-200">
         {/* Drag handle */}
         <div
           {...attributes}
           {...listeners}
-          className="absolute left-3 top-1/2 -translate-y-1/2 cursor-move opacity-50 group-hover:opacity-100"
+          className="absolute left-3 top-1/2 -translate-y-1/2 cursor-move opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <GripVertical className="h-5 w-5" />
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
         </div>
         
         <CardHeader className="py-3 pl-10">
