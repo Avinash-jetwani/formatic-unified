@@ -119,6 +119,17 @@ export default function RegisterPage() {
     }
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Only proceed with form submission logic if we're actually submitting
+    if (step === 1) {
+      goToNextStep(e);
+    } else if (step === 2) {
+      handleSubmit(e);
+    }
+  };
+
   const goToNextStep = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -148,7 +159,14 @@ export default function RegisterPage() {
     setStep(2);
   };
 
-  const goToPreviousStep = () => {
+  const goToPreviousStep = (e?: React.MouseEvent) => {
+    // Prevent any default behavior that might cause page refresh
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    console.log('Going back to step 1'); // Debug log
     setError(''); // Clear any errors when going back
     setStep(1);
   };
@@ -265,7 +283,7 @@ export default function RegisterPage() {
               </div>
             )}
             
-            <form onSubmit={step === 1 ? goToNextStep : handleSubmit} className="space-y-5">
+            <form onSubmit={handleFormSubmit} className="space-y-5" noValidate>
               {step === 1 ? (
                 // Step 1: Basic Info
                 <>
@@ -609,7 +627,7 @@ export default function RegisterPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={goToPreviousStep}
+                      onClick={(e) => goToPreviousStep(e)}
                       className="w-1/3"
                     >
                       Back
