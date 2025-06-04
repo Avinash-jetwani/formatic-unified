@@ -96,7 +96,52 @@ interface FormField {
   options: string[];
   config: any;
   order: number;
+  conditions?: {
+    logicOperator?: 'AND' | 'OR';
+    rules?: {
+      fieldId: string;
+      operator: string;
+      value: any;
+    }[];
+  };
 }
+
+// Helper function to format condition description
+const formatConditionDescription = (field: FormField, availableFields: FormField[]) => {
+  if (!field.conditions || !field.conditions.rules || field.conditions.rules.length === 0) {
+    return null;
+  }
+
+  const { logicOperator, rules } = field.conditions;
+  const validRules = rules.filter(rule => 
+    rule.fieldId && rule.operator && rule.value !== undefined && rule.value !== ''
+  );
+  
+  if (validRules.length === 0) return null;
+
+  const descriptions = validRules.map(rule => {
+    const targetField = availableFields.find(f => f.id === rule.fieldId);
+    const fieldName = targetField?.label || 'Unknown Field';
+    
+    const operatorLabels: Record<string, string> = {
+      equals: 'equals',
+      notEquals: 'does not equal',
+      contains: 'contains',
+      greaterThan: 'is greater than',
+      lessThan: 'is less than'
+    };
+    
+    const operatorLabel = operatorLabels[rule.operator] || rule.operator;
+    return `${fieldName} ${operatorLabel} "${rule.value}"`;
+  });
+
+  if (descriptions.length === 1) {
+    return descriptions[0];
+  }
+
+  const connector = logicOperator === 'AND' ? ' AND ' : ' OR ';
+  return descriptions.join(connector);
+};
 
 const FormEditPage = () => {
   const router = useRouter();
@@ -717,10 +762,11 @@ const FormEditPage = () => {
                   <div className="border rounded-lg overflow-hidden">
                     <div className="border-b p-3 bg-muted/30 hidden sm:grid sm:grid-cols-12 text-sm font-medium">
                       <div className="col-span-1 text-center">#</div>
-                      <div className="col-span-3">Label</div>
+                      <div className="col-span-2">Label</div>
                       <div className="col-span-2">Type</div>
-                      <div className="col-span-2">Required</div>
-                      <div className="col-span-4">Options/Config</div>
+                      <div className="col-span-1">Required</div>
+                      <div className="col-span-3">Options/Config</div>
+                      <div className="col-span-3">Conditions</div>
                     </div>
                     <div className="divide-y">
                       {form?.fields
@@ -731,13 +777,32 @@ const FormEditPage = () => {
                             <div className="sm:hidden space-y-2">
                               <div className="flex justify-between items-center">
                                 <div className="font-medium">{field.label}</div>
-                                <Badge variant={field.required ? "default" : "outline"}>
-                                  {field.required ? "Required" : "Optional"}
-                                </Badge>
+                                <div className="flex gap-1">
+                                  {/* Check if field has active conditions */}
+                                  {field.conditions && 
+                                   field.conditions.rules && 
+                                   field.conditions.rules.length > 0 &&
+                                   field.conditions.rules.some(rule => 
+                                     rule.fieldId && rule.operator && rule.value !== undefined && rule.value !== ''
+                                   ) && (
+                                    <Badge variant="default" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                                      ⚡ Conditional
+                                    </Badge>
+                                  )}
+                                  <Badge variant={field.required ? "default" : "outline"}>
+                                    {field.required ? "Required" : "Optional"}
+                                  </Badge>
+                                </div>
                               </div>
                               <div className="text-sm text-muted-foreground">
                                 Type: {field.type.replace('_', ' ')}
                               </div>
+                              {/* Show condition description */}
+                              {formatConditionDescription(field, form?.fields || []) && (
+                                <div className="text-xs text-blue-800 bg-blue-50 border border-blue-200 p-2 rounded">
+                                  <span className="font-medium">Condition:</span> Show when {formatConditionDescription(field, form?.fields || [])}
+                                </div>
+                              )}
                               {(field.options?.length > 0 || Object.keys(field.config || {}).length > 0) && (
                                 <div className="text-xs text-muted-foreground bg-muted/20 p-2 rounded">
                                   {field.options?.length > 0 
@@ -751,9 +816,24 @@ const FormEditPage = () => {
                             {/* Desktop view (table row) */}
                             <div className="hidden sm:grid sm:grid-cols-12 sm:items-center text-sm">
                               <div className="col-span-1 text-center text-muted-foreground">{index + 1}</div>
-                              <div className="col-span-3 font-medium truncate" title={field.label}>{field.label}</div>
+                              <div className="col-span-2 font-medium truncate" title={field.label}>
+                                <div className="flex items-center gap-2">
+                                  <span>{field.label}</span>
+                                  {/* Check if field has active conditions */}
+                                  {field.conditions && 
+                                   field.conditions.rules && 
+                                   field.conditions.rules.length > 0 &&
+                                   field.conditions.rules.some(rule => 
+                                     rule.fieldId && rule.operator && rule.value !== undefined && rule.value !== ''
+                                   ) && (
+                                    <Badge variant="default" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                                      ⚡
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
                               <div className="col-span-2">{field.type.replace('_', ' ')}</div>
-                              <div className="col-span-2">
+                              <div className="col-span-1">
                                 {field.required ? (
                                   <span className="inline-flex items-center text-green-600">
                                     <Check className="h-4 w-4 mr-1" /> Yes
@@ -764,12 +844,21 @@ const FormEditPage = () => {
                                   </span>
                                 )}
                               </div>
-                              <div className="col-span-4 text-muted-foreground truncate">
+                              <div className="col-span-3 text-muted-foreground truncate">
                                 {field.options?.length > 0 
                                   ? field.options.join(', ') 
                                   : Object.entries(field.config || {})
                                       .map(([key, value]) => `${key}: ${value}`)
                                       .join(', ') || 'None'}
+                              </div>
+                              <div className="col-span-3 text-xs">
+                                {formatConditionDescription(field, form?.fields || []) ? (
+                                  <div className="text-blue-800 bg-blue-50 border border-blue-200 p-1 rounded truncate" title={`Show when ${formatConditionDescription(field, form?.fields || [])}`}>
+                                    Show when {formatConditionDescription(field, form?.fields || [])}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground">No conditions</span>
+                                )}
                               </div>
                             </div>
                           </div>
