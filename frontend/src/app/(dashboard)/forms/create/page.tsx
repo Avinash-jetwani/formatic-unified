@@ -101,18 +101,36 @@ interface FieldTypeDefinition {
   description: string;
 }
 
-// Create field type list as static constant to prevent re-creation on renders
-const FIELD_TYPE_LIST = Object.entries(fieldTypes)
-  .filter(([type]) => type === type.toUpperCase()) // Only use uppercase types to avoid duplicates
-  .map(([type, def]) => ({
-    type,
-    ...def
-  }));
+// Create static field type list to prevent hydration mismatches
+const FIELD_TYPE_LIST = [
+  { type: 'TEXT', label: 'Text', icon: 'text', description: 'Short text like a name or title' },
+  { type: 'LONG_TEXT', label: 'Long Text', icon: 'paragraph', description: 'Multiple lines of text' },
+  { type: 'EMAIL', label: 'Email', icon: 'mail', description: 'Email address' },
+  { type: 'PHONE', label: 'Phone', icon: 'phone', description: 'Phone number' },
+  { type: 'URL', label: 'URL', icon: 'link', description: 'Website URL' },
+  { type: 'NUMBER', label: 'Number', icon: 'number', description: 'Numeric values only' },
+  { type: 'DATE', label: 'Date', icon: 'calendar', description: 'Date picker' },
+  { type: 'TIME', label: 'Time', icon: 'clock', description: 'Time picker' },
+  { type: 'DATETIME', label: 'Date & Time', icon: 'calendar-clock', description: 'Date and time picker' },
+  { type: 'RATING', label: 'Rating', icon: 'star', description: 'Star rating input' },
+  { type: 'SLIDER', label: 'Slider', icon: 'slider', description: 'Range slider input' },
+  { type: 'SCALE', label: 'Scale', icon: 'scale', description: 'Numeric scale (1-10)' },
+  { type: 'DROPDOWN', label: 'Dropdown', icon: 'dropdown', description: 'Dropdown select' },
+  { type: 'CHECKBOX', label: 'Checkbox', icon: 'checkbox', description: 'Multiple choice checkboxes' },
+  { type: 'RADIO', label: 'Radio', icon: 'radio', description: 'Single choice radio buttons' },
+  { type: 'FILE', label: 'File Upload', icon: 'upload', description: 'File upload input' },
+];
 
 // Form create page component
 const FormCreatePage: React.FC = () => {
   const router = useRouter();
   const { toast } = useToast();
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side to prevent hydration mismatches
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
 
   const [title, setTitle] = useState('');
@@ -424,6 +442,20 @@ const FormCreatePage: React.FC = () => {
       setIsSaving(false);
     }
   };
+
+  // Show loading until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className="container mx-auto py-6 space-y-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p className="text-muted-foreground">Loading form builder...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -1003,11 +1035,22 @@ const renderFieldPreview = (field: FormField) => {
       return <Input type="datetime-local" disabled />;
       
     case FieldType.RATING:
+      const maxRating = field.config?.max || 5;
       return (
         <div className="flex gap-1">
-          {Array.from({ length: field.config.max || 5 }).map((_, i) => (
-            <div key={i} className="text-primary">★</div>
-          ))}
+          {maxRating <= 5 ? (
+            <>
+              {[1,2,3,4,5].slice(0, maxRating).map((i) => (
+                <div key={i} className="text-primary">★</div>
+              ))}
+            </>
+          ) : (
+            <>
+              {[1,2,3,4,5,6,7,8,9,10].slice(0, maxRating).map((i) => (
+                <div key={i} className="text-primary">★</div>
+              ))}
+            </>
+          )}
         </div>
       );
       
@@ -1021,17 +1064,23 @@ const renderFieldPreview = (field: FormField) => {
       );
       
     case FieldType.SCALE:
+      const scaleMin = field.config?.min || 1;
+      const scaleMax = field.config?.max || 10;
+      const scaleNumbers = [];
+      for (let i = scaleMin; i <= scaleMax; i++) {
+        scaleNumbers.push(i);
+      }
       return (
         <div className="flex justify-between py-2">
-          {Array.from({ length: (field.config.max - field.config.min + 1) || 10 }).map((_, i) => (
+          {scaleNumbers.map((num) => (
             <Button
-              key={i}
+              key={num}
               variant="outline"
               size="icon"
               className="h-8 w-8 rounded-full"
               disabled
             >
-              {i + (field.config.min || 1)}
+              {num}
             </Button>
           ))}
         </div>
