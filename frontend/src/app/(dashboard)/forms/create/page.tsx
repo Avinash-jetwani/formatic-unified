@@ -1218,7 +1218,12 @@ const FieldEditorDialog = ({
   const handleTypeChange = (type: string) => {
     setType(type as FieldType);
     setConfig(getDefaultConfig(type as FieldType));
-    setOptions(fieldTypes[type].hasOptions ? options : []);
+    // Set default options for option-based fields
+    if (fieldTypes[type]?.hasOptions) {
+      setOptions(options.length > 0 ? options : ['Option 1', 'Option 2', 'Option 3']);
+    } else {
+      setOptions([]);
+    }
   };
   
   // Reuse the getDefaultConfig function for field type changes
@@ -1271,9 +1276,9 @@ const FieldEditorDialog = ({
   
   // Render field configuration based on type
   const renderFieldConfig = () => {
-    if (!field) return null;
+    if (!type) return null;
 
-    switch (field.type) {
+    switch (type) {
       case FieldType.TEXT:
         return (
           <div className="space-y-4 border-t pt-4 mt-4">
@@ -1614,7 +1619,6 @@ const FieldEditorDialog = ({
             <Select
               value={type}
               onValueChange={(value) => handleTypeChange(value)}
-              disabled={!!field} // Disable changing type for existing fields
             >
               <SelectTrigger id="fieldType" className="col-span-3">
                 <SelectValue placeholder="Select type" />
@@ -1681,13 +1685,65 @@ const FieldEditorDialog = ({
                   <SelectValue placeholder="Select page" />
                 </SelectTrigger>
                 <SelectContent>
-                  {[...Array(10)].map((_, i) => (
-                    <SelectItem key={i+1} value={(i+1).toString()}>
-                      Page {i+1}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="1">Page 1</SelectItem>
+                  <SelectItem value="2">Page 2</SelectItem>
+                  <SelectItem value="3">Page 3</SelectItem>
+                  <SelectItem value="4">Page 4</SelectItem>
+                  <SelectItem value="5">Page 5</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          )}
+          
+          {/* Options for dropdown, checkbox, and radio fields */}
+          {fieldTypeInfo.hasOptions && (
+            <div className="space-y-4 border-t pt-4 mt-4">
+              <h4 className="font-medium">Options</h4>
+              <div className="space-y-2">
+                {options.map((option, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <Input
+                      value={option}
+                      onChange={(e) => {
+                        const newOptions = [...options];
+                        newOptions[index] = e.target.value;
+                        setOptions(newOptions);
+                      }}
+                      placeholder={`Option ${index + 1}`}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleRemoveOption(option)}
+                      disabled={options.length <= 1}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <div className="flex items-center space-x-2">
+                  <Input
+                    value={newOptionValue}
+                    onChange={(e) => setNewOptionValue(e.target.value)}
+                    placeholder="New option"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddOption();
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddOption}
+                    disabled={!newOptionValue.trim()}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
           
