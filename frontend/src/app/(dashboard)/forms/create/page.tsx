@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowLeft, 
@@ -101,8 +101,8 @@ interface FieldTypeDefinition {
   description: string;
 }
 
-// Use the shared fieldTypes for the sidebar
-const fieldTypeList = Object.entries(fieldTypes).map(([type, def]) => ({
+// Create field type list as static constant to prevent re-creation on renders
+const FIELD_TYPE_LIST = Object.entries(fieldTypes).map(([type, def]) => ({
   type,
   ...def
 }));
@@ -437,7 +437,7 @@ const FormCreatePage: React.FC = () => {
               <CardContent>
                 <ScrollArea className="h-[calc(100vh-300px)]">
                   <div className="space-y-2">
-                    {fieldTypeList.map((fieldType) => (
+                    {FIELD_TYPE_LIST.map((fieldType: any) => (
                       <div
                         key={fieldType.type}
                         onClick={() => handleAddField(fieldType.type as FieldType)}
