@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AtSign, Lock, LogIn, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { authService } from '@/services/auth';
 
-export default function LoginPage() {
+function LoginPageContent() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -18,6 +20,28 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // Handle URL parameters for messages
+  useEffect(() => {
+    const message = searchParams?.get('message');
+    const errorParam = searchParams?.get('error');
+    
+    if (message === 'registration-success') {
+      setSuccessMessage('Account created successfully! Please sign in with your credentials.');
+    } else if (message === 'session-expired') {
+      setError('Your session has expired. Please sign in again.');
+    } else if (errorParam === 'session-expired') {
+      setError('Your session has expired. Please sign in again.');
+    }
+    
+    // Clear URL parameters
+    if (message || errorParam) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('message');
+      url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,5 +269,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LoginPageContent />
+    </Suspense>
   );
 } 

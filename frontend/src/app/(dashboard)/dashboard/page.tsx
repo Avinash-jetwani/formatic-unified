@@ -345,6 +345,11 @@ function DashboardContent() {
   // Check for authentication error in URL params
   useEffect(() => {
     const errorParam = searchParams?.get('error');
+    if (errorParam === 'session-expired') {
+      // If session expired, redirect to login
+      window.location.href = '/login?message=session-expired';
+      return;
+    }
     if (errorParam === 'authentication') {
       setShowAuthError(true);
       // Remove the error parameter from URL without page reload

@@ -149,6 +149,7 @@ export default function RegisterPage() {
   };
 
   const goToPreviousStep = () => {
+    setError(''); // Clear any errors when going back
     setStep(1);
   };
 
@@ -159,7 +160,7 @@ export default function RegisterPage() {
 
     try {
       // Call the auth service to register the user
-      await authService.register({
+      const response = await authService.register({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -171,10 +172,37 @@ export default function RegisterPage() {
       
       setSuccessMessage('Account created successfully! Redirecting to dashboard...');
       
-      // Redirect after showing success message
-      setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 2000);
+      // If registration includes a token (auto-login), handle it properly
+      if (response.access_token) {
+        // Store the token
+        localStorage.setItem('token', response.access_token);
+        
+        // Decode token to get user data
+        try {
+          const payload = JSON.parse(atob(response.access_token.split('.')[1]));
+          const userData = {
+            id: payload.sub || payload.id,
+            name: payload.name || `${formData.firstName} ${formData.lastName}`,
+            email: payload.email || formData.email,
+            role: payload.role || 'CLIENT',
+          };
+          
+          // Store user data
+          localStorage.setItem('user', JSON.stringify(userData));
+        } catch (e) {
+          console.error('Error parsing token:', e);
+        }
+        
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 1500);
+      } else {
+        // If no auto-login, redirect to login page
+        setTimeout(() => {
+          window.location.href = '/login?message=registration-success';
+        }, 2000);
+      }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

@@ -85,14 +85,21 @@ export const fetchApi = async <T>(
     if (axios.isAxiosError(error)) {
       // Handle 401 Unauthorized errors
       if (error.response?.status === 401) {
-        // Clear token and redirect to dashboard with error message instead of login
+        // Clear token and user data
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
           sessionStorage.removeItem('token');
           localStorage.removeItem('user');
           sessionStorage.removeItem('user');
-          // Redirect to dashboard instead of login to provide better UX
-          window.location.href = '/dashboard?error=authentication';
+          
+          // Only redirect to login if we're not already on auth pages
+          const currentPath = window.location.pathname;
+          const authPages = ['/login', '/register', '/forgot-password', '/reset-password'];
+          const isAuthPage = authPages.some(page => currentPath.startsWith(page));
+          
+          if (!isAuthPage) {
+            window.location.href = '/login?error=session-expired';
+          }
         }
       }
       

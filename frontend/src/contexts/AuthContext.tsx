@@ -26,7 +26,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
-  register: (userData: any) => Promise<void>;
+  register: (userData: any) => Promise<any>;
   logout: () => void;
   checkAuth: () => Promise<boolean>;
   setUser: (user: User | null) => void;
@@ -39,7 +39,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isAdmin: false,
   login: async () => {},
-  register: async () => {},
+  register: async () => ({}),
   logout: () => {},
   checkAuth: async () => false,
   setUser: () => {},
@@ -168,8 +168,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const register = async (userData: any) => {
     try {
       setLoading(true);
-      await authService.register(userData);
-      router.push('/login');
+      const response = await authService.register(userData);
+      
+      // If registration returns a token (auto-login), handle it
+      if (response.access_token) {
+        // Store the token
+        localStorage.setItem('token', response.access_token);
+        
+        // Decode token to get user data
+        try {
+          const payload = JSON.parse(atob(response.access_token.split('.')[1]));
+          const newUser = {
+            id: payload.sub || payload.id,
+            name: payload.name || `${userData.firstName} ${userData.lastName}`,
+            email: payload.email || userData.email,
+            role: payload.role || 'CLIENT',
+          };
+          
+          setUser(newUser);
+          saveUserToStorage(newUser, true);
+          
+          // Don't redirect here, let the calling component handle it
+          return response;
+        } catch (e) {
+          console.error('Error parsing token after registration:', e);
+        }
+      }
+      
+      return response;
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
