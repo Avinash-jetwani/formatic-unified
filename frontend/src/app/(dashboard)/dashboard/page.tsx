@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -327,7 +327,8 @@ const getDashboardStats = async (startDate: string, endDate: string, timestamp: 
   }
 };
 
-export default function DashboardPage() {
+// Component that uses useSearchParams
+function DashboardContent() {
   const { user, isAdmin } = useAuth();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -1096,5 +1097,13 @@ export default function DashboardPage() {
                 </div>
                 </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[200px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+      <DashboardContent />
+    </Suspense>
   );
 } 
