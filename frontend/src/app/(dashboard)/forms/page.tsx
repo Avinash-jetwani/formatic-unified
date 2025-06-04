@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { 
@@ -124,23 +124,8 @@ interface FormTemplate {
   }[];
 }
 
-const FormsPage = () => {
-  const router = useRouter();
-  const { isAdmin, user } = useAuth();
-  const { toast } = useToast();
-  const [forms, setForms] = useState<Form[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState<'all' | 'published' | 'draft' | 'templates'>('all');
-  const [formToDelete, setFormToDelete] = useState<string | null>(null);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [clientFilter, setClientFilter] = useState<'all' | 'mine' | 'clients'>('all');
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
-
-  // Pre-defined form templates
-  const formTemplates: FormTemplate[] = [
+// Pre-defined form templates - moved outside component to prevent re-creation
+const FORM_TEMPLATES: FormTemplate[] = [
     {
       title: "Customer Feedback",
       description: "Collect customer feedback about your product or service",
@@ -265,6 +250,21 @@ const FormsPage = () => {
       ]
     }
   ];
+
+const FormsPage = () => {
+  const router = useRouter();
+  const { isAdmin, user } = useAuth();
+  const { toast } = useToast();
+  const [forms, setForms] = useState<Form[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filter, setFilter] = useState<'all' | 'published' | 'draft' | 'templates'>('all');
+  const [formToDelete, setFormToDelete] = useState<string | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [clientFilter, setClientFilter] = useState<'all' | 'mine' | 'clients'>('all');
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
 
   // Load forms on component mount
   useEffect(() => {
@@ -441,35 +441,6 @@ const FormsPage = () => {
     }
   };
 
-  // Filter forms based on search term, published status, client filter, category and tags
-  const filteredForms = forms.filter(form => {
-    // Title or description matches search term
-    const matchesSearch = form.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (form.description && form.description.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    // Filter by status (published/draft/template)
-    const matchesStatus = filter === 'all' ? true :
-                         filter === 'published' ? form.published :
-                         filter === 'draft' ? !form.published :
-                         filter === 'templates' ? form.isTemplate : true;
-    
-    // Filter by client (for super admin only)
-    const matchesClient = !isAdmin ? true :
-                         clientFilter === 'all' ? true :
-                         clientFilter === 'mine' ? form.clientId === user?.id :
-                         clientFilter === 'clients' ? form.clientId !== user?.id : true;
-    
-    // Filter by category
-    const matchesCategory = !categoryFilter ? true :
-                           form.category === categoryFilter;
-    
-    // Filter by tag
-    const matchesTag = !tagFilter ? true :
-                      form.tags.some(tag => tag.toLowerCase().includes(tagFilter.toLowerCase()));
-    
-    return matchesSearch && matchesStatus && matchesClient && matchesCategory && matchesTag;
-  });
-  
   // Function to get submissions count
   const getSubmissionCount = (form: Form) => {
     return form.submissionCount || form._count?.submissions || 0;
@@ -485,16 +456,53 @@ const FormsPage = () => {
     router.push('/forms/create');
   };
 
-  // Extract unique categories
-  const uniqueCategories = Array.from(new Set(forms.filter(form => form.category).map(form => form.category || '')));
+  // Memoized filter forms based on search term, published status, client filter, category and tags
+  const filteredForms = useMemo(() => {
+    return forms.filter(form => {
+      // Title or description matches search term
+      const matchesSearch = form.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (form.description && form.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      // Filter by status (published/draft/template)
+      const matchesStatus = filter === 'all' ? true :
+                           filter === 'published' ? form.published :
+                           filter === 'draft' ? !form.published :
+                           filter === 'templates' ? form.isTemplate : true;
+      
+      // Filter by client (for super admin only)
+      const matchesClient = !isAdmin ? true :
+                           clientFilter === 'all' ? true :
+                           clientFilter === 'mine' ? form.clientId === user?.id :
+                           clientFilter === 'clients' ? form.clientId !== user?.id : true;
+      
+      // Filter by category
+      const matchesCategory = !categoryFilter ? true :
+                             form.category === categoryFilter;
+      
+      // Filter by tag
+      const matchesTag = !tagFilter ? true :
+                        form.tags.some(tag => tag.toLowerCase().includes(tagFilter.toLowerCase()));
+      
+      return matchesSearch && matchesStatus && matchesClient && matchesCategory && matchesTag;
+    });
+  }, [forms, searchTerm, filter, clientFilter, categoryFilter, tagFilter, isAdmin, user?.id]);
 
-  // Extract unique tags across all forms
-  const uniqueTags = Array.from(new Set(forms.flatMap(form => form.tags || [])));
+  // Memoized extract unique categories
+  const uniqueCategories = useMemo(() => {
+    return Array.from(new Set(forms.filter(form => form.category).map(form => form.category || '')));
+  }, [forms]);
 
-  // Extract unique client names for filtering
-  const uniqueClients = isAdmin ? Array.from(
-    new Set(forms.filter(form => form.client?.name).map(form => form.client?.name || ''))
-  ) : [];
+  // Memoized extract unique tags across all forms
+  const uniqueTags = useMemo(() => {
+    return Array.from(new Set(forms.flatMap(form => form.tags || [])));
+  }, [forms]);
+
+  // Memoized extract unique client names for filtering
+  const uniqueClients = useMemo(() => {
+    return isAdmin ? Array.from(
+      new Set(forms.filter(form => form.client?.name).map(form => form.client?.name || ''))
+    ) : [];
+  }, [forms, isAdmin]);
 
   return (
     <ErrorBoundary>
@@ -649,7 +657,7 @@ const FormsPage = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {formTemplates.map((template, index) => (
+            {FORM_TEMPLATES.map((template, index) => (
               <Card key={index} className="overflow-hidden">
                 <CardHeader className="pb-3">
                   <CardTitle>{template.title}</CardTitle>
