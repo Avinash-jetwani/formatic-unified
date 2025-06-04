@@ -85,11 +85,14 @@ export const fetchApi = async <T>(
     if (axios.isAxiosError(error)) {
       // Handle 401 Unauthorized errors
       if (error.response?.status === 401) {
-        // Clear token and redirect to login page if unauthorized
+        // Clear token and redirect to dashboard with error message instead of login
         if (typeof window !== 'undefined') {
           localStorage.removeItem('token');
           sessionStorage.removeItem('token');
-          window.location.href = '/login';
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('user');
+          // Redirect to dashboard instead of login to provide better UX
+          window.location.href = '/dashboard?error=authentication';
         }
       }
       

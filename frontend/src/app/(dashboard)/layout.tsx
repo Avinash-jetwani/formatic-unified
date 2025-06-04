@@ -2,9 +2,7 @@
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { AuthProvider } from '@/contexts/AuthContext';
-
-// In a real app, we would import an AuthProvider here too
-// import { AuthProvider } from '@/contexts/AuthContext';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export default function DashboardLayoutWrapper({
   children,
@@ -13,7 +11,9 @@ export default function DashboardLayoutWrapper({
 }) {
   return (
     <AuthProvider>
-      <DashboardLayout>{children}</DashboardLayout>
+      <ErrorBoundary>
+        <DashboardLayout>{children}</DashboardLayout>
+      </ErrorBoundary>
     </AuthProvider>
   );
 } 

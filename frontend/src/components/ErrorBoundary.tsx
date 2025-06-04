@@ -35,6 +35,10 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 
+  redirectToDashboard = () => {
+    window.location.href = '/dashboard';
+  };
+
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) {
@@ -48,7 +52,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
               <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
               <CardTitle>Something went wrong</CardTitle>
               <CardDescription>
-                An unexpected error occurred. Please try refreshing the page.
+                An unexpected error occurred. You can return to the dashboard and try again.
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center space-y-4">
@@ -61,6 +65,12 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
               )}
               <div className="flex gap-2 justify-center">
                 <Button 
+                  onClick={this.redirectToDashboard}
+                  size="sm"
+                >
+                  Go to Dashboard
+                </Button>
+                <Button 
                   onClick={() => window.location.reload()} 
                   variant="outline"
                   size="sm"
@@ -70,6 +80,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
                 </Button>
                 <Button 
                   onClick={this.resetError}
+                  variant="outline"
                   size="sm"
                 >
                   Try Again

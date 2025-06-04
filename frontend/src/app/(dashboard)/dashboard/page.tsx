@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   BarChart3,
   FileText,
@@ -328,16 +329,30 @@ const getDashboardStats = async (startDate: string, endDate: string, timestamp: 
 
 export default function DashboardPage() {
   const { user, isAdmin } = useAuth();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | 'custom'>('30d');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [showAuthError, setShowAuthError] = useState(false);
   
   // Custom date range
   const [startDate, setStartDate] = useState<Date>(() => subDays(new Date(), 30));
   const [endDate, setEndDate] = useState<Date>(() => new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   
+  // Check for authentication error in URL params
+  useEffect(() => {
+    const errorParam = searchParams?.get('error');
+    if (errorParam === 'authentication') {
+      setShowAuthError(true);
+      // Remove the error parameter from URL without page reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete('error');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams]);
+
   // Load user data and initial dashboard data on mount
   useEffect(() => {
     loadUserData();
@@ -516,6 +531,15 @@ export default function DashboardPage() {
   
   return (
     <div className="space-y-6">
+      {/* Authentication Error Alert */}
+      {showAuthError && (
+        <Alert
+          type="warning"
+          title="Authentication Issue"
+          message="There was an authentication problem, but you're back on track now! You can continue using the dashboard safely."
+        />
+      )}
+
       {/* Welcome & date range selector */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>

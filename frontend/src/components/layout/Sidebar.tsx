@@ -228,7 +228,7 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
 
       <div className="p-3 border-t border-border">
         <Link
-          href="/forms/new"
+          href="/forms/create"
           className={cn(
             'flex items-center rounded-md p-2 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors',
             collapsed && 'justify-center'
