@@ -102,29 +102,19 @@ interface FieldTypeDefinition {
 }
 
 // Create field type list as static constant to prevent re-creation on renders
-const FIELD_TYPE_LIST = Object.entries(fieldTypes).map(([type, def]) => ({
-  type,
-  ...def
-}));
+const FIELD_TYPE_LIST = Object.entries(fieldTypes)
+  .filter(([type]) => type === type.toUpperCase()) // Only use uppercase types to avoid duplicates
+  .map(([type, def]) => ({
+    type,
+    ...def
+  }));
 
 // Form create page component
 const FormCreatePage: React.FC = () => {
   const router = useRouter();
   const { toast } = useToast();
 
-  // Check authentication on component load
-  useEffect(() => {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    if (!token) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to create forms.",
-        variant: "destructive"
-      });
-      router.push('/login');
-      return;
-    }
-  }, [router, toast]);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [fields, setFields] = useState<FormField[]>([]);
@@ -251,16 +241,18 @@ const FormCreatePage: React.FC = () => {
       return;
     }
 
-    // Check authentication status
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    if (!token) {
-      toast({
-        title: "Authentication Error",
-        description: "You must be logged in to create forms. Please log in and try again.",
-        variant: "destructive"
-      });
-      router.push('/login');
-      return;
+    // Check authentication status (only on client side)
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to create forms. Please log in and try again.",
+          variant: "destructive"
+        });
+        router.push('/login');
+        return;
+      }
     }
 
     // Validate URL if provided
