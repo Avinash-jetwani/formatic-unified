@@ -110,11 +110,49 @@ interface FormField {
 }
 
 // Sortable Field Component
-const SortableField = ({ field, onEdit, onDelete, onDuplicate }: { 
+// Helper function to format condition description
+const formatConditionDescription = (field: FormField, availableFields: FormField[]) => {
+  if (!field.conditions || !field.conditions.rules || field.conditions.rules.length === 0) {
+    return null;
+  }
+
+  const { logicOperator, rules } = field.conditions;
+  const validRules = rules.filter(rule => 
+    rule.fieldId && rule.operator && rule.value !== undefined && rule.value !== ''
+  );
+  
+  if (validRules.length === 0) return null;
+
+  const descriptions = validRules.map(rule => {
+    const targetField = availableFields.find(f => f.id === rule.fieldId);
+    const fieldName = targetField?.label || 'Unknown Field';
+    
+    const operatorLabels: Record<string, string> = {
+      equals: 'equals',
+      notEquals: 'does not equal',
+      contains: 'contains',
+      greaterThan: 'is greater than',
+      lessThan: 'is less than'
+    };
+    
+    const operatorLabel = operatorLabels[rule.operator] || rule.operator;
+    return `${fieldName} ${operatorLabel} "${rule.value}"`;
+  });
+
+  if (descriptions.length === 1) {
+    return descriptions[0];
+  }
+
+  const connector = logicOperator === 'AND' ? ' AND ' : ' OR ';
+  return descriptions.join(connector);
+};
+
+const SortableField = ({ field, onEdit, onDelete, onDuplicate, availableFields }: { 
   field: FormField;
   onEdit: (field: FormField) => void;
   onDelete: (field: FormField) => void;
   onDuplicate: (field: FormField) => void;
+  availableFields: FormField[];
 }) => {
   const {
     attributes,
@@ -138,6 +176,16 @@ const SortableField = ({ field, onEdit, onDelete, onDuplicate }: {
     hasOptions: false,
     hasPlaceholder: false,
   };
+
+  // Check if field has active conditions
+  const hasConditions = field.conditions && 
+                       field.conditions.rules && 
+                       field.conditions.rules.length > 0 &&
+                       field.conditions.rules.some(rule => 
+                         rule.fieldId && rule.operator && rule.value !== undefined && rule.value !== ''
+                       );
+
+  const conditionDescription = formatConditionDescription(field, availableFields);
 
   return (
     <div
@@ -172,6 +220,11 @@ const SortableField = ({ field, onEdit, onDelete, onDuplicate }: {
               <Badge variant="secondary" className="text-xs font-normal ml-2">
                 Page {field.page || 1}
               </Badge>
+              {hasConditions && (
+                <Badge variant="default" className="text-xs font-normal bg-blue-100 text-blue-800 border-blue-200">
+                  ⚡ Conditional
+                </Badge>
+              )}
             </div>
             
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -253,6 +306,14 @@ const SortableField = ({ field, onEdit, onDelete, onDuplicate }: {
           ) : (
             <div className="text-sm text-muted-foreground italic">
               {fieldTypeInfo.description}
+            </div>
+          )}
+          {conditionDescription && (
+            <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+              <div className="flex items-center gap-1">
+                <span className="font-medium">Condition:</span>
+                <span>Show when {conditionDescription}</span>
+              </div>
             </div>
           )}
         </CardContent>
@@ -2122,6 +2183,7 @@ const FormBuilderPage = () => {
                                   onEdit={handleEditField}
                                   onDelete={handleDeleteField}
                                   onDuplicate={handleDuplicateField}
+                                  availableFields={fields}
                                 />
                               ))}
                             </SortableContext>
@@ -2162,6 +2224,7 @@ const FormBuilderPage = () => {
                             onEdit={handleEditField}
                             onDelete={handleDeleteField}
                             onDuplicate={handleDuplicateField}
+                            availableFields={fields}
                           />
                         ))}
                       </SortableContext>
