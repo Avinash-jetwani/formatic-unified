@@ -1804,8 +1804,8 @@ const FormBuilderPage = () => {
       loadForm();
       
       toast({
-        title: 'Success',
-        description: 'Form changes saved successfully',
+        title: 'Field Order Updated!',
+        description: 'The field order has been saved successfully.',
       });
     } catch (error) {
       console.error('Error saving field order:', error);
@@ -1896,8 +1896,8 @@ const FormBuilderPage = () => {
       setFields(fields.filter(f => f.id !== field.id));
       
       toast({
-        title: "Success",
-        description: "Field deleted successfully",
+        title: "Field Deleted!",
+        description: "The field has been removed and changes saved automatically.",
       });
     } catch (error) {
       console.error('Failed to delete field:', error);
@@ -2020,8 +2020,8 @@ const FormBuilderPage = () => {
       }
       
       toast({
-        title: "Success",
-        description: "Field saved successfully",
+        title: "Field Saved!",
+        description: "Your field changes have been saved automatically.",
       });
       
       setFieldDialogOpen(false);
@@ -2074,8 +2074,9 @@ const FormBuilderPage = () => {
             disabled={isSaving}
             size="sm"
             className="sm:size-default"
+            variant="outline"
           >
-            {isSaving ? 'Saving...' : 'Save Changes'}
+            {isSaving ? 'Updating...' : 'Update Field Order'}
           </Button>
         </div>
       </div>
@@ -2090,7 +2091,7 @@ const FormBuilderPage = () => {
             <CardHeader className="pb-3 space-y-2">
               <CardTitle className="text-lg sm:text-xl">Form Fields</CardTitle>
               <CardDescription className="text-xs sm:text-sm">
-                Add, remove, and reorder fields. Drag fields to change their order.
+                Add, remove, and reorder fields. Individual field changes are saved automatically.
               </CardDescription>
             </CardHeader>
             <CardContent className="px-3 sm:px-6">
@@ -2246,8 +2247,9 @@ const FormBuilderPage = () => {
                 onClick={saveFormFields}
                 disabled={isSaving}
                 className="w-full sm:w-auto"
+                variant="outline"
               >
-                {isSaving ? 'Saving...' : 'Save Changes'}
+                {isSaving ? 'Updating...' : 'Update Field Order'}
               </Button>
             </CardFooter>
           </Card>
