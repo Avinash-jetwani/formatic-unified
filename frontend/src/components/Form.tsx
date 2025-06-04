@@ -53,6 +53,14 @@ interface FormField {
     step?: number;
     [key: string]: any;
   };
+  conditions?: {
+    logicOperator?: 'AND' | 'OR';
+    rules?: {
+      fieldId: string;
+      operator: string;
+      value: any;
+    }[];
+  };
 }
 
 // Helper type guard
@@ -90,6 +98,9 @@ export function Form({ form }: FormProps) {
   const [emailForAccess, setEmailForAccess] = useState('');
   const [emailInputError, setEmailInputError] = useState<string | null>(null);
   const [isCheckingEmailAccess, setIsCheckingEmailAccess] = useState(false);
+  
+  // State for conditional field visibility
+  const [fieldsVisible, setFieldsVisible] = useState<Record<string, boolean>>({});
   
   // Create a function to validate email format
   const validateEmailFormat = (email: string) => {
@@ -204,6 +215,46 @@ export function Form({ form }: FormProps) {
     setEmailForAccess(e.target.value);
   };
 
+  // Function to evaluate field conditions
+  const evaluateCondition = (field: FormField): boolean => {
+    // If no conditions, field is always visible
+    if (!field.conditions || !field.conditions.rules || field.conditions.rules.length === 0) {
+      return true;
+    }
+
+    const { logicOperator, rules } = field.conditions;
+    
+    // Evaluate each rule
+    const results = rules.map(rule => {
+      const { fieldId, operator, value } = rule;
+      const fieldValue = formData[fieldId];
+      
+      switch (operator) {
+        case 'equals':
+          return fieldValue === value;
+        case 'notEquals':
+          return fieldValue !== value;
+        case 'contains':
+          return fieldValue && typeof fieldValue === 'string' 
+            ? fieldValue.includes(value) 
+            : Array.isArray(fieldValue) 
+              ? fieldValue.includes(value) 
+              : false;
+        case 'greaterThan':
+          return parseFloat(fieldValue) > parseFloat(value);
+        case 'lessThan':
+          return parseFloat(fieldValue) < parseFloat(value);
+        default:
+          return false;
+      }
+    });
+    
+    // Apply logic operator
+    return logicOperator === 'AND' 
+      ? results.every(result => result) 
+      : results.some(result => result);
+  };
+
   // Add a debug effect to log form props
   useEffect(() => {
     if (form.accessRestriction === 'email') {
@@ -236,6 +287,19 @@ export function Form({ form }: FormProps) {
       setMaxSubmissionsReached(true);
     }
   }, [form]);
+
+  // Update field visibility whenever form values change
+  useEffect(() => {
+    if (!form || !form.fields) return;
+    
+    const newVisibility: Record<string, boolean> = {};
+    
+    form.fields.forEach(field => {
+      newVisibility[field.id] = evaluateCondition(field);
+    });
+    
+    setFieldsVisible(newVisibility);
+  }, [form, formData]);
 
   // Handle redirect after submission if successRedirectUrl is set
   useEffect(() => {
@@ -998,7 +1062,9 @@ export function Form({ form }: FormProps) {
   };
 
   const validateCurrentPage = () => {
-    const currentPageFields = form.fields.filter(field => (field.page || 1) === currentPage);
+    const currentPageFields = form.fields.filter(field => 
+      (field.page || 1) === currentPage && evaluateCondition(field)
+    );
     
     for (const field of currentPageFields) {
       if (field.required) {
@@ -1268,8 +1334,10 @@ export function Form({ form }: FormProps) {
     return renderEmailAccessForm();
   }
 
-  // Filter fields by current page
-  const currentPageFields = form.fields?.filter(field => (field.page || 1) === currentPage) || [];
+  // Filter fields by current page and conditional logic
+  const currentPageFields = form.fields?.filter(field => 
+    (field.page || 1) === currentPage && evaluateCondition(field)
+  ) || [];
 
   return (
     <div className="w-full max-w-xl mx-auto">
