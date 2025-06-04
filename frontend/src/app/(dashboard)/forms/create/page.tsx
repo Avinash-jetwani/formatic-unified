@@ -101,25 +101,7 @@ interface FieldTypeDefinition {
   description: string;
 }
 
-// Create static field type list to prevent hydration mismatches
-const FIELD_TYPE_LIST = [
-  { type: 'TEXT', label: 'Text', icon: 'text', description: 'Short text like a name or title' },
-  { type: 'LONG_TEXT', label: 'Long Text', icon: 'paragraph', description: 'Multiple lines of text' },
-  { type: 'EMAIL', label: 'Email', icon: 'mail', description: 'Email address' },
-  { type: 'PHONE', label: 'Phone', icon: 'phone', description: 'Phone number' },
-  { type: 'URL', label: 'URL', icon: 'link', description: 'Website URL' },
-  { type: 'NUMBER', label: 'Number', icon: 'number', description: 'Numeric values only' },
-  { type: 'DATE', label: 'Date', icon: 'calendar', description: 'Date picker' },
-  { type: 'TIME', label: 'Time', icon: 'clock', description: 'Time picker' },
-  { type: 'DATETIME', label: 'Date & Time', icon: 'calendar-clock', description: 'Date and time picker' },
-  { type: 'RATING', label: 'Rating', icon: 'star', description: 'Star rating input' },
-  { type: 'SLIDER', label: 'Slider', icon: 'slider', description: 'Range slider input' },
-  { type: 'SCALE', label: 'Scale', icon: 'scale', description: 'Numeric scale (1-10)' },
-  { type: 'DROPDOWN', label: 'Dropdown', icon: 'dropdown', description: 'Dropdown select' },
-  { type: 'CHECKBOX', label: 'Checkbox', icon: 'checkbox', description: 'Multiple choice checkboxes' },
-  { type: 'RADIO', label: 'Radio', icon: 'radio', description: 'Single choice radio buttons' },
-  { type: 'FILE', label: 'File Upload', icon: 'upload', description: 'File upload input' },
-];
+
 
 // Form create page component
 const FormCreatePage: React.FC = () => {
@@ -531,18 +513,18 @@ const FormCreatePage: React.FC = () => {
               <CardContent>
                 <ScrollArea className="h-[calc(100vh-300px)]">
                   <div className="space-y-2">
-                    {FIELD_TYPE_LIST.map((fieldType: any) => (
+                    {Object.entries(fieldTypes).filter(([key]) => key === key.toUpperCase()).map(([fieldTypeKey, fieldTypeInfo]) => (
                       <div
-                        key={fieldType.type}
-                        onClick={() => handleAddField(fieldType.type as FieldType)}
+                        key={fieldTypeKey}
+                        onClick={() => handleAddField(fieldTypeKey as FieldType)}
                         className="flex items-center space-x-2 p-2 rounded-md hover:bg-accent cursor-pointer"
                       >
                         <div className="h-8 w-8 flex items-center justify-center rounded-md bg-muted">
-                          <span className="text-sm">{fieldType.icon || "+"}</span>
+                          <span className="text-sm">{fieldTypeInfo.icon || "+"}</span>
                         </div>
                         <div>
-                          <div className="font-medium">{fieldType.label}</div>
-                          <div className="text-xs text-muted-foreground">{fieldType.description}</div>
+                          <div className="font-medium">{fieldTypeInfo.label}</div>
+                          <div className="text-xs text-muted-foreground">{fieldTypeInfo.description}</div>
                         </div>
                       </div>
                     ))}
