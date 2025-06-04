@@ -1163,17 +1163,16 @@ const FieldEditorDialog = ({
     }
   }, [field]);
 
-  // Initialize config if needed when changing field types
+  // Ensure default config values when the field `type` changes (avoids infinite update loop)
   useEffect(() => {
-    if (config) {
-      setConfig({
-        ...config,
-        min: config.min !== undefined ? config.min : 1,
-        max: config.max !== undefined ? config.max : 10,
-        step: config.step !== undefined ? config.step : 1,
-      });
+    if (type === FieldType.SLIDER || type === FieldType.SCALE) {
+      setConfig((prev: any) => ({
+        min: prev?.min !== undefined ? prev.min : 1,
+        max: prev?.max !== undefined ? prev.max : 10,
+        step: prev?.step !== undefined ? prev.step : 1,
+      }));
     }
-  }, [config]);
+  }, [type]);
   
   if (!field) return null;
   
