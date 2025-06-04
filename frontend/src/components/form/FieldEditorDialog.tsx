@@ -359,6 +359,387 @@ export const FieldEditorDialog: React.FC<FieldEditorDialogProps> = ({
     });
   };
   
+  // Render field-specific configurations based on field type
+  const renderFieldConfig = () => {
+    if (!editedField) return null;
+
+    switch (editedField.type) {
+      case 'TEXT':
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">Text Field Settings</h4>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-4 sm:gap-6">
+              <Label htmlFor="minLength" className="sm:text-right">
+                Min Length
+              </Label>
+              <div className="col-span-1 sm:col-span-3">
+                <Input
+                  id="minLength"
+                  type="number"
+                  min="0"
+                  value={editedField.config?.minLength || ''}
+                  onChange={(e) => updateConfig('minLength', e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="Minimum character length"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-4 sm:gap-6">
+              <Label htmlFor="maxLength" className="sm:text-right">
+                Max Length
+              </Label>
+              <div className="col-span-1 sm:col-span-3">
+                <Input
+                  id="maxLength"
+                  type="number"
+                  min="0"
+                  value={editedField.config?.maxLength || ''}
+                  onChange={(e) => updateConfig('maxLength', e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="Maximum character length"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'LONG_TEXT':
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">Long Text Field Settings</h4>
+            
+            <div className="grid grid-cols-4 items-center gap-6">
+              <Label htmlFor="minLength" className="text-right">
+                Min Length
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="minLength"
+                  type="number"
+                  min="0"
+                  value={editedField.config?.minLength || ''}
+                  onChange={(e) => updateConfig('minLength', e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="Minimum character length"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-6">
+              <Label htmlFor="maxLength" className="text-right">
+                Max Length
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="maxLength"
+                  type="number"
+                  min="0"
+                  value={editedField.config?.maxLength || ''}
+                  onChange={(e) => updateConfig('maxLength', e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="Maximum character length"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-6">
+              <Label htmlFor="rows" className="text-right">
+                Rows
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="rows"
+                  type="number"
+                  min="2"
+                  max="20"
+                  value={editedField.config?.rows || '4'}
+                  onChange={(e) => updateConfig('rows', e.target.value === '' ? 4 : Number(e.target.value))}
+                  placeholder="Number of visible rows"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'EMAIL':
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">Email Field Settings</h4>
+            
+            <div className="grid grid-cols-4 items-center gap-6">
+              <Label htmlFor="validation" className="text-right">
+                Validation
+              </Label>
+              <div className="col-span-3 flex items-center">
+                <Switch
+                  id="validation"
+                  checked={editedField.config?.validateEmail !== false}
+                  onCheckedChange={(checked) => updateConfig('validateEmail', checked)}
+                />
+                <span className="ml-2 text-sm">Validate email format</span>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'PHONE':
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">Phone Field Settings</h4>
+            
+            <div className="grid grid-cols-4 items-center gap-6">
+              <Label htmlFor="format" className="text-right">
+                Format
+              </Label>
+              <div className="col-span-3">
+                <Select 
+                  value={editedField.config?.format || 'international'}
+                  onValueChange={(value) => updateConfig('format', value)}
+                >
+                  <SelectTrigger id="format">
+                    <SelectValue placeholder="Select format" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="international">International</SelectItem>
+                    <SelectItem value="us">US</SelectItem>
+                    <SelectItem value="uk">UK</SelectItem>
+                    <SelectItem value="india">India</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        );
+      
+      case 'NUMBER':
+        return (
+          <div className="space-y-4 border-t pt-4 mt-4">
+            <h4 className="font-medium">Number Field Settings</h4>
+            
+            <div className="grid grid-cols-4 items-center gap-6">
+              <Label htmlFor="min" className="text-right">
+                Min Value
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="min"
+                  type="number"
+                  value={editedField.config?.min ?? ''}
+                  onChange={(e) => updateConfig('min', e.target.value === '' ? null : Number(e.target.value))}
+                  placeholder="Minimum value"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-6">
+              <Label htmlFor="max" className="text-right">
+                Max Value
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="max"
+                  type="number"
+                  value={editedField.config?.max ?? ''}
+                  onChange={(e) => updateConfig('max', e.target.value === '' ? null : Number(e.target.value))}
+                  placeholder="Maximum value"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-6">
+              <Label htmlFor="step" className="text-right">
+                Step
+              </Label>
+              <div className="col-span-3">
+                <Input
+                  id="step"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={editedField.config?.step || '1'}
+                  onChange={(e) => updateConfig('step', e.target.value === '' ? 1 : Number(e.target.value))}
+                  placeholder="Step increment"
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // Function to render a preview of the field
+  const renderFieldPreview = () => {
+    switch (editedField.type) {
+      case 'TEXT':
+        return (
+          <Input 
+            id="preview-field"
+            placeholder={editedField.placeholder || 'Enter text'} 
+            disabled 
+            maxLength={editedField.config?.maxLength}
+          />
+        );
+
+      case 'LONG_TEXT':
+        return (
+          <Textarea
+            id="preview-field"
+            placeholder={editedField.placeholder || 'Enter long text'}
+            disabled
+            rows={editedField.config?.rows || 4}
+            maxLength={editedField.config?.maxLength}
+          />
+        );
+
+      case 'EMAIL':
+        return (
+          <Input
+            type="email"
+            id="preview-field"
+            placeholder={editedField.placeholder || 'email@example.com'}
+            disabled
+          />
+        );
+
+      case 'PHONE':
+        const phoneFormat = editedField.config?.format || 'international';
+        let phonePlaceholder = '(123) 456-7890';
+        
+        if (phoneFormat === 'us') {
+          phonePlaceholder = '(555) 123-4567';
+        } else if (phoneFormat === 'uk') {
+          phonePlaceholder = '07700 900123';
+        } else if (phoneFormat === 'india') {
+          phonePlaceholder = '+91 98765 43210';
+        } else {
+          phonePlaceholder = '+1 (555) 123-4567';
+        }
+        
+        return (
+          <Input
+            type="tel"
+            id="preview-field"
+            placeholder={editedField.placeholder || phonePlaceholder}
+            disabled
+          />
+        );
+
+      case 'URL':
+        return (
+          <Input
+            type="url"
+            id="preview-field"
+            placeholder={editedField.placeholder || 'https://example.com'}
+            disabled
+          />
+        );
+
+      case 'NUMBER':
+        return (
+          <Input
+            type="number"
+            id="preview-field"
+            placeholder={editedField.placeholder || '0'}
+            min={editedField.config?.min}
+            max={editedField.config?.max}
+            step={editedField.config?.step || 1}
+            disabled
+          />
+        );
+
+      case 'DATE':
+        return (
+          <Input 
+            type="date" 
+            id="preview-field" 
+            min={editedField.config?.min} 
+            max={editedField.config?.max} 
+            disabled 
+          />
+        );
+
+      case 'TIME':
+        return (
+          <Input 
+            type="time" 
+            id="preview-field" 
+            min={editedField.config?.min} 
+            max={editedField.config?.max} 
+            disabled 
+          />
+        );
+
+      case 'DATETIME':
+        return (
+          <Input 
+            type="datetime-local" 
+            id="preview-field" 
+            min={editedField.config?.min} 
+            max={editedField.config?.max} 
+            disabled 
+          />
+        );
+
+      case 'DROPDOWN':
+        return (
+          <div className="relative">
+            <select
+              id="preview-field"
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled
+            >
+              <option value="" disabled selected>{editedField.placeholder || 'Select an option'}</option>
+              {editedField.options.map((option, i) => (
+                <option key={i} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+        );
+
+      case 'CHECKBOX':
+        return (
+          <div className={`space-y-2 ${editedField.config?.layout === 'horizontal' ? 'flex flex-wrap gap-4 space-y-0' : ''}`}>
+            {editedField.options.length > 0 ? (
+              editedField.options.map((option, i) => (
+                <div key={i} className="flex items-center space-x-2">
+                  <Checkbox id={`preview-option-${i}`} disabled />
+                  <Label htmlFor={`preview-option-${i}`}>{option}</Label>
+                </div>
+              ))
+            ) : (
+              <div className="text-sm text-muted-foreground italic">Add options to see preview</div>
+            )}
+          </div>
+        );
+
+      case 'RADIO':
+        return (
+          <div className={`space-y-2 ${editedField.config?.layout === 'horizontal' ? 'flex flex-wrap gap-4 space-y-0' : ''}`}>
+            {editedField.options.length > 0 ? (
+              editedField.options.map((option, i) => (
+                <div key={i} className="flex items-center space-x-2">
+                  <input type="radio" id={`preview-radio-${i}`} disabled className="h-4 w-4" />
+                  <Label htmlFor={`preview-radio-${i}`}>{option}</Label>
+                </div>
+              ))
+            ) : (
+              <div className="text-sm text-muted-foreground italic">Add options to see preview</div>
+            )}
+          </div>
+        );
+
+      default:
+        return (
+          <Input 
+            id="preview-field"
+            placeholder={editedField.placeholder || 'Enter text'} 
+            disabled 
+          />
+        );
+    }
+  };
+
   // Handle save button click
   const handleSave = () => {
     if (editedField.label.trim()) {
@@ -394,7 +775,7 @@ export const FieldEditorDialog: React.FC<FieldEditorDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] lg:max-w-[1000px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Field</DialogTitle>
           <DialogDescription>
@@ -404,8 +785,8 @@ export const FieldEditorDialog: React.FC<FieldEditorDialogProps> = ({
         
         <div className="flex flex-col md:flex-row gap-6">
           {/* Configuration panel */}
-          <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+          <div className="flex-1 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-4 sm:gap-6">
               <Label htmlFor="fieldType" className="sm:text-right md:whitespace-nowrap">
                 Field Type
               </Label>
@@ -428,7 +809,7 @@ export const FieldEditorDialog: React.FC<FieldEditorDialogProps> = ({
               </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-4 sm:gap-6">
               <Label htmlFor="fieldLabel" className="sm:text-right md:whitespace-nowrap">
                 Label
               </Label>
@@ -443,7 +824,7 @@ export const FieldEditorDialog: React.FC<FieldEditorDialogProps> = ({
             </div>
             
             {multiPageEnabled && (
-              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-4 sm:gap-6">
                 <Label htmlFor="fieldPage" className="sm:text-right md:whitespace-nowrap">
                   Page
                 </Label>
@@ -467,7 +848,7 @@ export const FieldEditorDialog: React.FC<FieldEditorDialogProps> = ({
               </div>
             )}
             
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-4 sm:gap-6">
               <Label htmlFor="fieldPlaceholder" className="sm:text-right md:whitespace-nowrap">
                 Placeholder
               </Label>
@@ -481,7 +862,7 @@ export const FieldEditorDialog: React.FC<FieldEditorDialogProps> = ({
               </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-4 sm:gap-6">
               <Label htmlFor="fieldRequired" className="sm:text-right md:whitespace-nowrap">
                 Required
               </Label>
@@ -495,8 +876,11 @@ export const FieldEditorDialog: React.FC<FieldEditorDialogProps> = ({
               </div>
             </div>
             
+            {/* Field type specific settings */}
+            {renderFieldConfig()}
+            
             {/* Conditional Logic Toggle */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 items-start sm:items-center gap-4 sm:gap-6">
               <Label htmlFor="useConditions" className="sm:text-right md:whitespace-nowrap">
                 Conditions
               </Label>
@@ -512,7 +896,7 @@ export const FieldEditorDialog: React.FC<FieldEditorDialogProps> = ({
             
             {/* Conditional Logic Rules */}
             {showConditions && (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-4 gap-6">
                 <Label className="text-right self-start mt-2 md:whitespace-nowrap">
                   Logic
                 </Label>
@@ -663,7 +1047,7 @@ export const FieldEditorDialog: React.FC<FieldEditorDialogProps> = ({
             
             {/* Options for fields that have them */}
             {fieldTypeInfo.hasOptions && (
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-4 gap-6">
                 <Label className="text-right self-start mt-2 md:whitespace-nowrap">
                   Options
                 </Label>
@@ -707,23 +1091,19 @@ export const FieldEditorDialog: React.FC<FieldEditorDialogProps> = ({
           </div>
           
           {/* Preview panel */}
-          <div className="border rounded-md p-4 md:p-6 bg-muted/20 md:w-[250px] lg:w-[300px] flex-shrink-0">
+          <div className="border rounded-md p-4 md:p-6 bg-muted/20 md:w-[280px] lg:w-[320px] flex-shrink-0">
             <div className="mb-4">
               <h3 className="text-lg font-medium">Preview</h3>
               <p className="text-sm text-muted-foreground">See how your field will appear</p>
             </div>
             
-            <div className="space-y-2 max-w-full overflow-hidden">
+            <div className="space-y-3 max-w-full overflow-hidden">
               <Label htmlFor="preview-field">
                 {editedField.label || 'Field Label'}
                 {editedField.required && <span className="text-destructive ml-1">*</span>}
               </Label>
               
-              <Input 
-                id="preview-field"
-                placeholder={editedField.placeholder || 'Enter text'} 
-                disabled 
-              />
+              {renderFieldPreview()}
             </div>
           </div>
         </div>
