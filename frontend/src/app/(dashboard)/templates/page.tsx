@@ -66,7 +66,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { fetchApi } from '@/services/api';
 
 // Template interface
@@ -623,7 +623,7 @@ const TemplateGalleryPage = () => {
     setIsCreating(template.id);
     try {
       // Create the form
-      const newForm = await fetchApi('/forms', {
+      const newForm = await fetchApi<{id: string}>('/forms', {
         method: 'POST',
         data: {
           title: template.title,
