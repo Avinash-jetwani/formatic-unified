@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +43,18 @@ import {
   RefreshCcw, 
   Search, 
   Trash, 
-  TrendingUp 
+  TrendingUp,
+  FileText,
+  CheckCircle2,
+  Clock,
+  Archive,
+  Activity,
+  Zap,
+  Users,
+  BarChart3,
+  Star,
+  Grid3X3,
+  List
 } from 'lucide-react';
 import { 
   Select,
@@ -399,143 +411,275 @@ export default function SubmissionsDashboard() {
   };
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold">Submissions</h1>
-          <p className="text-sm text-muted-foreground">Manage and analyze form submissions</p>
-        </div>
-        <div className="flex w-full sm:w-auto justify-between sm:justify-start gap-2">
-          <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => loadSubmissions(savedStatusMap)}>
-            <RefreshCcw className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-            <span className="hidden xs:inline">Refresh</span>
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" className="text-xs sm:text-sm">
-                <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">Export</span>
-                <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4 ml-1 sm:ml-2" />
+    <div className="space-y-8">
+      {/* Enhanced Header Section - Matching Forms Dashboard */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative overflow-hidden bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-950 dark:via-emerald-950 dark:to-teal-950 rounded-2xl p-8 border border-green-100 dark:border-green-800"
+      >
+        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="p-2 bg-gradient-to-r from-green-500 to-teal-600 rounded-lg"
+              >
+                <FileText className="h-6 w-6 text-white" />
+              </motion.div>
+              <div>
+                <motion.h1 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                  className="text-4xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent"
+                >
+                  Submissions Dashboard
+                </motion.h1>
+                <motion.p 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4, duration: 0.5 }}
+                  className="text-lg text-muted-foreground mt-1"
+                >
+                  Manage, analyze, and track all your form submissions with powerful insights
+                </motion.p>
+              </div>
+            </div>
+            
+            {/* Quick Stats */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="flex flex-wrap gap-4 mt-4"
+            >
+              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
+                <BarChart3 className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">{stats.total} Total</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
+                <Activity className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">{stats.today} Today</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
+                <TrendingUp className="h-4 w-4 text-purple-600" />
+                <span className="text-sm font-medium">{stats.thisWeek} This Week</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
+                <CheckCircle2 className="h-4 w-4 text-orange-600" />
+                <span className="text-sm font-medium">{stats.thisMonth} This Month</span>
+              </div>
+            </motion.div>
+          </div>
+          
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            className="flex items-center gap-4"
+          >
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button 
+                variant="outline" 
+                onClick={() => loadSubmissions(savedStatusMap)}
+                className="relative overflow-hidden bg-gradient-to-r from-green-50 to-teal-50 border-green-200 text-green-700 hover:from-green-100 hover:to-teal-100 dark:from-green-950 dark:to-teal-950 dark:border-green-800 dark:text-green-300 transition-all duration-300 hover:shadow-lg"
+              >
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                Refresh
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleExport('csv')}>
-                Export as CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport('json')}>
-                Export as JSON
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport('pdf')}>
-                Export as PDF
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </motion.div>
+            
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button className="relative overflow-hidden bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleExport('csv')}>
+                    Export as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('json')}>
+                    Export as JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                    Export as PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </motion.div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-3 py-3 sm:px-6 sm:py-4">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
-              Total Submissions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pt-0 pb-3 sm:pb-4">
-            <div className="text-xl sm:text-2xl font-bold">{stats.total}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">All time</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-3 py-3 sm:px-6 sm:py-4">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
-              Today
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pt-0 pb-3 sm:pb-4">
-            <div className="text-xl sm:text-2xl font-bold">{stats.today}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
-              {stats.today > 0 ? 
-                <span className="text-green-500 flex items-center"><TrendingUp className="h-2 w-2 sm:h-3 sm:w-3 mr-1" /> Active today</span> : 
-                "No submissions today"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-3 py-3 sm:px-6 sm:py-4">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
-              This Week
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pt-0 pb-3 sm:pb-4">
-            <div className="text-xl sm:text-2xl font-bold">{stats.thisWeek}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Last 7 days</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2 px-3 py-3 sm:px-6 sm:py-4">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
-              This Month
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pt-0 pb-3 sm:pb-4">
-            <div className="text-xl sm:text-2xl font-bold">{stats.thisMonth}</div>
-            <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">Since {format(new Date(new Date().setDate(1)), 'MMM d')}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <Card className="lg:col-span-2">
-          <CardHeader className="px-3 py-3 sm:px-6 sm:py-4">
-            <CardTitle className="text-lg sm:text-xl">Submissions Overview</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">View and manage all form submissions</CardDescription>
-          </CardHeader>
-          <CardContent className="p-3 sm:p-6">
-            <Tabs defaultValue="all" className="mb-4 sm:mb-6" onValueChange={setCurrentTab}>
-              <TabsList className="grid grid-cols-4 mb-3 sm:mb-4 w-full h-8 sm:h-10">
-                <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
-                <TabsTrigger value="new" className="text-xs sm:text-sm">New</TabsTrigger>
-                <TabsTrigger value="viewed" className="text-xs sm:text-sm">Viewed</TabsTrigger>
-                <TabsTrigger value="archived" className="text-xs sm:text-sm">Archived</TabsTrigger>
-              </TabsList>
-              
-              <div className="flex flex-col gap-3 mb-4 sm:gap-4 sm:mb-6">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search submissions..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8 sm:pl-9 h-8 sm:h-10 text-xs sm:text-sm"
-                  />
-                </div>
-                <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-4 flex-wrap">
-                  <Select value={formFilter} onValueChange={setFormFilter}>
-                    <SelectTrigger className="w-full sm:w-[180px] h-8 sm:h-10 text-xs sm:text-sm">
-                      <SelectValue placeholder="Filter by form" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Forms</SelectItem>
-                      {uniqueForms.map(form => (
-                        <SelectItem key={form.id} value={form.id}>
-                          {form.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Select value={dateFilter} onValueChange={setDateFilter}>
-                    <SelectTrigger className="w-full sm:w-[180px] h-8 sm:h-10 text-xs sm:text-sm">
-                      <SelectValue placeholder="Filter by date" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="week">This Week</SelectItem>
-                      <SelectItem value="month">This Month</SelectItem>
-                    </SelectContent>
-                  </Select>
+      {/* Enhanced Stats Cards Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+      >
+        <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Total Submissions
+                </CardTitle>
+                <div className="p-2 bg-blue-500 rounded-lg">
+                  <BarChart3 className="h-4 w-4 text-white" />
                 </div>
               </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.total}</div>
+              <p className="text-xs text-muted-foreground mt-1">All time submissions</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Today
+                </CardTitle>
+                <div className="p-2 bg-green-500 rounded-lg">
+                  <Activity className="h-4 w-4 text-white" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.today}</div>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center">
+                {stats.today > 0 ? (
+                  <>
+                    <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
+                    Active today
+                  </>
+                ) : (
+                  "No submissions today"
+                )}
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  This Week
+                </CardTitle>
+                <div className="p-2 bg-purple-500 rounded-lg">
+                  <TrendingUp className="h-4 w-4 text-white" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{stats.thisWeek}</div>
+              <p className="text-xs text-muted-foreground mt-1">Last 7 days</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  This Month
+                </CardTitle>
+                <div className="p-2 bg-orange-500 rounded-lg">
+                  <Calendar className="h-4 w-4 text-white" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.thisMonth}</div>
+              <p className="text-xs text-muted-foreground mt-1">Since {format(new Date(new Date().setDate(1)), 'MMM d')}</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
+
+      {/* Enhanced Main Content Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="lg:col-span-2"
+        >
+          <Card className="border-gray-200 dark:border-gray-700 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-t-lg">
+              <CardTitle className="text-xl font-semibold">Submissions Overview</CardTitle>
+              <CardDescription>View and manage all form submissions with advanced filtering</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              {/* Enhanced Search and Filter Section */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="bg-white dark:bg-black/20 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm mb-6"
+              >
+                <Tabs defaultValue="all" className="mb-6" onValueChange={setCurrentTab}>
+                  <TabsList className="grid grid-cols-4 mb-4 w-full h-10 bg-gray-100 dark:bg-gray-800">
+                    <TabsTrigger value="all" className="text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">All</TabsTrigger>
+                    <TabsTrigger value="new" className="text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">New</TabsTrigger>
+                    <TabsTrigger value="viewed" className="text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">Viewed</TabsTrigger>
+                    <TabsTrigger value="archived" className="text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">Archived</TabsTrigger>
+                  </TabsList>
+                  
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search submissions by form name or content..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9 pr-4 h-11 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                      />
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <Select value={formFilter} onValueChange={setFormFilter}>
+                        <SelectTrigger className="w-[180px] h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                          <SelectValue placeholder="Filter by form" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Forms</SelectItem>
+                          {uniqueForms.map(form => (
+                            <SelectItem key={form.id} value={form.id}>
+                              {form.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={dateFilter} onValueChange={setDateFilter}>
+                        <SelectTrigger className="w-[180px] h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                          <SelectValue placeholder="Filter by date" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Time</SelectItem>
+                          <SelectItem value="today">Today</SelectItem>
+                          <SelectItem value="week">This Week</SelectItem>
+                          <SelectItem value="month">This Month</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
               <TabsContent value="all" className="m-0">
                 {renderSubmissionsTable(filteredSubmissions)}
@@ -550,44 +694,69 @@ export default function SubmissionsDashboard() {
                 {renderSubmissionsTable(filteredSubmissions.filter(s => s.status === 'archived'))}
               </TabsContent>
             </Tabs>
-          </CardContent>
-        </Card>
+              </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
         
-        <Card className="hidden md:block">
-          <CardHeader className="px-3 py-3 sm:px-6 sm:py-4">
-            <CardTitle className="text-lg sm:text-xl">Submissions by Form</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">Distribution of submissions across your forms</CardDescription>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-3 sm:pb-4">
-            <ScrollArea className="h-60 sm:h-80">
-              <div className="space-y-3 sm:space-y-4">
-                {stats.byForm.map((formStat, index) => (
-                  <div key={formStat.formId} className="space-y-1 sm:space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-xs sm:text-sm font-medium truncate max-w-[150px] sm:max-w-[200px]" title={formStat.formTitle}>
-                        {formStat.formTitle}
-                      </span>
-                      <span className="text-xs sm:text-sm text-muted-foreground">{formStat.count}</span>
-                    </div>
-                    <div className="w-full h-1.5 sm:h-2 bg-secondary rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary rounded-full" 
-                        style={{ width: `${(formStat.count / stats.total) * 100}%` }} 
-                      />
-                    </div>
-                    {index < stats.byForm.length - 1 && <Separator className="my-2" />}
-                  </div>
-                ))}
-                
-                {stats.byForm.length === 0 && (
-                  <div className="text-center py-8 text-xs sm:text-sm text-muted-foreground">
-                    No submissions data available
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
+          <Card className="border-gray-200 dark:border-gray-700 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-t-lg">
+              <CardTitle className="text-xl font-semibold">Submissions by Form</CardTitle>
+              <CardDescription>Distribution of submissions across your forms</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <ScrollArea className="h-80">
+                <div className="space-y-4">
+                  <AnimatePresence>
+                    {stats.byForm.map((formStat, index) => (
+                      <motion.div 
+                        key={formStat.formId} 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                        className="space-y-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium truncate flex-1 mr-2" title={formStat.formTitle}>
+                            {formStat.formTitle}
+                          </span>
+                          <Badge variant="secondary" className="text-xs">
+                            {formStat.count}
+                          </Badge>
+                        </div>
+                        <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
+                          <motion.div 
+                            className="h-full bg-gradient-to-r from-green-500 to-teal-500 rounded-full" 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(formStat.count / stats.total) * 100}%` }}
+                            transition={{ duration: 1, delay: index * 0.1 }}
+                          />
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  
+                  {stats.byForm.length === 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-8 text-sm text-muted-foreground"
+                    >
+                      <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No submissions data available</p>
+                    </motion.div>
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );
