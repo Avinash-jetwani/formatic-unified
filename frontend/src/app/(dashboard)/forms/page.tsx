@@ -262,7 +262,7 @@ const FormsPage = () => {
   const [filter, setFilter] = useState<'all' | 'published' | 'draft' | 'templates'>('all');
   const [formToDelete, setFormToDelete] = useState<string | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(false);
+
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [clientFilter, setClientFilter] = useState<'all' | 'mine' | 'clients'>('all');
   const [tagFilter, setTagFilter] = useState<string | null>(null);
@@ -281,7 +281,8 @@ const FormsPage = () => {
       
       // Show templates if user has no forms
       if (data.length === 0) {
-        setShowTemplates(true);
+        // Navigate to template gallery instead
+      router.push('/templates');
       }
     } catch (error) {
       console.error('Failed to load forms:', error);
@@ -516,14 +517,6 @@ const FormsPage = () => {
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
-            onClick={() => setShowTemplates(true)}
-            className="whitespace-nowrap"
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            Quick Templates
-          </Button>
-          <Button
-            variant="outline"
             onClick={() => router.push('/templates')}
             className="whitespace-nowrap bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-purple-100 dark:from-blue-950 dark:to-purple-950 dark:border-blue-800 dark:text-blue-300"
           >
@@ -655,51 +648,7 @@ const FormsPage = () => {
         )}
       </div>
       
-      {/* Templates section for new users */}
-      {showTemplates && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Form Templates</h2>
-            <Button variant="outline" onClick={() => setShowTemplates(false)}>
-              Hide Templates
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {FORM_TEMPLATES.map((template, index) => (
-              <Card key={index} className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <CardTitle>{template.title}</CardTitle>
-                  <CardDescription className="truncate">{template.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <div className="text-sm text-muted-foreground">
-                    <div className="flex justify-between items-center text-xs mb-3">
-                      <span>{template.fields.length} fields</span>
-                      <span>Template</span>
-                    </div>
-                    <ul className="list-disc list-inside text-xs">
-                      {template.fields.slice(0, 3).map((field, i) => (
-                        <li key={i} className="truncate">{field.label} ({field.type})</li>
-                      ))}
-                      {template.fields.length > 3 && (
-                        <li className="text-xs italic">+ {template.fields.length - 3} more fields</li>
-                      )}
-                    </ul>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-end pt-3 border-t">
-                  <Button 
-                    onClick={() => createFromTemplate(template)}
-                  >
-                    Use Template
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
+
       
       {/* Forms grid for mobile and tablet */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
@@ -740,11 +689,9 @@ const FormsPage = () => {
               <Button onClick={navigateToCreateForm}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Create Form
               </Button>
-              {!showTemplates && !searchTerm && (
-                <Button variant="outline" onClick={() => setShowTemplates(true)}>
-                  Use Templates
-                </Button>
-              )}
+              <Button variant="outline" onClick={() => router.push('/templates')}>
+                Browse Templates
+              </Button>
             </div>
           </div>
         ) : (
@@ -920,11 +867,9 @@ const FormsPage = () => {
                     <Button onClick={navigateToCreateForm}>
                       <PlusCircle className="mr-2 h-4 w-4" /> Create Form
                     </Button>
-                    {!showTemplates && !searchTerm && (
-                      <Button variant="outline" onClick={() => setShowTemplates(true)}>
-                        Use Templates
-                      </Button>
-                    )}
+                    <Button variant="outline" onClick={() => router.push('/templates')}>
+                      Browse Templates
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
