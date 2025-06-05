@@ -66,6 +66,77 @@ import {
   mapFormPerformanceData
 } from '@/services/dashboard';
 
+// Advanced Color Theme Generator based on data patterns
+const generateDataBasedTheme = (stats: any) => {
+  const formCount = stats?.forms || 0;
+  const submissionCount = stats?.submissions || 0;
+  const webhookSuccessRate = stats?.webhookSuccessRate || 0;
+  
+  // Generate theme based on performance metrics
+  if (webhookSuccessRate >= 90 && submissionCount > 100) {
+    return {
+      primary: 'from-emerald-400 via-green-500 to-teal-600',
+      secondary: 'from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-800/20',
+      accent: 'border-emerald-200 dark:border-emerald-700',
+      glow: 'shadow-emerald-500/20',
+      particle: 'bg-emerald-400'
+    };
+  } else if (submissionCount > 50) {
+    return {
+      primary: 'from-blue-400 via-purple-500 to-pink-600',
+      secondary: 'from-blue-50 to-purple-100 dark:from-blue-900/20 dark:to-purple-800/20',
+      accent: 'border-blue-200 dark:border-blue-700',
+      glow: 'shadow-blue-500/20',
+      particle: 'bg-blue-400'
+    };
+  } else if (formCount > 5) {
+    return {
+      primary: 'from-orange-400 via-yellow-500 to-amber-600',
+      secondary: 'from-orange-50 to-yellow-100 dark:from-orange-900/20 dark:to-yellow-800/20',
+      accent: 'border-orange-200 dark:border-orange-700',
+      glow: 'shadow-orange-500/20',
+      particle: 'bg-orange-400'
+    };
+  } else {
+    return {
+      primary: 'from-gray-400 via-slate-500 to-gray-600',
+      secondary: 'from-gray-50 to-slate-100 dark:from-gray-900/20 dark:to-slate-800/20',
+      accent: 'border-gray-200 dark:border-gray-700',
+      glow: 'shadow-gray-500/20',
+      particle: 'bg-gray-400'
+    };
+  }
+};
+
+// Floating particles background component
+const FloatingParticles = ({ theme }: { theme: any }) => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    {Array.from({ length: 8 }).map((_, i) => (
+      <motion.div
+        key={i}
+        className={`absolute w-2 h-2 ${theme.particle} rounded-full opacity-30`}
+        initial={{
+          x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200),
+          y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
+        }}
+        animate={{
+          x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200),
+          y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
+        }}
+        transition={{
+          duration: Math.random() * 20 + 10,
+          repeat: Infinity,
+          repeatType: "reverse",
+          ease: "linear"
+        }}
+        style={{
+          filter: 'blur(1px)',
+        }}
+      />
+    ))}
+  </div>
+);
+
 // Enhanced Types for Advanced Dashboard
 interface EnhancedStats extends DashboardStats {
   webhooks?: {
@@ -134,7 +205,108 @@ interface AdvancedChartProps {
   loading?: boolean;
 }
 
-// Enhanced Dashboard Components with Beautiful Styling
+// Real-time Number Counter Component
+const AnimatedCounter = ({ 
+  value, 
+  duration = 2, 
+  className = "",
+  prefix = "",
+  suffix = ""
+}: {
+  value: string | number;
+  duration?: number;
+  className?: string;
+  prefix?: string;
+  suffix?: string;
+}) => {
+  const [displayValue, setDisplayValue] = React.useState(0);
+  const [isVisible, setIsVisible] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement>(null);
+
+  // Parse numeric value from string
+  const numericValue = React.useMemo(() => {
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') {
+      // Extract numbers from string (e.g., "42 Forms" -> 42)
+      const match = value.match(/[\d,]+/);
+      return match ? parseInt(match[0].replace(/,/g, '')) : 0;
+    }
+    return 0;
+  }, [value]);
+
+  // Intersection Observer to trigger animation when visible
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Animate counter when visible
+  React.useEffect(() => {
+    if (!isVisible) return;
+
+    let startTime: number;
+    let animationFrame: number;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
+      
+      // Easing function for smooth animation
+      const easeOutCubic = 1 - Math.pow(1 - progress, 3);
+      const currentValue = Math.floor(numericValue * easeOutCubic);
+      
+      setDisplayValue(currentValue);
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [isVisible, numericValue, duration]);
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toLocaleString();
+  };
+
+  return (
+    <div ref={ref} className={className}>
+      <motion.span
+        initial={{ opacity: 0, scale: 0.5 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        {prefix}{formatNumber(displayValue)}{suffix}
+      </motion.span>
+    </div>
+  );
+};
+
+// Enhanced Dashboard Components with Glassmorphism & Advanced Animations
 const EnhancedStatCard = ({ 
   title, 
   value, 
@@ -147,37 +319,90 @@ const EnhancedStatCard = ({
 }: StatCardProps) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      whileHover={{ y: -2, transition: { duration: 0.2 } }}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      whileHover={{ 
+        y: -8, 
+        scale: 1.03,
+        transition: { duration: 0.2, ease: "easeOut" }
+      }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="relative group cursor-pointer"
     >
-      <Card className={`hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-600 bg-gradient-to-br ${gradient} dark:bg-gray-800`}>
-        <CardHeader className="pb-2">
+      {/* Enhanced Glassmorphism Card */}
+      <Card className={cn(
+        "relative overflow-hidden border border-white/20 dark:border-white/10 shadow-2xl hover:shadow-3xl transition-all duration-500",
+        "bg-white/10 dark:bg-gray-900/30 backdrop-blur-xl",
+        "before:absolute before:inset-0 before:bg-gradient-to-br before:from-white/20 before:to-transparent before:opacity-0 before:transition-opacity before:duration-300",
+        "hover:before:opacity-100",
+        "after:absolute after:inset-0 after:bg-gradient-to-t after:from-black/5 after:to-transparent after:opacity-0 after:transition-opacity after:duration-300",
+        "hover:after:opacity-100"
+      )}>
+        {/* Animated gradient background */}
+        <div className={cn(
+          "absolute inset-0 opacity-20 transition-opacity duration-500 group-hover:opacity-30",
+          `bg-gradient-to-br ${gradient}`
+        )} />
+        
+        {/* Glassmorphism border effect */}
+        <div className="absolute inset-[1px] rounded-[inherit] bg-gradient-to-b from-white/30 to-white/5 dark:from-white/20 dark:to-white/5" />
+        
+        {/* Content */}
+        <CardHeader className="relative pb-2 z-10">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-300">
-              {title}
-            </CardTitle>
-            <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg">
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                {title}
+              </CardTitle>
+            </motion.div>
+            
+            {/* Enhanced icon with glassmorphism */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.5, rotate: -45 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }}
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="relative p-2 rounded-xl bg-white/30 dark:bg-gray-700/40 backdrop-blur-lg shadow-xl group-hover:shadow-2xl transition-all duration-300"
+            >
+              {/* Icon glow effect */}
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-400/20 to-blue-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-lg" />
+              
               {React.cloneElement(icon as React.ReactElement, { 
-                className: "h-4 w-4 text-white" 
+                className: "relative h-4 w-4 text-gray-700 dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors duration-300" 
               })}
-            </div>
+            </motion.div>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
+        
+        <CardContent className="relative pt-0 z-10">
           {loading ? (
-            <div className="h-8 w-24 bg-muted animate-pulse rounded mb-2"></div>
-          ) : (
-            <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
-              {value}
-            </div>
-          )}
+            <motion.div 
+              animate={{ opacity: [0.4, 0.8, 0.4] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+              className="h-8 w-24 bg-white/20 dark:bg-gray-700/30 rounded-lg backdrop-blur-sm mb-2"
+            />
+                      ) : (
+              <AnimatedCounter
+                value={value}
+                duration={1.5}
+                className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1"
+              />
+            )}
           
           {trend && trendValue && !loading && (
-            <div className="flex items-center gap-1">
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+              className="flex items-center gap-1"
+            >
               <div className={cn(
-                "p-1 rounded-full",
+                "p-1 rounded-full bg-white/20 dark:bg-gray-700/30 backdrop-blur-sm",
                 trend === 'up' ? 'text-green-600 dark:text-green-400' : 
                 trend === 'down' ? 'text-red-600 dark:text-red-400' : 
                 'text-gray-600 dark:text-gray-400'
@@ -187,62 +412,202 @@ const EnhancedStatCard = ({
                 {trend === 'neutral' && <Activity className="h-3 w-3" />}
               </div>
               <span className={cn(
-                "text-xs font-medium",
+                "text-xs font-medium px-2 py-1 rounded-full bg-white/20 dark:bg-gray-700/30 backdrop-blur-sm",
                 trend === 'up' ? 'text-green-600 dark:text-green-400' : 
                 trend === 'down' ? 'text-red-600 dark:text-red-400' : 
                 'text-gray-600 dark:text-gray-400'
               )}>
                 {trendValue}
               </span>
-              <span className="text-xs text-muted-foreground dark:text-gray-400">
+              <span className="text-xs text-gray-600 dark:text-gray-300">
                 vs last period
               </span>
-            </div>
+            </motion.div>
           )}
           
           {description && (
-            <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1">
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="text-xs text-gray-600 dark:text-gray-300 mt-1"
+            >
               {description}
-            </p>
+            </motion.p>
           )}
         </CardContent>
+        
+        {/* Enhanced glassmorphism overlay with shimmer effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent dark:via-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 transform -skew-x-12" />
+        
+        {/* Corner accent */}
+        <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-white/20 to-transparent dark:from-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </Card>
     </motion.div>
   );
 };
 
 const ChartPlaceholder = ({ title, height = 300 }: ChartPlaceholderProps) => (
-  <div className="rounded-lg border bg-card shadow-sm p-5">
-    <div className="flex items-center justify-between mb-5">
-      <h3 className="font-medium">{title}</h3>
+  <motion.div 
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.5 }}
+    className="rounded-xl border border-white/20 dark:border-white/10 bg-white/10 dark:bg-gray-900/30 backdrop-blur-xl shadow-2xl p-6"
+  >
+    <div className="flex items-center justify-between mb-6">
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
+      </motion.div>
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+        className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full"
+      />
     </div>
-    <div className={`w-full bg-muted/50 rounded-md flex items-center justify-center`} style={{ height }}>
-      <BarChart3 className="h-8 w-8 text-muted-foreground/50" />
-    </div>
-  </div>
-);
-
-const TablePlaceholder = ({ title, rows = 5 }: TablePlaceholderProps) => (
-  <div className="rounded-lg border bg-card shadow-sm p-5">
-    <div className="flex items-center justify-between mb-5">
-      <h3 className="font-medium">{title}</h3>
-    </div>
-    <div className="space-y-3">
-      <div className="grid grid-cols-4 gap-3">
-        {Array(4).fill(null).map((_, i) => (
-          <div key={i} className="h-3 bg-muted rounded animate-pulse"></div>
+    
+    {/* Advanced skeleton with multiple animated elements */}
+    <div className="space-y-4" style={{ height }}>
+      {/* Chart bars skeleton */}
+      <div className="flex items-end justify-between h-48 gap-2">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ 
+              height: `${Math.random() * 80 + 20}%`,
+              opacity: [0.3, 0.7, 0.3]
+            }}
+            transition={{
+              duration: 1.5,
+              delay: i * 0.1,
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
+            className="bg-gradient-to-t from-purple-400/30 to-blue-400/30 rounded-t-lg flex-1 backdrop-blur-sm"
+          />
         ))}
       </div>
       
+      {/* X-axis labels skeleton */}
+      <div className="flex justify-between">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: [0.3, 0.6, 0.3], y: 0 }}
+            transition={{ 
+              duration: 1.2,
+              delay: i * 0.1,
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
+            className="h-3 w-8 bg-white/20 dark:bg-gray-700/30 rounded backdrop-blur-sm"
+          />
+        ))}
+      </div>
+    </div>
+  </motion.div>
+);
+
+const TablePlaceholder = ({ title, rows = 5 }: TablePlaceholderProps) => (
+  <motion.div 
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    transition={{ duration: 0.5, delay: 0.1 }}
+    className="rounded-xl border border-white/20 dark:border-white/10 bg-white/10 dark:bg-gray-900/30 backdrop-blur-xl shadow-2xl p-6"
+  >
+    <div className="flex items-center justify-between mb-6">
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <h3 className="font-semibold text-gray-900 dark:text-white">{title}</h3>
+      </motion.div>
+      <motion.div
+        animate={{ scale: [1, 1.2, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="w-2 h-2 bg-green-500 rounded-full"
+      />
+    </div>
+    
+    <div className="space-y-4">
+      {/* Table header */}
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="grid grid-cols-4 gap-4 p-3 bg-white/20 dark:bg-gray-800/30 rounded-lg backdrop-blur-sm"
+      >
+        {Array(4).fill(null).map((_, i) => (
+          <motion.div 
+            key={i}
+            initial={{ width: 0 }}
+            animate={{ width: '100%' }}
+            transition={{ delay: 0.5 + i * 0.1, duration: 0.5 }}
+            className="h-3 bg-white/30 dark:bg-gray-600/40 rounded backdrop-blur-sm"
+          />
+        ))}
+      </motion.div>
+      
+      {/* Table rows */}
       {Array(rows).fill(null).map((_, i) => (
-        <div key={i} className="grid grid-cols-4 gap-3">
+        <motion.div 
+          key={i}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.6 + i * 0.1 }}
+          whileHover={{ scale: 1.01, backgroundColor: 'rgba(255,255,255,0.1)' }}
+          className="grid grid-cols-4 gap-4 p-3 rounded-lg hover:bg-white/10 dark:hover:bg-gray-800/20 transition-all duration-300 cursor-pointer"
+        >
           {Array(4).fill(null).map((_, j) => (
-            <div key={j} className="h-8 bg-muted/50 rounded animate-pulse"></div>
+            <motion.div 
+              key={j}
+              animate={{ 
+                opacity: [0.3, 0.7, 0.3],
+                scale: [1, 1.02, 1]
+              }}
+              transition={{ 
+                duration: 2,
+                delay: j * 0.2,
+                repeat: Infinity,
+                repeatType: "reverse"
+              }}
+              className="h-6 bg-gradient-to-r from-white/20 to-white/10 dark:from-gray-700/30 dark:to-gray-700/20 rounded backdrop-blur-sm"
+            />
           ))}
-        </div>
+        </motion.div>
       ))}
     </div>
-  </div>
+    
+    {/* Loading indicator */}
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 1 }}
+      className="flex justify-center mt-6"
+    >
+      <div className="flex space-x-1">
+        {Array(3).fill(null).map((_, i) => (
+          <motion.div
+            key={i}
+            animate={{ y: [0, -8, 0] }}
+            transition={{
+              duration: 0.6,
+              delay: i * 0.1,
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
+            className="w-2 h-2 bg-purple-500 rounded-full"
+          />
+        ))}
+      </div>
+    </motion.div>
+  </motion.div>
 );
 
 const EnhancedAlert = ({ title, message, type = 'info', action, actionLabel }: AlertProps) => {
