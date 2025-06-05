@@ -60,6 +60,7 @@ export class SubmissionsService {
               slug: true,
               published: true,
               clientId: true,
+              fields: true,
               client: {
                 select: {
                   id: true,
@@ -91,6 +92,7 @@ export class SubmissionsService {
             slug: true,
             published: true,
             clientId: true,
+            fields: true,
           }
         }
       },
