@@ -71,6 +71,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Logo from '@/components/ui/logo';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchApi } from '@/services/api';
 
 // Template interface (same as dashboard version)
 interface FormTemplate {
@@ -550,6 +552,7 @@ const TEMPLATE_GALLERY: FormTemplate[] = [
 
 const PublicTemplateGalleryPage = () => {
   const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -596,11 +599,33 @@ const PublicTemplateGalleryPage = () => {
     return filtered;
   }, [searchTerm, selectedCategory, selectedComplexity, selectedIndustry, sortBy]);
 
-  // Handle template selection - redirect to signup
-  const handleUseTemplate = (template: FormTemplate) => {
-    // Store template selection in localStorage for after signup
-    localStorage.setItem('selectedTemplate', JSON.stringify(template));
-    router.push('/register?from=template');
+  // Handle template selection
+  const handleUseTemplate = async (template: FormTemplate) => {
+    if (!isAuthenticated) {
+      // Store template selection in localStorage for after signup
+      localStorage.setItem('selectedTemplate', JSON.stringify(template));
+      router.push('/register?from=template');
+      return;
+    }
+
+    // For authenticated users, create form from template
+    try {
+      const formData = {
+        title: template.title,
+        description: template.description,
+        published: false,
+        fields: template.fields
+      };
+
+      const newForm = await fetchApi('/forms', {
+        method: 'POST',
+        data: formData,
+      }) as { id: string };
+
+      router.push(`/forms/${newForm.id}/builder`);
+    } catch (error) {
+      console.error('Error creating form from template:', error);
+    }
   };
 
   return (
@@ -615,14 +640,28 @@ const PublicTemplateGalleryPage = () => {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Link href="/" className="text-sm font-medium hover:text-primary transition-colors flex items-center">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
-            </Link>
-            <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">Sign In</Link>
-            <Link href="/register" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
-              Get Started
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link href="/dashboard" className="text-sm font-medium hover:text-primary transition-colors flex items-center">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Link>
+                <Link href="/forms" className="text-sm font-medium hover:text-primary transition-colors">
+                  My Forms
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/" className="text-sm font-medium hover:text-primary transition-colors flex items-center">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Home
+                </Link>
+                <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">Sign In</Link>
+                <Link href="/register" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -662,12 +701,21 @@ const PublicTemplateGalleryPage = () => {
                 <span>Instant Setup</span>
               </div>
             </div>
-            <Link href="/register">
-              <Button className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105 shadow-lg">
-                Sign Up to Use Templates
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/forms">
+                <Button className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105 shadow-lg">
+                  View My Forms
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/register">
+                <Button className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105 shadow-lg">
+                  Sign Up to Use Templates
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            )}
           </motion.div>
         </div>
       </div>
@@ -965,27 +1013,29 @@ const PublicTemplateGalleryPage = () => {
       </div>
 
       {/* Footer CTA */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold mb-4">Ready to Create Your Form?</h2>
-          <p className="text-xl mb-8 text-blue-100">
-            Sign up now and start using these professional templates instantly
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register">
-              <Button className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105 shadow-lg">
-                Get Started Free
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3 rounded-lg font-medium transition-all duration-200">
-                Sign In
-              </Button>
-            </Link>
+      {!isAuthenticated && (
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-16">
+          <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+            <h2 className="text-3xl font-bold mb-4">Ready to Create Your Form?</h2>
+            <p className="text-xl mb-8 text-blue-100">
+              Sign up now and start using these professional templates instantly
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/register">
+                <Button className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105 shadow-lg">
+                  Get Started Free
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button variant="outline" className="border-white text-white hover:bg-white/10 px-8 py-3 rounded-lg font-medium transition-all duration-200">
+                  Sign In
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
