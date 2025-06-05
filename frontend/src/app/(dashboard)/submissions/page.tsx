@@ -186,7 +186,7 @@ const formatSubmissionData = (submission: Submission) => {
   return formattedData;
 };
 
-// Helper function to render submission data in a beautiful format
+// Helper function to render submission data in a compact format
 const renderSubmissionDataPreview = (
   submission: Submission, 
   maxFields: number = 3
@@ -196,17 +196,17 @@ const renderSubmissionDataPreview = (
   const remainingCount = Math.max(0, formattedData.length - maxFields);
   
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {previewData.map((item, index) => (
-        <div key={index} className="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30">
-          <div className="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+        <div key={index} className="flex items-start gap-2 p-1.5 rounded bg-gray-50 dark:bg-gray-800/30">
+          <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5"></div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">
               {item.label}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400 break-words">
-              {typeof item.value === 'string' && item.value.length > 150 
-                ? `${item.value.substring(0, 150)}...` 
+            <div className="text-xs text-gray-600 dark:text-gray-400 break-words">
+              {typeof item.value === 'string' && item.value.length > 80 
+                ? `${item.value.substring(0, 80)}...` 
                 : String(item.value || 'No response')}
             </div>
           </div>
@@ -214,9 +214,9 @@ const renderSubmissionDataPreview = (
       ))}
       
       {remainingCount > 0 && (
-        <div className="text-xs text-gray-500 dark:text-gray-500 text-center p-2 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-          <FileText className="h-3 w-3 inline mr-1" />
-          +{remainingCount} more field{remainingCount !== 1 ? 's' : ''}
+        <div className="text-xs text-gray-500 dark:text-gray-500 text-center p-1 bg-gray-100 dark:bg-gray-800/50 rounded">
+          <FileText className="h-2.5 w-2.5 inline mr-1" />
+          +{remainingCount} more
         </div>
       )}
     </div>
@@ -245,9 +245,6 @@ export default function SubmissionsDashboard() {
     byForm: [] as {formId: string, formTitle: string, count: number}[]
   });
 
-  // Form fields mapping for better data display
-  const [formFields, setFormFields] = useState<Record<string, Array<{id: string, label: string, type: string}>>>({});
-  
   // Pagination state
   const [submissionsPerForm, setSubmissionsPerForm] = useState(10);
   const [expandedForms, setExpandedForms] = useState<Record<string, boolean>>({});
@@ -283,38 +280,6 @@ export default function SubmissionsDashboard() {
       loadSubmissions({});
     }
   }, []);
-
-  // Load form fields for better data display
-  const loadFormFields = async (formIds: string[]) => {
-    try {
-      const fieldsPromises = formIds.map(async (formId) => {
-        try {
-          const fields = await fetchApi(`/forms/${formId}/fields`);
-          return { formId, fields: Array.isArray(fields) ? fields : [] };
-        } catch (error) {
-          console.error(`Failed to load fields for form ${formId}:`, error);
-          // Return empty fields array if API fails
-          return { formId, fields: [] };
-        }
-      });
-      
-      const fieldsResults = await Promise.all(fieldsPromises);
-      const fieldsMap: Record<string, Array<{id: string, label: string, type: string}>> = {};
-      
-      fieldsResults.forEach(({ formId, fields }) => {
-        fieldsMap[formId] = fields.map((field: any) => ({
-          id: field.id || field.name || '',
-          label: field.label || field.name || 'Unknown Field',
-          type: field.type || 'text'
-        }));
-      });
-      
-      setFormFields(fieldsMap);
-    } catch (error) {
-      console.error('Failed to load form fields:', error);
-      // Continue without form fields if there's an error
-    }
-  };
 
   const loadSubmissions = async (statusMap = savedStatusMap) => {
     try {
@@ -362,12 +327,6 @@ export default function SubmissionsDashboard() {
       
       setSubmissions(enhancedData);
       calculateStats(enhancedData);
-      
-      // Load form fields for better data display
-      const uniqueFormIds = Array.from(new Set(enhancedData.map(s => s.formId)));
-      if (uniqueFormIds.length > 0) {
-        await loadFormFields(uniqueFormIds);
-      }
     } catch (error) {
       toast({
         title: 'Error',
@@ -1054,53 +1013,53 @@ export default function SubmissionsDashboard() {
                   {/* Distinctive Form Header with Brand Colors */}
                   <div className={`h-1.5 bg-gradient-to-r ${colorScheme.from} ${colorScheme.to}`} />
                   
-                  <CardHeader className={`${colorScheme.bg} dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700`}>
+                  <CardHeader className={`${colorScheme.bg} dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 py-3 sm:py-4`}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        {/* Form Icon with Brand Color */}
-                        <div className={`p-3 bg-gradient-to-r ${colorScheme.from} ${colorScheme.to} rounded-xl shadow-lg`}>
-                          <FileText className="h-6 w-6 text-white" />
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        {/* Compact Form Icon */}
+                        <div className={`p-2 bg-gradient-to-r ${colorScheme.from} ${colorScheme.to} rounded-lg shadow-md`}>
+                          <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                         </div>
                         
                         <div>
-                          <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                          <CardTitle className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                             {group.form.title}
-                            <Badge variant="outline" className={`${colorScheme.border} ${colorScheme.text} bg-white dark:bg-gray-800`}>
-                              Form #{group.form.id.slice(-4)}
+                            <Badge variant="outline" className={`${colorScheme.border} ${colorScheme.text} bg-white dark:bg-gray-800 text-xs`}>
+                              #{group.form.id.slice(-4)}
                             </Badge>
                           </CardTitle>
-                          <CardDescription className="mt-1 flex items-center gap-4">
+                          <CardDescription className="mt-0.5 flex items-center gap-3 text-xs sm:text-sm">
                             <span className="flex items-center gap-1">
-                              <Users className="h-4 w-4" />
+                              <Users className="h-3 w-3" />
                               {formSubmissions.length} submission{formSubmissions.length !== 1 ? 's' : ''} 
                             </span>
                             {currentTab !== 'all' && (
-                              <span className="text-sm font-medium">
-                                Showing {currentTab} submissions
+                              <span className="text-xs font-medium">
+                                Showing {currentTab}
                               </span>
                             )}
                           </CardDescription>
                         </div>
                       </div>
                       
-                      {/* Status Metrics */}
-                      <div className="flex items-center gap-2 flex-wrap">
+                      {/* Compact Status Metrics */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         {newCount > 0 && (
-                          <Badge className="bg-blue-500 hover:bg-blue-600 shadow-sm">
-                            <Zap className="h-3 w-3 mr-1" />
-                            {newCount} New
+                          <Badge className="bg-blue-500 hover:bg-blue-600 shadow-sm text-xs px-1.5 py-0.5">
+                            <Zap className="h-2.5 w-2.5 mr-1" />
+                            {newCount}
                           </Badge>
                         )}
                         {viewedCount > 0 && (
-                          <Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20">
-                            <Eye className="h-3 w-3 mr-1" />
-                            {viewedCount} Viewed
+                          <Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 text-xs px-1.5 py-0.5">
+                            <Eye className="h-2.5 w-2.5 mr-1" />
+                            {viewedCount}
                           </Badge>
                         )}
                         {archivedCount > 0 && (
-                          <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700">
-                            <Archive className="h-3 w-3 mr-1" />
-                            {archivedCount} Archived
+                          <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700 text-xs px-1.5 py-0.5">
+                            <Archive className="h-2.5 w-2.5 mr-1" />
+                            {archivedCount}
                           </Badge>
                         )}
                       </div>
@@ -1136,18 +1095,18 @@ export default function SubmissionsDashboard() {
                               {submissionIndex + 1}
                             </div>
                             
-                            <div className="pl-10 sm:pl-12 pr-4 sm:pr-6 py-4 sm:py-6">
-                              {/* Submission Header - Responsive */}
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                                  {/* Enhanced Submission ID Badge - Responsive */}
-                                  <div className={`px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-mono font-semibold ${colorScheme.bg} ${colorScheme.text} border-2 ${colorScheme.border} shadow-sm w-fit`}>
-                                    {isMobile ? `#${submission.id.slice(-4).toUpperCase()}` : `Submission #${submission.id.slice(-6).toUpperCase()}`}
+                            <div className="pl-8 sm:pl-10 pr-3 sm:pr-4 py-3 sm:py-4">
+                              {/* Submission Header - Compact */}
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-3">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2">
+                                  {/* Compact Submission ID Badge */}
+                                  <div className={`px-2 sm:px-3 py-1 rounded text-xs font-mono font-medium ${colorScheme.bg} ${colorScheme.text} border ${colorScheme.border} w-fit`}>
+                                    {isMobile ? `#${submission.id.slice(-4).toUpperCase()}` : `#${submission.id.slice(-6).toUpperCase()}`}
                                   </div>
                                   
-                                  {/* Timestamp with enhanced styling - Responsive */}
-                                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 sm:px-3 py-1 rounded-full w-fit">
-                                    <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                                  {/* Compact Timestamp */}
+                                  <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full w-fit">
+                                    <Clock className="h-3 w-3" />
                                     <span className="font-medium">
                                       {isMobile 
                                         ? formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true }).replace('about ', '')
@@ -1160,8 +1119,8 @@ export default function SubmissionsDashboard() {
                                   {getStatusBadge(submission.status || 'viewed')}
                                 </div>
                                 
-                                {/* Action Buttons - Responsive */}
-                                <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover/submission:opacity-100 transition-opacity duration-200">
+                                {/* Compact Action Buttons */}
+                                <div className="flex items-center gap-1.5 opacity-100 sm:opacity-0 group-hover/submission:opacity-100 transition-opacity duration-200">
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -1169,16 +1128,16 @@ export default function SubmissionsDashboard() {
                                       e.stopPropagation();
                                       router.push(`/submissions/${submission.id}`);
                                     }}
-                                    className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm hover:bg-white dark:hover:bg-gray-700 shadow-sm"
+                                    className="h-6 sm:h-7 px-2 text-xs hover:bg-white dark:hover:bg-gray-700"
                                   >
-                                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                    <Eye className="h-3 w-3 mr-1" />
                                     {!isMobile && "View"}
                                   </Button>
                                   
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                      <Button variant="ghost" size="sm" className="h-7 w-7 sm:h-8 sm:w-8 p-0 hover:bg-white dark:hover:bg-gray-700 shadow-sm">
-                                        <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
+                                      <Button variant="ghost" size="sm" className="h-6 w-6 sm:h-7 sm:w-7 p-0 hover:bg-white dark:hover:bg-gray-700">
+                                        <MoreHorizontal className="h-3 w-3" />
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-48">
@@ -1235,19 +1194,19 @@ export default function SubmissionsDashboard() {
                                 </div>
                               </div>
                               
-                              {/* Rich Submission Data Preview - Responsive */}
-                              <div className="bg-white dark:bg-gray-900/70 rounded-lg sm:rounded-xl border-2 border-gray-200 dark:border-gray-700 p-3 sm:p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
-                                <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                                  <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gradient-to-r ${colorScheme.from} ${colorScheme.to}`}></div>
-                                  <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Response Data</span>
+                              {/* Compact Data Preview */}
+                              <div className="bg-white dark:bg-gray-900/70 rounded-md border border-gray-200 dark:border-gray-700 p-2 sm:p-2.5 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <div className="flex items-center gap-1.5 mb-1.5">
+                                  <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${colorScheme.from} ${colorScheme.to}`}></div>
+                                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Response Data</span>
                                 </div>
                                 {renderSubmissionDataPreview(submission, isMobile ? 1 : 2)}
                               </div>
                               
-                              {/* Submission Footer - Responsive */}
-                              <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 text-xs text-gray-500 dark:text-gray-400">
-                                <span>Submission {submissionIndex + 1} of {formSubmissions.length}</span>
-                                <span className="font-mono">ID: {submission.id.slice(-8)}</span>
+                              {/* Compact Footer */}
+                              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-0.5 sm:gap-0 text-xs text-gray-500 dark:text-gray-400">
+                                <span>#{submissionIndex + 1} of {formSubmissions.length}</span>
+                                <span className="font-mono text-xs">ID: {submission.id.slice(-8)}</span>
                               </div>
                             </div>
                           </motion.div>
