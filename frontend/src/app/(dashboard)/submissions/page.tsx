@@ -98,6 +98,13 @@ export default function SubmissionsDashboard() {
     byForm: [] as {formId: string, formTitle: string, count: number}[]
   });
 
+  // Form fields mapping for better data display
+  const [formFields, setFormFields] = useState<Record<string, Array<{id: string, label: string, type: string}>>>({});
+  
+  // Pagination state
+  const [submissionsPerForm, setSubmissionsPerForm] = useState(10);
+  const [expandedForms, setExpandedForms] = useState<Record<string, boolean>>({});
+
   // Detect mobile screens on client side
   useEffect(() => {
     const checkIfMobile = () => {
@@ -129,10 +136,41 @@ export default function SubmissionsDashboard() {
     }
   }, []);
 
+  // Load form fields for better data display
+  const loadFormFields = async (formIds: string[]) => {
+    try {
+      const fieldsPromises = formIds.map(async (formId) => {
+        try {
+          const fields = await fetchApi(`/forms/${formId}/fields`);
+          return { formId, fields: Array.isArray(fields) ? fields : [] };
+        } catch (error) {
+          console.error(`Failed to load fields for form ${formId}:`, error);
+          return { formId, fields: [] };
+        }
+      });
+      
+      const fieldsResults = await Promise.all(fieldsPromises);
+      const fieldsMap: Record<string, Array<{id: string, label: string, type: string}>> = {};
+      
+      fieldsResults.forEach(({ formId, fields }) => {
+        fieldsMap[formId] = fields.map((field: any) => ({
+          id: field.id || field.name || '',
+          label: field.label || field.name || 'Unknown Field',
+          type: field.type || 'text'
+        }));
+      });
+      
+      setFormFields(fieldsMap);
+    } catch (error) {
+      console.error('Failed to load form fields:', error);
+    }
+  };
+
   const loadSubmissions = async (statusMap = savedStatusMap) => {
     try {
       setLoading(true);
       const data = await fetchApi('/submissions') as Submission[];
+      
       // Enhance submissions with a status field
       const enhancedData = data.map((submission: Submission) => {
         // First check if we have a manually saved status for this submission
@@ -171,8 +209,15 @@ export default function SubmissionsDashboard() {
           status
         };
       });
+      
       setSubmissions(enhancedData);
       calculateStats(enhancedData);
+      
+      // Load form fields for better data display
+      const uniqueFormIds = Array.from(new Set(enhancedData.map(s => s.formId)));
+      if (uniqueFormIds.length > 0) {
+        await loadFormFields(uniqueFormIds);
+      }
     } catch (error) {
       toast({
         title: 'Error',
@@ -655,6 +700,18 @@ export default function SubmissionsDashboard() {
                     <SelectItem value="month">This Month</SelectItem>
                   </SelectContent>
                 </Select>
+                
+                <Select value={submissionsPerForm.toString()} onValueChange={(value) => setSubmissionsPerForm(parseInt(value))}>
+                  <SelectTrigger className="w-[120px] h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">Show 5</SelectItem>
+                    <SelectItem value="10">Show 10</SelectItem>
+                    <SelectItem value="20">Show 20</SelectItem>
+                    <SelectItem value="50">Show 50</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>
@@ -666,6 +723,63 @@ export default function SubmissionsDashboard() {
     </div>
   );
   
+  // Helper function to format submission data with field labels
+  const formatSubmissionData = (submission: Submission, formId: string) => {
+    const fields = formFields[formId] || [];
+    const submissionData = submission.data || {};
+    
+    const formattedData: Array<{label: string, value: any, type: string}> = [];
+    
+    // Map each data entry to its field label
+    Object.entries(submissionData).forEach(([key, value]) => {
+      const field = fields.find(f => f.id === key || f.label === key);
+      const label = field?.label || key.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      const type = field?.type || 'text';
+      
+      formattedData.push({
+        label,
+        value,
+        type
+      });
+    });
+    
+    return formattedData;
+  };
+
+  // Helper function to render submission data in a beautiful format
+  const renderSubmissionDataPreview = (submission: Submission, formId: string, maxFields: number = 3) => {
+    const formattedData = formatSubmissionData(submission, formId);
+    const previewData = formattedData.slice(0, maxFields);
+    const remainingCount = Math.max(0, formattedData.length - maxFields);
+    
+    return (
+      <div className="space-y-2">
+        {previewData.map((item, index) => (
+          <div key={index} className="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30">
+            <div className="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {item.label}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-gray-400 break-words">
+                {typeof item.value === 'string' && item.value.length > 150 
+                  ? `${item.value.substring(0, 150)}...` 
+                  : String(item.value || 'No response')}
+              </div>
+            </div>
+          </div>
+        ))}
+        
+        {remainingCount > 0 && (
+          <div className="text-xs text-gray-500 dark:text-gray-500 text-center p-2 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+            <FileText className="h-3 w-3 inline mr-1" />
+            +{remainingCount} more field{remainingCount !== 1 ? 's' : ''}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Revolutionary Form-Grouped Submissions Renderer
   function renderFormGroupedSubmissions() {
     if (loading) {
@@ -803,11 +917,13 @@ export default function SubmissionsDashboard() {
                     </div>
                   </CardHeader>
 
-                  {/* Submissions List */}
-                  <CardContent className="p-0">
-                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                      <AnimatePresence>
-                        {formSubmissions.map((submission, submissionIndex) => (
+                                     {/* Submissions List */}
+                   <CardContent className="p-0">
+                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                       <AnimatePresence>
+                         {formSubmissions
+                           .slice(0, expandedForms[group.form.id] ? formSubmissions.length : submissionsPerForm)
+                           .map((submission, submissionIndex) => (
                           <motion.div
                             key={submission.id}
                             initial={{ opacity: 0, x: -20 }}
@@ -829,25 +945,8 @@ export default function SubmissionsDashboard() {
                                   {getStatusBadge(submission.status || 'viewed')}
                                 </div>
                                 
-                                {/* Submission Data Preview */}
-                                <div className="space-y-1">
-                                  {Object.entries(submission.data || {}).slice(0, 2).map(([key, value]) => (
-                                    <div key={key} className="flex items-start gap-2 text-sm">
-                                      <span className="font-medium text-gray-700 dark:text-gray-300 min-w-0 flex-shrink-0">
-                                        {key}:
-                                      </span>
-                                      <span className="text-gray-600 dark:text-gray-400 truncate">
-                                        {typeof value === 'string' ? value.substring(0, 100) : String(value).substring(0, 100)}
-                                        {(typeof value === 'string' ? value.length : String(value).length) > 100 && '...'}
-                                      </span>
-                                    </div>
-                                  ))}
-                                  {Object.keys(submission.data || {}).length > 2 && (
-                                    <div className="text-xs text-gray-500 dark:text-gray-500">
-                                      +{Object.keys(submission.data || {}).length - 2} more fields
-                                    </div>
-                                  )}
-                                </div>
+                                                                 {/* Beautiful Submission Data Preview */}
+                                 {renderSubmissionDataPreview(submission, group.form.id, 2)}
                               </div>
                               
                               <div className="flex items-center gap-2 ml-4">
@@ -917,10 +1016,42 @@ export default function SubmissionsDashboard() {
                               </div>
                             </div>
                           </motion.div>
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                  </CardContent>
+                                                 ))}
+                       </AnimatePresence>
+                       
+                       {/* Show More/Less Button */}
+                       {formSubmissions.length > submissionsPerForm && (
+                         <motion.div
+                           initial={{ opacity: 0 }}
+                           animate={{ opacity: 1 }}
+                           className="p-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-700"
+                         >
+                           <Button
+                             variant="outline"
+                             onClick={() => {
+                               setExpandedForms(prev => ({
+                                 ...prev,
+                                 [group.form.id]: !prev[group.form.id]
+                               }));
+                             }}
+                             className="w-full h-10 text-sm"
+                           >
+                             {expandedForms[group.form.id] ? (
+                               <>
+                                 <ChevronDown className="h-4 w-4 mr-2 rotate-180" />
+                                 Show Less ({formSubmissions.length - submissionsPerForm} hidden)
+                               </>
+                             ) : (
+                               <>
+                                 <ChevronDown className="h-4 w-4 mr-2" />
+                                 Show {formSubmissions.length - submissionsPerForm} More Submissions
+                               </>
+                             )}
+                           </Button>
+                         </motion.div>
+                       )}
+                     </div>
+                   </CardContent>
                 </Card>
               </motion.div>
             );
