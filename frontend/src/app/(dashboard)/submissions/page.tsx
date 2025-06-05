@@ -54,7 +54,9 @@ import {
   BarChart3,
   Star,
   Grid3X3,
-  List
+  List,
+  ChevronUp,
+  X
 } from 'lucide-react';
 import { 
   Select,
@@ -873,17 +875,27 @@ export default function SubmissionsDashboard() {
   function renderFormGroupedSubmissions() {
     if (loading) {
       return (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="border-gray-200 dark:border-gray-700">
+            <Card key={i} className="border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="h-2 bg-gradient-to-r from-blue-400 to-purple-400 animate-pulse" />
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <Skeleton className="h-6 w-48" />
-                  <Skeleton className="h-8 w-20" />
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-12 w-12 rounded-xl" />
+                    <div>
+                      <Skeleton className="h-6 w-48 mb-2" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-8 w-24" />
                 </div>
-                <div className="space-y-3">
+                <div className="grid gap-4">
                   {[1, 2].map((j) => (
-                    <Skeleton key={j} className="h-16 w-full" />
+                    <div key={j} className="border rounded-lg p-4">
+                      <Skeleton className="h-4 w-full mb-2" />
+                      <Skeleton className="h-16 w-full" />
+                    </div>
                   ))}
                 </div>
               </CardContent>
@@ -923,16 +935,19 @@ export default function SubmissionsDashboard() {
     if (formGroups.length === 0) {
       return (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-12"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center py-16"
         >
-          <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">No submissions found</h3>
-          <p className="text-gray-500 dark:text-gray-500 mb-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full blur-3xl opacity-50" />
+            <FileText className="relative h-20 w-20 mx-auto mb-6 text-gray-300" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-3">No submissions found</h3>
+          <p className="text-gray-500 dark:text-gray-500 mb-8 max-w-md mx-auto">
             {searchTerm ? `No submissions match "${searchTerm}"` : 
              currentTab !== 'all' ? `No ${currentTab} submissions found` : 
-             'No submissions have been received yet'}
+             'No submissions have been received yet. Create a form and start collecting responses!'}
           </p>
           {(searchTerm || currentTab !== 'all') && (
             <Button 
@@ -942,7 +957,9 @@ export default function SubmissionsDashboard() {
                 setCurrentTab('all');
                 setDateFilter('all');
               }}
+              className="bg-white dark:bg-gray-800"
             >
+              <X className="h-4 w-4 mr-2" />
               Clear all filters
             </Button>
           )}
@@ -950,55 +967,84 @@ export default function SubmissionsDashboard() {
       );
     }
 
+    // Generate unique colors for each form
+    const formColors = [
+      { from: 'from-blue-500', to: 'to-indigo-600', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700' },
+      { from: 'from-green-500', to: 'to-emerald-600', bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-700' },
+      { from: 'from-purple-500', to: 'to-violet-600', bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700' },
+      { from: 'from-orange-500', to: 'to-red-600', bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-700' },
+      { from: 'from-teal-500', to: 'to-cyan-600', bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-700' },
+      { from: 'from-pink-500', to: 'to-rose-600', bg: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-700' },
+    ];
+
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         <AnimatePresence>
           {formGroups.map((group, groupIndex) => {
             const formSubmissions = group.submissions;
             const newCount = formSubmissions.filter(s => s.status === 'new').length;
             const viewedCount = formSubmissions.filter(s => s.status === 'viewed').length;
             const archivedCount = formSubmissions.filter(s => s.status === 'archived').length;
+            const colorScheme = formColors[groupIndex % formColors.length];
 
             return (
               <motion.div
                 key={group.form.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, delay: groupIndex * 0.1 }}
+                exit={{ opacity: 0, y: -30 }}
+                transition={{ duration: 0.4, delay: groupIndex * 0.1 }}
               >
-                <Card className="border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  {/* Form Header with Metrics */}
-                  <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 border-b border-gray-200 dark:border-gray-700">
+                <Card className="border-gray-200 dark:border-gray-700 shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden group">
+                  {/* Distinctive Form Header with Brand Colors */}
+                  <div className={`h-1.5 bg-gradient-to-r ${colorScheme.from} ${colorScheme.to}`} />
+                  
+                  <CardHeader className={`${colorScheme.bg} dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="p-2 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
-                          <FileText className="h-5 w-5 text-white" />
+                        {/* Form Icon with Brand Color */}
+                        <div className={`p-3 bg-gradient-to-r ${colorScheme.from} ${colorScheme.to} rounded-xl shadow-lg`}>
+                          <FileText className="h-6 w-6 text-white" />
                         </div>
+                        
                         <div>
-                          <CardTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                          <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                             {group.form.title}
+                            <Badge variant="outline" className={`${colorScheme.border} ${colorScheme.text} bg-white dark:bg-gray-800`}>
+                              Form #{group.form.id.slice(-4)}
+                            </Badge>
                           </CardTitle>
-                          <CardDescription className="mt-1">
-                            {formSubmissions.length} submission{formSubmissions.length !== 1 ? 's' : ''} 
-                            {currentTab !== 'all' && ` (${currentTab})`}
+                          <CardDescription className="mt-1 flex items-center gap-4">
+                            <span className="flex items-center gap-1">
+                              <Users className="h-4 w-4" />
+                              {formSubmissions.length} submission{formSubmissions.length !== 1 ? 's' : ''} 
+                            </span>
+                            {currentTab !== 'all' && (
+                              <span className="text-sm font-medium">
+                                Showing {currentTab} submissions
+                              </span>
+                            )}
                           </CardDescription>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      {/* Status Metrics */}
+                      <div className="flex items-center gap-2 flex-wrap">
                         {newCount > 0 && (
-                          <Badge variant="default" className="bg-blue-500 hover:bg-blue-600">
+                          <Badge className="bg-blue-500 hover:bg-blue-600 shadow-sm">
+                            <Zap className="h-3 w-3 mr-1" />
                             {newCount} New
                           </Badge>
                         )}
                         {viewedCount > 0 && (
-                          <Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400">
+                          <Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20">
+                            <Eye className="h-3 w-3 mr-1" />
                             {viewedCount} Viewed
                           </Badge>
                         )}
                         {archivedCount > 0 && (
-                          <Badge variant="secondary">
+                          <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700">
+                            <Archive className="h-3 w-3 mr-1" />
                             {archivedCount} Archived
                           </Badge>
                         )}
@@ -1006,397 +1052,157 @@ export default function SubmissionsDashboard() {
                     </div>
                   </CardHeader>
 
-                                     {/* Submissions List */}
-                   <CardContent className="p-0">
-                     <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                       <AnimatePresence>
-                         {formSubmissions
-                           .slice(0, expandedForms[group.form.id] ? formSubmissions.length : submissionsPerForm)
-                           .map((submission, submissionIndex) => (
+                  {/* Enhanced Submissions Grid */}
+                  <CardContent className="p-0">
+                    <div className="grid gap-0">
+                      <AnimatePresence>
+                        {formSubmissions
+                          .slice(0, expandedForms[group.form.id] ? formSubmissions.length : submissionsPerForm)
+                          .map((submission, submissionIndex) => (
                           <motion.div
                             key={submission.id}
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
-                            transition={{ duration: 0.2, delay: submissionIndex * 0.05 }}
-                            className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                            transition={{ duration: 0.3, delay: submissionIndex * 0.05 }}
+                            className="border-b border-gray-100 dark:border-gray-800 last:border-b-0 hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent dark:hover:from-gray-800/50 dark:hover:to-transparent transition-all duration-300 cursor-pointer group/submission"
                             onClick={() => router.push(`/submissions/${submission.id}`)}
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <div className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4 text-gray-400" />
-                                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                                      {formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}
-                                    </span>
+                            <div className="p-6">
+                              {/* Submission Header */}
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                  {/* Submission ID Badge */}
+                                  <div className={`px-3 py-1 rounded-full text-xs font-mono ${colorScheme.bg} ${colorScheme.text} border ${colorScheme.border}`}>
+                                    #{submission.id.slice(-6)}
                                   </div>
+                                  
+                                  {/* Timestamp */}
+                                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                    <Clock className="h-4 w-4" />
+                                    <span>{formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}</span>
+                                  </div>
+                                  
+                                  {/* Status Badge */}
                                   {getStatusBadge(submission.status || 'viewed')}
                                 </div>
                                 
-                                                                                                   {/* Beautiful Submission Data Preview */}
-                                  {renderSubmissionDataPreview(submission, 2)}
+                                {/* Action Buttons */}
+                                <div className="flex items-center gap-2 opacity-0 group-hover/submission:opacity-100 transition-opacity duration-200">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/submissions/${submission.id}`);
+                                    }}
+                                    className="h-8 px-3 hover:bg-white dark:hover:bg-gray-700"
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" />
+                                    View
+                                  </Button>
+                                  
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-white dark:hover:bg-gray-700">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48">
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          router.push(`/submissions/${submission.id}`);
+                                        }}
+                                      >
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateSubmissionStatus(submission.id, 'new');
+                                        }}
+                                      >
+                                        <Zap className="mr-2 h-4 w-4" />
+                                        Mark as New
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateSubmissionStatus(submission.id, 'viewed');
+                                        }}
+                                      >
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        Mark as Viewed
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateSubmissionStatus(submission.id, 'archived');
+                                        }}
+                                      >
+                                        <Archive className="mr-2 h-4 w-4" />
+                                        Archive
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDelete(submission.id);
+                                        }}
+                                        className="text-red-600 dark:text-red-400"
+                                      >
+                                        <Trash className="mr-2 h-4 w-4" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
                               </div>
                               
-                              <div className="flex items-center gap-2 ml-4">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/submissions/${submission.id}`);
-                                  }}
-                                  className="h-8 px-3"
-                                >
-                                  <Eye className="h-4 w-4 mr-1" />
-                                  View
-                                </Button>
-                                
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        updateSubmissionStatus(submission.id, 'new');
-                                      }}
-                                      disabled={submission.status === 'new'}
-                                    >
-                                      <Badge className="bg-blue-500 h-3 w-3 mr-2 p-0" />
-                                      Mark as New
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        updateSubmissionStatus(submission.id, 'viewed');
-                                      }}
-                                      disabled={submission.status === 'viewed'}
-                                    >
-                                      <CheckCircle2 className="h-3 w-3 mr-2 text-green-500" />
-                                      Mark as Viewed
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        updateSubmissionStatus(submission.id, 'archived');
-                                      }}
-                                      disabled={submission.status === 'archived'}
-                                    >
-                                      <Archive className="h-3 w-3 mr-2 text-gray-500" />
-                                      Archive
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                      className="text-red-600"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDelete(submission.id);
-                                      }}
-                                    >
-                                      <Trash className="h-3 w-3 mr-2" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                              {/* Rich Submission Data Preview */}
+                              <div className="bg-white dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                                {renderSubmissionDataPreview(submission, 2)}
                               </div>
                             </div>
                           </motion.div>
-                                                 ))}
-                       </AnimatePresence>
-                       
-                       {/* Show More/Less Button */}
-                       {formSubmissions.length > submissionsPerForm && (
-                         <motion.div
-                           initial={{ opacity: 0 }}
-                           animate={{ opacity: 1 }}
-                           className="p-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-700"
-                         >
-                           <Button
-                             variant="outline"
-                             onClick={() => {
-                               setExpandedForms(prev => ({
-                                 ...prev,
-                                 [group.form.id]: !prev[group.form.id]
-                               }));
-                             }}
-                             className="w-full h-10 text-sm"
-                           >
-                             {expandedForms[group.form.id] ? (
-                               <>
-                                 <ChevronDown className="h-4 w-4 mr-2 rotate-180" />
-                                 Show Less ({formSubmissions.length - submissionsPerForm} hidden)
-                               </>
-                             ) : (
-                               <>
-                                 <ChevronDown className="h-4 w-4 mr-2" />
-                                 Show {formSubmissions.length - submissionsPerForm} More Submissions
-                               </>
-                             )}
-                           </Button>
-                         </motion.div>
-                       )}
-                     </div>
-                   </CardContent>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                    
+                    {/* Show More/Less Button */}
+                    {formSubmissions.length > submissionsPerForm && (
+                      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                        <Button
+                          variant="ghost"
+                          onClick={() => setExpandedForms(prev => ({
+                            ...prev,
+                            [group.form.id]: !prev[group.form.id]
+                          }))}
+                          className="w-full"
+                        >
+                          {expandedForms[group.form.id] ? (
+                            <>
+                              <ChevronUp className="mr-2 h-4 w-4" />
+                              Show Less
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="mr-2 h-4 w-4" />
+                              Show {formSubmissions.length - submissionsPerForm} More Submissions
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
                 </Card>
               </motion.div>
             );
           })}
         </AnimatePresence>
-      </div>
-    );
-  }
-
-  function renderSubmissionsTable(submissions: Submission[]) {
-    if (loading) {
-      return (
-        <div className="space-y-3 sm:space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center space-x-2 sm:space-x-4">
-              <Skeleton className="h-8 w-8 sm:h-12 sm:w-12" />
-              <div className="space-y-1 sm:space-y-2">
-                <Skeleton className="h-3 w-[150px] sm:h-4 sm:w-[250px]" />
-                <Skeleton className="h-3 w-[120px] sm:h-4 sm:w-[200px]" />
-              </div>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    
-    if (submissions.length === 0) {
-      return (
-        <div className="text-center py-4 sm:py-8">
-          <p className="text-xs sm:text-sm text-muted-foreground">No submissions match your filters</p>
-          <Button variant="outline" size="sm" className="mt-3 sm:mt-4 text-xs sm:text-sm" onClick={() => {
-            setSearchTerm('');
-            setFormFilter('all');
-            setDateFilter('all');
-            setStatusFilter('all');
-          }}>
-            Clear Filters
-          </Button>
-        </div>
-      );
-    }
-    
-    // For mobile screens, use a card layout instead of a table
-    if (isMobile) {
-      return (
-        <div className="space-y-3">
-          {submissions.map((submission) => (
-            <Card 
-              key={submission.id}
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => router.push(`/submissions/${submission.id}`)}
-            >
-              <CardContent className="p-3">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <h4 className="font-medium text-xs truncate max-w-[150px]">
-                      {submission.form.title}
-                    </h4>
-                    <p className="text-[10px] text-muted-foreground">
-                      {formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {getStatusBadge(submission.status || 'viewed')}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" className="h-6 w-6 p-0">
-                          <MoreHorizontal className="h-3 w-3" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-[160px]">
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`/submissions/${submission.id}`);
-                          }}
-                          className="text-xs"
-                        >
-                          <Eye className="h-3 w-3 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toast({
-                              title: "Email Feature",
-                              description: "Email functionality will be implemented soon",
-                            });
-                          }}
-                          className="text-xs"
-                        >
-                          <Mail className="h-3 w-3 mr-2" />
-                          Email Response
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateSubmissionStatus(submission.id, 'new');
-                          }} 
-                          disabled={submission.status === 'new'}
-                          className="text-xs"
-                        >
-                          <Badge className="bg-blue-500 h-3 w-3 mr-2 p-0" />
-                          Mark as New
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateSubmissionStatus(submission.id, 'viewed');
-                          }} 
-                          disabled={submission.status === 'viewed'}
-                          className="text-xs"
-                        >
-                          <Badge variant="outline" className="border-green-500 h-3 w-3 mr-2 p-0" />
-                          Mark as Viewed
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateSubmissionStatus(submission.id, 'archived');
-                          }} 
-                          disabled={submission.status === 'archived'}
-                          className="text-xs"
-                        >
-                          <Badge variant="secondary" className="h-3 w-3 sm:h-4 sm:w-4 mr-2 p-0" />
-                          Archive
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-red-600 text-xs"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(submission.id);
-                          }}
-                        >
-                          <Trash className="h-3 w-3 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      );
-    }
-    
-    // For larger screens, use the table layout
-    return (
-      <div className="overflow-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="cursor-pointer text-xs sm:text-sm" onClick={() => handleSort('form')}>
-                Form
-                {sortField === 'form' && (
-                  <ArrowUpDown className={`ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4 inline ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
-                )}
-              </TableHead>
-              <TableHead className="cursor-pointer text-xs sm:text-sm" onClick={() => handleSort('createdAt')}>
-                Submitted
-                {sortField === 'createdAt' && (
-                  <ArrowUpDown className={`ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4 inline ${sortDirection === 'asc' ? 'rotate-180' : ''}`} />
-                )}
-              </TableHead>
-              <TableHead className="text-xs sm:text-sm">Status</TableHead>
-              <TableHead className="text-right text-xs sm:text-sm">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {submissions.map((submission) => (
-              <TableRow key={submission.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/submissions/${submission.id}`)}>
-                <TableCell className="font-medium py-2 sm:py-4 text-xs sm:text-sm">
-                  {submission.form.title}
-                </TableCell>
-                <TableCell className="py-2 sm:py-4 text-xs sm:text-sm">
-                  <div className="flex flex-col">
-                    <span>{formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}</span>
-                    <span className="text-[10px] sm:text-xs text-muted-foreground">{format(new Date(submission.createdAt), 'MMM d, yyyy HH:mm')}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="py-2 sm:py-4">
-                  {getStatusBadge(submission.status || 'viewed')}
-                </TableCell>
-                <TableCell className="text-right py-2 sm:py-4">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button variant="ghost" className="h-7 w-7 sm:h-8 sm:w-8 p-0">
-                        <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/submissions/${submission.id}`);
-                        }}
-                        className="text-xs sm:text-sm"
-                      >
-                        <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                        View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        // Would implement email functionality here
-                        toast({
-                          title: "Email Feature",
-                          description: "Email functionality will be implemented soon",
-                        });
-                      }} className="text-xs sm:text-sm">
-                        <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                        Email Response
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        updateSubmissionStatus(submission.id, 'new');
-                      }} disabled={submission.status === 'new'} className="text-xs sm:text-sm">
-                        <Badge className="bg-blue-500 h-3 w-3 sm:h-4 sm:w-4 mr-2 p-0" />
-                        Mark as New
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        updateSubmissionStatus(submission.id, 'viewed');
-                      }} disabled={submission.status === 'viewed'} className="text-xs sm:text-sm">
-                        <Badge variant="outline" className="border-green-500 h-3 w-3 sm:h-4 sm:w-4 mr-2 p-0" />
-                        Mark as Viewed
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation();
-                        updateSubmissionStatus(submission.id, 'archived');
-                      }} disabled={submission.status === 'archived'} className="text-xs sm:text-sm">
-                        <Badge variant="secondary" className="h-3 w-3 sm:h-4 sm:w-4 mr-2 p-0" />
-                        Archive
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-red-600 text-xs sm:text-sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(submission.id);
-                        }}
-                      >
-                        <Trash className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
       </div>
     );
   }
