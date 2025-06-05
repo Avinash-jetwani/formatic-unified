@@ -1054,7 +1054,7 @@ export default function SubmissionsDashboard() {
 
                   {/* Enhanced Submissions Grid */}
                   <CardContent className="p-0">
-                    <div className="grid gap-0">
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
                       <AnimatePresence>
                         {formSubmissions
                           .slice(0, expandedForms[group.form.id] ? formSubmissions.length : submissionsPerForm)
@@ -1065,22 +1065,35 @@ export default function SubmissionsDashboard() {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: 20 }}
                             transition={{ duration: 0.3, delay: submissionIndex * 0.05 }}
-                            className="border-b border-gray-100 dark:border-gray-800 last:border-b-0 hover:bg-gradient-to-r hover:from-gray-50 hover:to-transparent dark:hover:from-gray-800/50 dark:hover:to-transparent transition-all duration-300 cursor-pointer group/submission"
+                            className={`
+                              relative
+                              ${submissionIndex % 2 === 0 ? 'bg-white dark:bg-gray-900/30' : 'bg-gray-50/50 dark:bg-gray-800/30'}
+                              hover:bg-gradient-to-r hover:from-${colorScheme.from.replace('from-', '')}/5 hover:to-transparent 
+                              dark:hover:from-${colorScheme.from.replace('from-', '')}/10 dark:hover:to-transparent 
+                              transition-all duration-300 cursor-pointer group/submission
+                              border-l-4 border-l-${colorScheme.from.replace('from-', '')} border-l-opacity-20
+                              hover:border-l-opacity-60 hover:shadow-lg
+                            `}
                             onClick={() => router.push(`/submissions/${submission.id}`)}
                           >
-                            <div className="p-6">
+                            {/* Submission Number Badge */}
+                            <div className={`absolute -left-2 top-6 w-8 h-8 rounded-full bg-gradient-to-r ${colorScheme.from} ${colorScheme.to} flex items-center justify-center text-white text-sm font-bold shadow-lg z-10`}>
+                              {submissionIndex + 1}
+                            </div>
+                            
+                            <div className="pl-8 pr-6 py-6">
                               {/* Submission Header */}
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-3">
-                                  {/* Submission ID Badge */}
-                                  <div className={`px-3 py-1 rounded-full text-xs font-mono ${colorScheme.bg} ${colorScheme.text} border ${colorScheme.border}`}>
-                                    #{submission.id.slice(-6)}
+                                  {/* Enhanced Submission ID Badge */}
+                                  <div className={`px-4 py-2 rounded-lg text-sm font-mono font-semibold ${colorScheme.bg} ${colorScheme.text} border-2 ${colorScheme.border} shadow-sm`}>
+                                    Submission #{submission.id.slice(-6).toUpperCase()}
                                   </div>
                                   
-                                  {/* Timestamp */}
-                                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                  {/* Timestamp with enhanced styling */}
+                                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
                                     <Clock className="h-4 w-4" />
-                                    <span>{formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}</span>
+                                    <span className="font-medium">{formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}</span>
                                   </div>
                                   
                                   {/* Status Badge */}
@@ -1096,7 +1109,7 @@ export default function SubmissionsDashboard() {
                                       e.stopPropagation();
                                       router.push(`/submissions/${submission.id}`);
                                     }}
-                                    className="h-8 px-3 hover:bg-white dark:hover:bg-gray-700"
+                                    className="h-8 px-3 hover:bg-white dark:hover:bg-gray-700 shadow-sm"
                                   >
                                     <Eye className="h-4 w-4 mr-1" />
                                     View
@@ -1104,7 +1117,7 @@ export default function SubmissionsDashboard() {
                                   
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-white dark:hover:bg-gray-700">
+                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-white dark:hover:bg-gray-700 shadow-sm">
                                         <MoreHorizontal className="h-4 w-4" />
                                       </Button>
                                     </DropdownMenuTrigger>
@@ -1162,9 +1175,19 @@ export default function SubmissionsDashboard() {
                                 </div>
                               </div>
                               
-                              {/* Rich Submission Data Preview */}
-                              <div className="bg-white dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                              {/* Rich Submission Data Preview with enhanced styling */}
+                              <div className="bg-white dark:bg-gray-900/70 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${colorScheme.from} ${colorScheme.to}`}></div>
+                                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Response Data</span>
+                                </div>
                                 {renderSubmissionDataPreview(submission, 2)}
+                              </div>
+                              
+                              {/* Submission Footer with metadata */}
+                              <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                <span>Submission {submissionIndex + 1} of {formSubmissions.length}</span>
+                                <span className="font-mono">ID: {submission.id.slice(-8)}</span>
                               </div>
                             </div>
                           </motion.div>
