@@ -1,217 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Define field types
-interface FormField {
-  id: string;
-  formId: string;
-  type: string;
-  label: string;
-  placeholder: string;
-  required: boolean;
-  order: number;
-  validations: Array<{
-    type: string;
-    params: Record<string, any>;
-    message: string;
-  }>;
-}
-
-// Mock form fields with proper typing
-const mockFields: Record<string, FormField[]> = {
-  '65fef360-29a5-40ed-a79e-78fccdc4842c': [
-    {
-      id: 'field_1',
-      formId: '65fef360-29a5-40ed-a79e-78fccdc4842c',
-      type: 'TEXT',
-      label: 'Name',
-      placeholder: 'Enter your name',
-      required: true,
-      order: 1,
-      validations: []
-    },
-    {
-      id: 'field_2',
-      formId: '65fef360-29a5-40ed-a79e-78fccdc4842c',
-      type: 'EMAIL',
-      label: 'Email',
-      placeholder: 'Enter your email',
-      required: true,
-      order: 2,
-      validations: [
-        {
-          type: 'email',
-          params: {},
-          message: 'Please enter a valid email address'
-        }
-      ]
-    },
-    {
-      id: 'field_3',
-      formId: '65fef360-29a5-40ed-a79e-78fccdc4842c',
-      type: 'TEXTAREA',
-      label: 'Message',
-      placeholder: 'Enter your message',
-      required: false,
-      order: 3,
-      validations: []
-    }
-  ],
-  '722060e7-f061-4865-925c-ed3f8034ffb6': [
-    {
-      id: 'name',
-      formId: '722060e7-f061-4865-925c-ed3f8034ffb6',
-      type: 'TEXT',
-      label: 'Full Name',
-      placeholder: 'Enter your full name',
-      required: true,
-      order: 1,
-      validations: []
-    },
-    {
-      id: 'email',
-      formId: '722060e7-f061-4865-925c-ed3f8034ffb6',
-      type: 'EMAIL',
-      label: 'Email Address',
-      placeholder: 'Enter your email address',
-      required: true,
-      order: 2,
-      validations: [
-        {
-          type: 'email',
-          params: {},
-          message: 'Please enter a valid email address'
-        }
-      ]
-    },
-    {
-      id: 'message',
-      formId: '722060e7-f061-4865-925c-ed3f8034ffb6',
-      type: 'TEXTAREA',
-      label: 'Message',
-      placeholder: 'Enter your message',
-      required: false,
-      order: 3,
-      validations: []
-    }
-  ],
-  'form_123': [
-    {
-      id: '6883981f-afd6-469c-8a8d-9e08d6b1d843',
-      formId: 'form_123',
-      type: 'SELECT',
-      label: 'Choice',
-      placeholder: 'Select an option',
-      required: true,
-      order: 1,
-      validations: []
-    },
-    {
-      id: 'name',
-      formId: 'form_123',
-      type: 'TEXT',
-      label: 'Name',
-      placeholder: 'Enter your name',
-      required: true,
-      order: 2,
-      validations: []
-    },
-    {
-      id: 'email',
-      formId: 'form_123',
-      type: 'EMAIL',
-      label: 'Email',
-      placeholder: 'Enter your email',
-      required: true,
-      order: 3,
-      validations: []
-    }
-  ],
-  'customer_feedback': [
-    {
-      id: '0a36777e-5c7c-4e6d-b1d8-2dc6ece39dc',
-      formId: 'customer_feedback',
-      type: 'TEXT',
-      label: 'Overall Rating',
-      placeholder: 'How would you rate us?',
-      required: true,
-      order: 1,
-      validations: []
-    },
-    {
-      id: '4e127c12-72e1-42bd-9e63-f8a92eae9052',
-      formId: 'customer_feedback',
-      type: 'RATING',
-      label: 'Service Rating',
-      placeholder: 'Rate our service',
-      required: true,
-      order: 2,
-      validations: []
-    },
-    {
-      id: 'rating',
-      formId: 'customer_feedback',
-      type: 'NUMBER',
-      label: 'Rating Score',
-      placeholder: 'Rate from 1-5',
-      required: false,
-      order: 3,
-      validations: []
-    },
-    {
-      id: 'comments',
-      formId: 'customer_feedback',
-      type: 'TEXTAREA',
-      label: 'Comments',
-      placeholder: 'Additional comments',
-      required: false,
-      order: 4,
-      validations: []
-    },
-    {
-      id: 'feedback_text',
-      formId: 'customer_feedback',
-      type: 'TEXTAREA',
-      label: 'Feedback',
-      placeholder: 'Your feedback',
-      required: false,
-      order: 5,
-      validations: []
-    },
-    {
-      id: 'recommend',
-      formId: 'customer_feedback',
-      type: 'CHECKBOX',
-      label: 'Would Recommend',
-      placeholder: 'Would you recommend us?',
-      required: false,
-      order: 6,
-      validations: []
-    }
-  ]
-};
-
 export async function GET(
   request: NextRequest,
   { params }: { params: { formId: string } }
 ) {
   try {
-    console.log('Mock fields API: GET request for form ID:', params.formId);
+    console.log('Fetching real form fields for form ID:', params.formId);
     
-    // Simulate a brief delay
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // Get the authorization token from the request headers
+    const authHeader = request.headers.get('authorization');
     
-    // Return mock fields for the form if they exist
-    if (mockFields[params.formId]) {
-      return NextResponse.json(mockFields[params.formId]);
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No valid token provided' },
+        { status: 401 }
+      );
     }
     
-    // Return an empty array for forms without defined fields
-    return NextResponse.json([]);
+    // Build backend URL
+    const backendUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001';
+    const apiUrl = `${backendUrl}/api/forms/${params.formId}`;
+    
+    console.log('Fetching form details from:', apiUrl);
+    
+    // Call the real backend API to get form details (which includes fields)
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      console.error('Backend API error:', response.status, response.statusText);
+      const errorText = await response.text();
+      console.error('Backend error details:', errorText);
+      
+      // Return empty array for 404 (form not found) to prevent dashboard crashes
+      if (response.status === 404) {
+        console.log('Form not found, returning empty fields array');
+        return NextResponse.json([]);
+      }
+      
+      return NextResponse.json(
+        { error: 'Failed to fetch form fields from backend', details: errorText },
+        { status: response.status }
+      );
+    }
+    
+    const form = await response.json();
+    console.log('Real form fetched:', form.title || 'Unknown form');
+    
+    // Extract fields from the form object
+    const fields = form.fields || [];
+    console.log('Form fields found:', fields.length, 'fields');
+    
+    // Transform fields to match the expected format
+    const transformedFields = fields.map((field: any) => ({
+      id: field.id || field.name || '',
+      label: field.label || field.name || 'Unknown Field',
+      type: field.type || 'text',
+      placeholder: field.placeholder || '',
+      required: field.required || false,
+      order: field.order || 0,
+      validations: field.validations || []
+    }));
+    
+    return NextResponse.json(transformedFields);
   } catch (error) {
     console.error('Form fields API error:', error);
-    return NextResponse.json(
-      { error: 'An error occurred', message: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    
+    // Return empty array instead of error to prevent dashboard crashes
+    console.log('Returning empty fields array due to error');
+    return NextResponse.json([]);
   }
 } 
