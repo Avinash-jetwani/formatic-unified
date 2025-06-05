@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   PlusCircle, 
   Search, 
@@ -461,9 +462,11 @@ const FormsPage = () => {
   // Memoized filter forms based on search term, published status, client filter, category and tags
   const filteredForms = useMemo(() => {
     return forms.filter(form => {
-      // Title or description matches search term
-      const matchesSearch = form.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (form.description && form.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      // Title, description, or tags match search term
+      const matchesSearch = !searchTerm || 
+        form.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (form.description && form.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (form.tags && form.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
       
       // Filter by status (published/draft/template)
       const matchesStatus = filter === 'all' ? true :
@@ -509,37 +512,116 @@ const FormsPage = () => {
   return (
     <ErrorBoundary>
       <div className="space-y-8">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Forms</h1>
-          <p className="text-muted-foreground">Create, manage, and track your forms and submissions.</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            onClick={() => router.push('/templates')}
-            className="whitespace-nowrap bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-purple-100 dark:from-blue-950 dark:to-purple-950 dark:border-blue-800 dark:text-blue-300"
+      {/* Enhanced Header Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative overflow-hidden bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950 dark:via-indigo-950 dark:to-purple-950 rounded-2xl p-8 border border-blue-100 dark:border-blue-800"
+      >
+        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <motion.div 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg"
+              >
+                <FileText className="h-6 w-6 text-white" />
+              </motion.div>
+              <div>
+                <motion.h1 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                  className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+                >
+                  Forms Dashboard
+                </motion.h1>
+                <motion.p 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4, duration: 0.5 }}
+                  className="text-lg text-muted-foreground mt-1"
+                >
+                  Create, manage, and track your forms with powerful analytics
+                </motion.p>
+              </div>
+            </div>
+            
+            {/* Quick Stats */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="flex flex-wrap gap-4 mt-4"
+            >
+              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
+                <FileText className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">{filteredForms.length} Forms</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">{filteredForms.filter(f => f.published).length} Published</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
+                <Edit className="h-4 w-4 text-orange-600" />
+                <span className="text-sm font-medium">{filteredForms.filter(f => !f.published).length} Drafts</span>
+              </div>
+            </motion.div>
+          </div>
+          
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            className="flex items-center gap-4"
           >
-            <Sparkles className="mr-2 h-4 w-4" />
-            Browse Templates
-          </Button>
-          <Button onClick={navigateToCreateForm} className="whitespace-nowrap">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Form
-          </Button>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                variant="outline"
+                onClick={() => router.push('/templates')}
+                className="relative overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-purple-100 dark:from-blue-950 dark:to-purple-950 dark:border-blue-800 dark:text-blue-300 transition-all duration-300 hover:shadow-lg"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Browse Templates
+              </Button>
+            </motion.div>
+            
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button 
+                onClick={navigateToCreateForm} 
+                className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Create Form
+              </Button>
+            </motion.div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search forms..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      {/* Enhanced Search and Filter Section */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="bg-white dark:bg-black/20 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm"
+      >
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search forms by title, description, or tags..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 pr-4 h-11 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
         
         {/* Status filter dropdown */}
         <DropdownMenu>
@@ -646,9 +728,9 @@ const FormsPage = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-      </div>
-      
-
+          </div>
+        </div>
+      </motion.div>
       
       {/* Forms grid for mobile and tablet */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
@@ -696,18 +778,31 @@ const FormsPage = () => {
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredForms.map(form => (
-              <Card key={form.id} className="overflow-hidden">
+            <AnimatePresence>
+              {filteredForms.map((form, index) => (
+                <motion.div
+                  key={form.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                  whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                >
+                  <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 border-gray-200 dark:border-gray-700">
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                      <CardTitle className="flex items-center gap-2">
+                    <div 
+                      className="space-y-1 cursor-pointer flex-1 hover:opacity-80 transition-opacity"
+                      onClick={() => router.push(`/forms/${form.id}`)}
+                      title="Click to edit form"
+                    >
+                      <CardTitle className="flex items-center gap-2 hover:text-blue-600 transition-colors">
                         {form.title}
                         {form.isTemplate && (
                           <Badge variant="outline" className="ml-2 text-xs">Template</Badge>
                         )}
                       </CardTitle>
-                      <CardDescription>
+                      <CardDescription className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                         {form.description?.substring(0, 120) || 'No description'}
                         {form.description && form.description.length > 120 ? '...' : ''}
                       </CardDescription>
@@ -812,8 +907,10 @@ const FormsPage = () => {
                     Edit
                   </Button>
                 </CardFooter>
-              </Card>
-            ))}
+                  </Card>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
@@ -876,9 +973,13 @@ const FormsPage = () => {
             ) : (
               filteredForms.map(form => (
                 <TableRow key={form.id}>
-                  <TableCell>
-                    <div className="font-medium">{form.title}</div>
-                    <div className="text-sm text-muted-foreground truncate max-w-[300px]">
+                  <TableCell 
+                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    onClick={() => router.push(`/forms/${form.id}`)}
+                    title="Click to edit form"
+                  >
+                    <div className="font-medium hover:text-blue-600 transition-colors">{form.title}</div>
+                    <div className="text-sm text-muted-foreground truncate max-w-[300px] hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                       {form.description || "No description"}
                     </div>
                   </TableCell>
