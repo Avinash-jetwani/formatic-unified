@@ -94,6 +94,89 @@ const submissions: Submission[] = [
     ipAddress: '192.168.1.4',
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     referrer: null
+  },
+  // Add submissions that match the IDs from the screenshot
+  {
+    id: '6883981f-afd6-469c-8a8d-9e08d6b1d843',
+    formId: 'form_123',
+    form: {
+      id: 'form_123',
+      title: '123',
+      slug: 'form-123'
+    },
+    data: {
+      '6883981f-afd6-469c-8a8d-9e08d6b1d843': 'Two',
+      'name': 'Alex Thompson',
+      'email': 'alex@example.com'
+    },
+    status: 'viewed',
+    createdAt: new Date(Date.now() - 1000 * 60 * 33).toISOString(), // 33 minutes ago
+    ipAddress: '192.168.1.5',
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    referrer: null
+  },
+  {
+    id: '6883981f-afd6-469c-8a8d-9e08d6b1d844',
+    formId: 'form_123',
+    form: {
+      id: 'form_123',
+      title: '123',
+      slug: 'form-123'
+    },
+    data: {
+      '6883981f-afd6-469c-8a8d-9e08d6b1d843': 'One',
+      'name': 'Sarah Wilson',
+      'email': 'sarah@example.com'
+    },
+    status: 'new',
+    createdAt: new Date(Date.now() - 1000 * 60 * 33).toISOString(), // 33 minutes ago
+    ipAddress: '192.168.1.6',
+    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+    referrer: null
+  },
+  // Add Customer Feedback form submissions
+  {
+    id: '0a36777e-5c7c-4e6d-b1d8-2dc6ece39dc',
+    formId: 'customer_feedback',
+    form: {
+      id: 'customer_feedback',
+      title: 'Customer Feedback',
+      slug: 'customer-feedback'
+    },
+    data: {
+      '0a36777e-5c7c-4e6d-b1d8-2dc6ece39dc': 'Good',
+      'rating': 5,
+      'comments': 'Excellent service!'
+    },
+    status: 'new',
+    createdAt: new Date(Date.now() - 1000 * 30).toISOString(), // less than a minute ago
+    ipAddress: '192.168.1.7',
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X)',
+    referrer: null
+  },
+  {
+    id: '4e127c12-72e1-42bd-9e63-f8a92eae9052',
+    formId: 'customer_feedback',
+    form: {
+      id: 'customer_feedback',
+      title: 'Customer Feedback',
+      slug: 'customer-feedback'
+    },
+    data: {
+      '4e127c12-72e1-42bd-9e63-f8a92eae9052': {
+        type: 'rating',
+        value: 4,
+        scale: 5,
+        comment: 'Pretty good overall'
+      },
+      'feedback_text': 'The service was good but could be improved',
+      'recommend': true
+    },
+    status: 'new',
+    createdAt: new Date(Date.now() - 1000 * 60).toISOString(), // 1 minute ago
+    ipAddress: '192.168.1.8',
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    referrer: null
   }
 ];
 

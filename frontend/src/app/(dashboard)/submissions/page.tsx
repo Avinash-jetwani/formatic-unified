@@ -85,15 +85,87 @@ const formatSubmissionData = (submission: Submission, formFields: Array<{id: str
     return formattedData;
   }
 
+  // Helper function to safely convert any value to a readable string
+  const formatValue = (value: any): string => {
+    if (value === null || value === undefined) {
+      return 'No response';
+    }
+    
+    if (typeof value === 'string') {
+      return value;
+    }
+    
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+    
+    if (Array.isArray(value)) {
+      return value.join(', ');
+    }
+    
+    if (typeof value === 'object') {
+      // Handle common object structures
+      if (value.type && value.value !== undefined) {
+        // Rating or structured field
+        if (value.type === 'rating' && value.scale) {
+          return `${value.value}/${value.scale} stars${value.comment ? ` - ${value.comment}` : ''}`;
+        }
+        return String(value.value);
+      }
+      
+      if (value.label && value.value !== undefined) {
+        return `${value.label}: ${value.value}`;
+      }
+      
+      // For other objects, try to extract meaningful data
+      const keys = Object.keys(value);
+      if (keys.length === 1) {
+        return String(value[keys[0]]);
+      }
+      
+      // If object has multiple keys, format as key-value pairs
+      return keys.map(key => `${key}: ${value[key]}`).join(', ');
+    }
+    
+    // Fallback for any other type
+    return String(value);
+  };
+
   Object.entries(submission.data).forEach(([key, value]) => {
     // Try to find the field definition to get a proper label
     const field = formFields.find(f => f.id === key || f.label === key);
-    const label = field?.label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+    
+    let label: string;
+    if (field?.label) {
+      label = field.label;
+    } else {
+      // If no field found, try to make the key more readable
+      // Handle UUID-like keys by checking if they look like UUIDs
+      if (key.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        // For UUID keys, try to infer meaning from the value or use a generic label
+        if (typeof value === 'string' && ['good', 'bad', 'excellent', 'poor', 'one', 'two', 'three'].includes(value.toLowerCase())) {
+          label = 'Rating/Choice';
+        } else if (typeof value === 'object' && value.type) {
+          label = value.type.charAt(0).toUpperCase() + value.type.slice(1);
+        } else {
+          label = 'Response';
+        }
+      } else {
+        // For regular keys, format them nicely
+        label = key
+          .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+          .replace(/[-_]/g, ' ') // Replace dashes and underscores with spaces
+          .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize first letter of each word
+          .trim();
+      }
+    }
+    
     const type = field?.type || 'text';
+    const formattedValue = formatValue(value);
     
     formattedData.push({
       label,
-      value,
+      value: formattedValue,
       type
     });
   });

@@ -93,6 +93,100 @@ const mockFields: Record<string, FormField[]> = {
       order: 3,
       validations: []
     }
+  ],
+  'form_123': [
+    {
+      id: '6883981f-afd6-469c-8a8d-9e08d6b1d843',
+      formId: 'form_123',
+      type: 'SELECT',
+      label: 'Choice',
+      placeholder: 'Select an option',
+      required: true,
+      order: 1,
+      validations: []
+    },
+    {
+      id: 'name',
+      formId: 'form_123',
+      type: 'TEXT',
+      label: 'Name',
+      placeholder: 'Enter your name',
+      required: true,
+      order: 2,
+      validations: []
+    },
+    {
+      id: 'email',
+      formId: 'form_123',
+      type: 'EMAIL',
+      label: 'Email',
+      placeholder: 'Enter your email',
+      required: true,
+      order: 3,
+      validations: []
+    }
+  ],
+  'customer_feedback': [
+    {
+      id: '0a36777e-5c7c-4e6d-b1d8-2dc6ece39dc',
+      formId: 'customer_feedback',
+      type: 'TEXT',
+      label: 'Overall Rating',
+      placeholder: 'How would you rate us?',
+      required: true,
+      order: 1,
+      validations: []
+    },
+    {
+      id: '4e127c12-72e1-42bd-9e63-f8a92eae9052',
+      formId: 'customer_feedback',
+      type: 'RATING',
+      label: 'Service Rating',
+      placeholder: 'Rate our service',
+      required: true,
+      order: 2,
+      validations: []
+    },
+    {
+      id: 'rating',
+      formId: 'customer_feedback',
+      type: 'NUMBER',
+      label: 'Rating Score',
+      placeholder: 'Rate from 1-5',
+      required: false,
+      order: 3,
+      validations: []
+    },
+    {
+      id: 'comments',
+      formId: 'customer_feedback',
+      type: 'TEXTAREA',
+      label: 'Comments',
+      placeholder: 'Additional comments',
+      required: false,
+      order: 4,
+      validations: []
+    },
+    {
+      id: 'feedback_text',
+      formId: 'customer_feedback',
+      type: 'TEXTAREA',
+      label: 'Feedback',
+      placeholder: 'Your feedback',
+      required: false,
+      order: 5,
+      validations: []
+    },
+    {
+      id: 'recommend',
+      formId: 'customer_feedback',
+      type: 'CHECKBOX',
+      label: 'Would Recommend',
+      placeholder: 'Would you recommend us?',
+      required: false,
+      order: 6,
+      validations: []
+    }
   ]
 };
 
