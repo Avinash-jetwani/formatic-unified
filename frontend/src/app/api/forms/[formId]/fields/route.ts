@@ -55,6 +55,44 @@ const mockFields: Record<string, FormField[]> = {
       order: 3,
       validations: []
     }
+  ],
+  '722060e7-f061-4865-925c-ed3f8034ffb6': [
+    {
+      id: 'name',
+      formId: '722060e7-f061-4865-925c-ed3f8034ffb6',
+      type: 'TEXT',
+      label: 'Full Name',
+      placeholder: 'Enter your full name',
+      required: true,
+      order: 1,
+      validations: []
+    },
+    {
+      id: 'email',
+      formId: '722060e7-f061-4865-925c-ed3f8034ffb6',
+      type: 'EMAIL',
+      label: 'Email Address',
+      placeholder: 'Enter your email address',
+      required: true,
+      order: 2,
+      validations: [
+        {
+          type: 'email',
+          params: {},
+          message: 'Please enter a valid email address'
+        }
+      ]
+    },
+    {
+      id: 'message',
+      formId: '722060e7-f061-4865-925c-ed3f8034ffb6',
+      type: 'TEXTAREA',
+      label: 'Message',
+      placeholder: 'Enter your message',
+      required: false,
+      order: 3,
+      validations: []
+    }
   ]
 };
 

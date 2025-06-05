@@ -77,6 +77,68 @@ interface Submission {
   status?: 'new' | 'viewed' | 'archived';
 }
 
+// Helper function to format submission data
+const formatSubmissionData = (submission: Submission, formFields: Array<{id: string, label: string, type: string}>) => {
+  const formattedData: Array<{label: string, value: any, type: string}> = [];
+  
+  if (!submission.data || typeof submission.data !== 'object') {
+    return formattedData;
+  }
+
+  Object.entries(submission.data).forEach(([key, value]) => {
+    // Try to find the field definition to get a proper label
+    const field = formFields.find(f => f.id === key || f.label === key);
+    const label = field?.label || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+    const type = field?.type || 'text';
+    
+    formattedData.push({
+      label,
+      value,
+      type
+    });
+  });
+  
+  return formattedData;
+};
+
+// Helper function to render submission data in a beautiful format
+const renderSubmissionDataPreview = (
+  submission: Submission, 
+  formFields: Array<{id: string, label: string, type: string}>, 
+  maxFields: number = 3
+) => {
+  const formattedData = formatSubmissionData(submission, formFields);
+  const previewData = formattedData.slice(0, maxFields);
+  const remainingCount = Math.max(0, formattedData.length - maxFields);
+  
+  return (
+    <div className="space-y-2">
+      {previewData.map((item, index) => (
+        <div key={index} className="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30">
+          <div className="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 mt-2"></div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {item.label}
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400 break-words">
+              {typeof item.value === 'string' && item.value.length > 150 
+                ? `${item.value.substring(0, 150)}...` 
+                : String(item.value || 'No response')}
+            </div>
+          </div>
+        </div>
+      ))}
+      
+      {remainingCount > 0 && (
+        <div className="text-xs text-gray-500 dark:text-gray-500 text-center p-2 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+          <FileText className="h-3 w-3 inline mr-1" />
+          +{remainingCount} more field{remainingCount !== 1 ? 's' : ''}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function SubmissionsDashboard() {
   const router = useRouter();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -145,6 +207,7 @@ export default function SubmissionsDashboard() {
           return { formId, fields: Array.isArray(fields) ? fields : [] };
         } catch (error) {
           console.error(`Failed to load fields for form ${formId}:`, error);
+          // Return empty fields array if API fails
           return { formId, fields: [] };
         }
       });
@@ -163,6 +226,7 @@ export default function SubmissionsDashboard() {
       setFormFields(fieldsMap);
     } catch (error) {
       console.error('Failed to load form fields:', error);
+      // Continue without form fields if there's an error
     }
   };
 
@@ -723,63 +787,6 @@ export default function SubmissionsDashboard() {
     </div>
   );
   
-  // Helper function to format submission data with field labels
-  const formatSubmissionData = (submission: Submission, formId: string) => {
-    const fields = formFields[formId] || [];
-    const submissionData = submission.data || {};
-    
-    const formattedData: Array<{label: string, value: any, type: string}> = [];
-    
-    // Map each data entry to its field label
-    Object.entries(submissionData).forEach(([key, value]) => {
-      const field = fields.find(f => f.id === key || f.label === key);
-      const label = field?.label || key.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      const type = field?.type || 'text';
-      
-      formattedData.push({
-        label,
-        value,
-        type
-      });
-    });
-    
-    return formattedData;
-  };
-
-  // Helper function to render submission data in a beautiful format
-  const renderSubmissionDataPreview = (submission: Submission, formId: string, maxFields: number = 3) => {
-    const formattedData = formatSubmissionData(submission, formId);
-    const previewData = formattedData.slice(0, maxFields);
-    const remainingCount = Math.max(0, formattedData.length - maxFields);
-    
-    return (
-      <div className="space-y-2">
-        {previewData.map((item, index) => (
-          <div key={index} className="flex items-start gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30">
-            <div className="flex-shrink-0 w-2 h-2 rounded-full bg-green-500 mt-2"></div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {item.label}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 break-words">
-                {typeof item.value === 'string' && item.value.length > 150 
-                  ? `${item.value.substring(0, 150)}...` 
-                  : String(item.value || 'No response')}
-              </div>
-            </div>
-          </div>
-        ))}
-        
-        {remainingCount > 0 && (
-          <div className="text-xs text-gray-500 dark:text-gray-500 text-center p-2 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
-            <FileText className="h-3 w-3 inline mr-1" />
-            +{remainingCount} more field{remainingCount !== 1 ? 's' : ''}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   // Revolutionary Form-Grouped Submissions Renderer
   function renderFormGroupedSubmissions() {
     if (loading) {
@@ -946,7 +953,7 @@ export default function SubmissionsDashboard() {
                                 </div>
                                 
                                                                  {/* Beautiful Submission Data Preview */}
-                                 {renderSubmissionDataPreview(submission, group.form.id, 2)}
+                                 {renderSubmissionDataPreview(submission, formFields[group.form.id] || [], 2)}
                               </div>
                               
                               <div className="flex items-center gap-2 ml-4">
