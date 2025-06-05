@@ -349,7 +349,7 @@ const generateFormPerformanceFromForms = (forms: any[], submissions: any[]) => {
   }).sort((a, b) => b.submissions - a.submissions); // Sort by submission count
 };
 
-// Enhanced Dashboard Content Component
+// Enhanced Dashboard Content Component - Updated for chart data fixes
 function EnhancedDashboardContent() {
   const router = useRouter();
   const { user, isAdmin } = useAuth();
