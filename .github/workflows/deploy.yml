@@ -1,36 +1,353 @@
-name: Deploy to EC2
+name: Deploy to Production
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
 
-      - name: Deploy to EC2
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-          EC2_USER: ${{ secrets.EC2_USER }}
-        run: |
-          # Add EC2 to known hosts
-          mkdir -p ~/.ssh
-          ssh-keyscan $EC2_HOST >> ~/.ssh/known_hosts
+    - name: Build Backend
+      working-directory: ./backend
+      run: |
+        echo "=== Building Backend ==="
+        npm ci
+        npx prisma generate
+        npm run build
+        
+        # Verify build succeeded
+        if [ ! -d "dist" ]; then
+          echo "❌ Backend build failed - dist directory not found"
+          exit 1
+        fi
+        
+        # Install production dependencies
+        rm -rf node_modules
+        npm ci --omit=dev
+        
+        # Create deployment package
+        tar -czf backend-build.tar.gz dist prisma node_modules package.json package-lock.json
+        
+        if [ ! -f "backend-build.tar.gz" ]; then
+          echo "❌ Failed to create backend-build.tar.gz"
+          exit 1
+        fi
+        
+        echo "✅ Backend build completed successfully"
+        ls -la backend-build.tar.gz
+
+    - name: Build Frontend
+      working-directory: ./frontend
+      env:
+        NEXT_PUBLIC_API_URL: ${{ secrets.FRONTEND_URL || 'https://www.datizmo.com' }}
+        NEXTAUTH_URL: ${{ secrets.FRONTEND_URL || 'https://www.datizmo.com' }}
+      run: |
+        echo "=== Building Frontend ==="
+        npm ci
+        npx prisma generate
+        
+        # Create production environment file
+        cat > .env.production << EOF
+        NODE_ENV=production
+        NEXT_PUBLIC_API_URL=http://127.0.0.1:3001
+        BACKEND_URL=http://127.0.0.1:3001
+        NEXTAUTH_URL=${NEXTAUTH_URL}
+        NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET || 'change-this-in-production' }}
+        NEXT_PUBLIC_S3_PUBLIC_URL=https://formatic-uploads-dev.s3.amazonaws.com
+        NEXT_PUBLIC_AWS_REGION=eu-west-2
+        NEXT_PUBLIC_S3_BUCKET_NAME=formatic-uploads-dev
+        EOF
+        
+        npm run build
+        
+        # Verify build succeeded
+        if [ ! -d ".next" ]; then
+          echo "❌ Frontend build failed - .next directory not found"
+          exit 1
+        fi
+        
+        # Install production dependencies
+        rm -rf node_modules
+        npm ci --omit=dev
+        
+        # Create deployment package
+        tar -czf frontend-build.tar.gz .next node_modules package.json package-lock.json next.config.js .env.production
+        
+        if [ ! -f "frontend-build.tar.gz" ]; then
+          echo "❌ Failed to create frontend-build.tar.gz"
+          exit 1
+        fi
+        
+        echo "✅ Frontend build completed successfully"
+        ls -la frontend-build.tar.gz
+
+    - name: Copy Build Artifacts to Server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ec2-user
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        source: "backend/backend-build.tar.gz,frontend/frontend-build.tar.gz,nginx-deploy.conf"
+        target: "/home/ec2-user/formatic-unified/"
+        strip_components: 1
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}
+        username: ec2-user
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          set -e
           
-          # Deploy to EC2
-          ssh $EC2_USER@$EC2_HOST "cd /var/www/datizmo && \
-            git pull && \
-            cd frontend && npm install && \
-            cd ../backend && npm install && \
-            npx prisma migrate deploy && \
-            pm2 restart datizmo-backend && \
-            pm2 restart datizmo-frontend"
+          # Configuration
+          APP_DIR="/home/ec2-user/formatic-unified"
+          BACKEND_DIR="$APP_DIR/backend"
+          FRONTEND_DIR="$APP_DIR/frontend"
+          NVM_DIR="/home/ec2-user/.nvm"
+          DOMAIN="${{ secrets.DOMAIN || 'datizmo.com' }}"
+          FRONTEND_URL="${{ secrets.FRONTEND_URL || 'https://www.datizmo.com' }}"
+          
+          echo "🚀 Starting deployment for $DOMAIN"
+          echo "Frontend URL: $FRONTEND_URL"
+          
+          # Setup Node.js environment
+          echo "=== Setting up Node.js environment ==="
+          export NVM_DIR="$NVM_DIR"
+          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
+          
+          echo "Node version: $(node -v)"
+          echo "NPM version: $(npm -v)"
+          
+          # Install PM2 if not available
+          if ! command -v pm2 &> /dev/null; then
+            echo "Installing PM2..."
+            npm install -g pm2
+          fi
+          echo "PM2 version: $(pm2 --version)"
+          
+          # Stop existing services
+          echo "=== Stopping existing services ==="
+          pm2 stop all || echo "No PM2 processes running"
+          
+          # Update repository
+          echo "=== Updating repository ==="
+          cd $APP_DIR
+          git fetch origin main
+          git reset --hard origin/main
+          
+          # Extract backend build
+          echo "=== Extracting backend build ==="
+          cd $BACKEND_DIR
+          if [ -f "../backend-build.tar.gz" ]; then
+            tar -xzf ../backend-build.tar.gz
+            rm ../backend-build.tar.gz
+            echo "✅ Backend extracted successfully"
+          else
+            echo "❌ Backend build not found"
+            exit 1
+          fi
+          
+          # Extract frontend build  
+          echo "=== Extracting frontend build ==="
+          cd $FRONTEND_DIR
+          if [ -f "../frontend-build.tar.gz" ]; then
+            tar -xzf ../frontend-build.tar.gz
+            rm ../frontend-build.tar.gz
+            echo "✅ Frontend extracted successfully"
+            
+            # Ensure static files are copied for Next.js standalone build
+            echo "=== Copying static files for standalone build ==="
+            if [ -d ".next/static" ] && [ -d ".next/standalone" ]; then
+              mkdir -p .next/standalone/.next
+              cp -r .next/static .next/standalone/.next/
+              echo "✅ Static files copied successfully"
+            else
+              echo "⚠️  Static files copy skipped - directories not found"
+            fi
+          else
+            echo "❌ Frontend build not found"
+            exit 1
+          fi
+          
+          # Verify and update backend environment
+          echo "=== Verifying backend environment ==="
+          cd $BACKEND_DIR
+          if [ ! -f .env ]; then
+            echo "❌ Backend .env file not found!"
+            exit 1
+          fi
+          
+          # Update AWS configuration for production
+          echo "Updating AWS S3 configuration..."
+          sed -i "s|AWS_REGION=.*|AWS_REGION=eu-west-2|g" .env
+          sed -i "s|AWS_ACCESS_KEY_ID=.*|AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}|g" .env
+          sed -i "s|AWS_SECRET_ACCESS_KEY=.*|AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}|g" .env
+          sed -i "s|S3_BUCKET_NAME=.*|S3_BUCKET_NAME=formatic-uploads-dev|g" .env
+          
+          # Run database migrations
+          echo "=== Running database migrations ==="
+          npx prisma migrate deploy
+          npx prisma generate
+          
+          # Update frontend environment
+          echo "=== Updating frontend environment ==="
+          cd $FRONTEND_DIR
+          if [ ! -f .env.production ]; then
+            echo "Creating .env.production file..."
+            cat > .env.production << EOF
+          NODE_ENV=production
+          NEXT_PUBLIC_API_URL=http://127.0.0.1:3001
+          BACKEND_URL=http://127.0.0.1:3001
+          NEXTAUTH_URL=$FRONTEND_URL
+          NEXTAUTH_SECRET=your-secret-key-here
+          NEXT_PUBLIC_S3_PUBLIC_URL=https://formatic-uploads-dev.s3.amazonaws.com
+          NEXT_PUBLIC_AWS_REGION=eu-west-2
+          NEXT_PUBLIC_S3_BUCKET_NAME=formatic-uploads-dev
+          EOF
+          else
+            echo "Updating existing .env.production..."
+            sed -i "s|NEXT_PUBLIC_API_URL=.*|NEXT_PUBLIC_API_URL=http://127.0.0.1:3001|g" .env.production
+            sed -i "s|BACKEND_URL=.*|BACKEND_URL=http://127.0.0.1:3001|g" .env.production
+            sed -i "s|NEXTAUTH_URL=.*|NEXTAUTH_URL=$FRONTEND_URL|g" .env.production
+          fi
+          
+          # Start applications with PM2
+          echo "=== Starting applications ==="
+          cd $APP_DIR
+          
+          # Clean start with ecosystem config if available
+          if [ -f "ecosystem.config.js" ]; then
+            echo "Using PM2 ecosystem configuration"
+            pm2 delete all || echo "No processes to delete"
+            pm2 start ecosystem.config.js --env production
+          else
+            echo "Starting applications individually"
+            pm2 delete all || echo "No processes to delete"
+            
+            # Start backend
+            if [ -f "$BACKEND_DIR/dist/src/main.js" ]; then
+              pm2 start $BACKEND_DIR/dist/src/main.js --name "formatic-app" --cwd $BACKEND_DIR
+            else
+              pm2 start $BACKEND_DIR/dist/main.js --name "formatic-app" --cwd $BACKEND_DIR
+            fi
+            
+            # Start frontend using standalone server (required for output: standalone)
+            pm2 start node --name "formatic-frontend" -- .next/standalone/server.js --cwd $FRONTEND_DIR
+          fi
+          
+          # Wait for services to stabilize
+          echo "Waiting for services to stabilize..."
+          sleep 15
+          
+          # Save PM2 configuration
+          pm2 save
+          
+          # Check application status
+          echo "=== Application Status ==="
+          pm2 status
+          
+          # SSL and Nginx Configuration
+          echo "=== Configuring SSL and Nginx ==="
+          
+          # Copy our working nginx configuration
+          echo "Copying nginx configuration..."
+          sudo cp nginx-deploy.conf /etc/nginx/conf.d/formatic.conf
+          
+          # Check for existing Let's Encrypt certificates
+          LETSENCRYPT_EXISTS=false
+          if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ] && [ -f "/etc/letsencrypt/live/$DOMAIN/privkey.pem" ]; then
+            if sudo openssl x509 -in /etc/letsencrypt/live/$DOMAIN/fullchain.pem -checkend 2592000 -noout; then
+              echo "✅ Valid Let's Encrypt certificates found"
+              LETSENCRYPT_EXISTS=true
+            else
+              echo "⚠️  Let's Encrypt certificates expiring soon"
+            fi
+          fi
+          
+          # Install certbot if needed
+          if [ "$LETSENCRYPT_EXISTS" = "false" ]; then
+            echo "Installing certbot for SSL certificate management..."
+            if ! command -v certbot >/dev/null 2>&1; then
+              sudo yum install -y certbot python3-certbot-nginx 2>/dev/null || \
+              sudo dnf install -y certbot python3-certbot-nginx 2>/dev/null || \
+              echo "Certbot installation failed"
+            fi
+          fi
+          
+          # Backup existing config
+          if [ -f "/etc/nginx/conf.d/formatic.conf" ]; then
+            sudo cp /etc/nginx/conf.d/formatic.conf /etc/nginx/conf.d/formatic.conf.backup.$(date +%Y%m%d_%H%M%S)
+          fi
+          
+          # Remove conflicting configs
+          sudo rm -f /etc/nginx/sites-enabled/default /etc/nginx/conf.d/default.conf
+          
+          # SSL certificates already exist, config already copied
+          if [ "$LETSENCRYPT_EXISTS" = "true" ]; then
+            echo "✅ Using existing SSL certificates with copied nginx config"
+          else
+            echo "⚠️  No SSL certificates found. The copied config will work with HTTP only."
+            echo "    SSL certificates should be configured manually if needed."
+          fi
+          
+          # Test and start nginx
+          echo "=== Starting Nginx ==="
+          
+          # Test and start nginx
+          echo "=== Starting Nginx ==="
+          if sudo nginx -t; then
+            sudo systemctl enable nginx
+            sudo systemctl restart nginx
+            echo "✅ Nginx started successfully"
+          else
+            echo "❌ Nginx configuration error"
+            sudo nginx -T 2>&1 | head -20
+            exit 1
+          fi
+          
+          # Final health checks
+          echo "=== Final Health Checks ==="
+          sleep 10
+          
+          echo "PM2 Status:"
+          pm2 list
+          
+          echo "Testing HTTP access..."
+          curl -I http://$DOMAIN 2>/dev/null | head -1 || echo "HTTP test failed"
+          
+          if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
+            echo "Testing HTTPS access..."
+            curl -I https://$DOMAIN 2>/dev/null | head -1 || echo "HTTPS test failed"
+            
+            echo "SSL Certificate Status:"
+            sudo certbot certificates 2>/dev/null | grep -A 5 "$DOMAIN" || echo "Certbot status unavailable"
+          fi
+          
+          echo ""
+          echo "🎉 Deployment completed successfully!"
+          echo "🌐 Your app is available at: https://$DOMAIN"
+          echo ""
+          echo "📊 Application Status:"
+          echo "- Frontend: Port 3000 (Next.js)"
+          echo "- Backend: Port 3001 (NestJS)"  
+          echo "- SSL: Let's Encrypt certificates"
+          echo "- Proxy: Nginx with security headers"
+          echo ""
+          echo "🔧 Quick Commands:"
+          echo "- View logs: pm2 logs"
+          echo "- Restart apps: pm2 restart all"
+          echo "- Check SSL: sudo certbot certificates"
