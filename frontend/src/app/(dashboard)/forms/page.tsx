@@ -31,7 +31,8 @@ import {
   ClipboardList,
   Tag,
   FolderIcon,
-  Layers
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -519,7 +520,15 @@ const FormsPage = () => {
             className="whitespace-nowrap"
           >
             <FileText className="mr-2 h-4 w-4" />
-            Templates
+            Quick Templates
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push('/templates')}
+            className="whitespace-nowrap bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-purple-100 dark:from-blue-950 dark:to-purple-950 dark:border-blue-800 dark:text-blue-300"
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Template Gallery
           </Button>
           <Button onClick={navigateToCreateForm} className="whitespace-nowrap">
             <PlusCircle className="mr-2 h-4 w-4" />

@@ -33,6 +33,7 @@ import {
   Layers,
   PlusCircle
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Testimonials data
@@ -628,17 +629,24 @@ export default function HomePage() {
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
                 Build forms for any purpose
               </h2>
-              <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+              <p className="mx-auto max-w-2xl text-lg text-muted-foreground mb-8">
                 From simple contact forms to complex multi-page applications, Datizmo adapts to your specific needs
               </p>
+              <Link href="/templates">
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-medium transition-all duration-200 hover:scale-105 shadow-lg">
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  Explore All Templates
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {formUseCases.map((useCase, index) => (
-                <div
-                  key={index}
-                  className="group bg-card rounded-xl border p-6 text-center hover:shadow-xl transition-all duration-300 relative overflow-hidden hover:-translate-y-2"
-                >
+                <Link href="/templates" key={index}>
+                  <div
+                    className="group bg-card rounded-xl border p-6 text-center hover:shadow-xl transition-all duration-300 relative overflow-hidden hover:-translate-y-2 cursor-pointer"
+                  >
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300" 
                     style={{ 
                       background: index === 0 ? 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)' : 
@@ -660,7 +668,11 @@ export default function HomePage() {
                       <li key={i} className="text-muted-foreground group-hover:text-foreground/90 transition-colors duration-300">{caseItem}</li>
                     ))}
                   </ul>
+                  <div className="mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <span className="text-sm text-primary font-medium">Click to explore templates →</span>
+                  </div>
                 </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -895,7 +907,7 @@ export default function HomePage() {
                         Build custom forms with our intuitive drag-and-drop interface. Add fields, conditional logic, and validation.
                       </p>
                       
-                      <div className="flex flex-wrap gap-3 mt-4">
+                      <div className="flex flex-wrap gap-3 mt-4 mb-6">
                         <div className="bg-blue-500/10 dark:bg-blue-500/20 px-3 py-1.5 rounded-full text-sm font-medium text-blue-600 dark:text-blue-400 flex items-center">
                           <FileText className="h-3.5 w-3.5 mr-1.5" />
                           <span>Drag & Drop Builder</span>
@@ -908,6 +920,21 @@ export default function HomePage() {
                           <MonitorSmartphone className="h-3.5 w-3.5 mr-1.5" />
                           <span>Mobile Responsive</span>
                   </div>
+                      </div>
+                      
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <Link href="/register" className="inline-flex">
+                          <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 shadow-lg">
+                            Start Building
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Link href="/templates" className="inline-flex">
+                          <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950 px-6 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105">
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            Browse Templates
+                          </Button>
+                        </Link>
                       </div>
                     </motion.div>
                   </div>
