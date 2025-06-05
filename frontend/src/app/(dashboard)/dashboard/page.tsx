@@ -324,7 +324,17 @@ const calculateTrend = (data: any[]): number => {
 
 // Generate form performance data from forms and submissions
 const generateFormPerformanceFromForms = (forms: any[], submissions: any[]) => {
-  if (!forms?.length) return [];
+  console.log('generateFormPerformanceFromForms called with:', {
+    formsCount: forms?.length || 0,
+    submissionsCount: submissions?.length || 0,
+    formsSample: forms?.slice(0, 3)?.map(f => ({ id: f.id, title: f.title })),
+    submissionsSample: submissions?.slice(0, 3)?.map(s => ({ id: s.id, formId: s.formId }))
+  });
+
+  if (!forms?.length) {
+    console.log('No forms provided to generateFormPerformanceFromForms');
+    return [];
+  }
   
   // Count submissions per form
   const submissionCounts = submissions.reduce((acc, submission) => {
@@ -333,7 +343,9 @@ const generateFormPerformanceFromForms = (forms: any[], submissions: any[]) => {
     return acc;
   }, {} as Record<string, number>);
   
-  return forms.map(form => {
+  console.log('Submission counts by form:', submissionCounts);
+  
+  const result = forms.map(form => {
     const submissionCount = submissionCounts[form.id] || 0;
     // Calculate a realistic completion rate based on submission count
     const completionRate = submissionCount > 0 
@@ -347,6 +359,14 @@ const generateFormPerformanceFromForms = (forms: any[], submissions: any[]) => {
       completionRate
     };
   }).sort((a, b) => b.submissions - a.submissions); // Sort by submission count
+  
+  console.log('generateFormPerformanceFromForms result:', {
+    resultLength: result.length,
+    totalSubmissions: result.reduce((sum, item) => sum + item.submissions, 0),
+    resultSample: result.slice(0, 5)
+  });
+  
+  return result;
 };
 
 // Enhanced Dashboard Content Component - Chart data fixes v2
@@ -551,12 +571,21 @@ function EnhancedDashboardContent() {
       
       // Process form completion rates properly
       const formCompletionRates = formCompletionRatesData?.forms || formCompletionRatesData || [];
+      
+      console.log('Form completion rates debug:', {
+        formCompletionRatesData,
+        formCompletionRatesLength: formCompletionRates.length,
+        formCompletionRatesSample: formCompletionRates.slice(0, 3),
+        formsDataLength: formsData.length,
+        filteredSubmissionsLength: filteredSubmissions.length
+      });
+      
       const formPerformance = formCompletionRates.length > 0 
         ? formCompletionRates.map((item: any) => ({
-            formId: item.id || 'unknown',
-            formName: item.form || item.title || 'Unnamed Form',
-            submissions: item.submissionCount || 0,
-            completionRate: item.rate || 0
+            formId: item.id || item.formId || 'unknown',
+            formName: item.form || item.title || item.name || 'Unnamed Form',
+            submissions: item.submissionCount || item.submissions || 0,
+            completionRate: item.rate || item.completionRate || item.completion_rate || 0
           }))
         : generateFormPerformanceFromForms(formsData, filteredSubmissions);
         

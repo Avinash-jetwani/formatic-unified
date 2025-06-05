@@ -152,10 +152,29 @@ const getDashboardStats = async (startDate: string, endDate: string, timestamp: 
  * Generate submission timeline data from actual submissions
  */
 export const generateSubmissionTimeline = (submissions: any[], startDate: string, endDate: string) => {
-  if (!submissions?.length) return [];
+  console.log('generateSubmissionTimeline called with:', { 
+    submissionsCount: submissions?.length || 0, 
+    startDate, 
+    endDate,
+    submissionSample: submissions?.slice(0, 3)?.map(s => ({ 
+      id: s.id, 
+      createdAt: s.createdAt, 
+      parsedDate: new Date(s.createdAt || s.submittedAt).toISOString() 
+    }))
+  });
+
+  if (!submissions?.length) {
+    console.log('No submissions provided to generateSubmissionTimeline');
+    return [];
+  }
 
   const start = new Date(startDate);
   const end = new Date(endDate);
+  
+  // Set start time to beginning of day and end time to end of day to be more inclusive
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+  
   const dateMap = new Map();
   
   // Initialize all dates in the range with zero value
@@ -166,23 +185,47 @@ export const generateSubmissionTimeline = (submissions: any[], startDate: string
     currentDate.setDate(currentDate.getDate() + 1);
   }
   
-  // Count submissions per day
+  // Count submissions per day - be more flexible with date parsing
+  let processedCount = 0;
+  let inRangeCount = 0;
+  
   submissions.forEach(submission => {
-    const submissionDate = new Date(submission.createdAt || submission.submittedAt);
+    const submissionDate = new Date(submission.createdAt || submission.submittedAt || submission.created_at);
     const dateStr = submissionDate.toISOString().split('T')[0];
+    
+    processedCount++;
     
     // Only count if within our date range
     if (submissionDate >= start && submissionDate <= end) {
+      inRangeCount++;
       const count = dateMap.get(dateStr) || 0;
       dateMap.set(dateStr, count + 1);
     }
   });
   
+  console.log('generateSubmissionTimeline processing:', {
+    processedCount,
+    inRangeCount,
+    startDate: start.toISOString(),
+    endDate: end.toISOString(),
+    dateMapSize: dateMap.size,
+    dateMapEntries: Array.from(dateMap.entries()).slice(0, 5)
+  });
+  
   // Convert map to array format needed for charts
-  return Array.from(dateMap.entries()).map(([date, value]) => ({
+  const result = Array.from(dateMap.entries()).map(([date, value]) => ({
     date,
     value
   })).sort((a, b) => a.date.localeCompare(b.date));
+  
+  console.log('generateSubmissionTimeline result:', {
+    resultLength: result.length,
+    totalValues: result.reduce((sum, item) => sum + item.value, 0),
+    maxValue: Math.max(...result.map(item => item.value)),
+    resultSample: result.slice(0, 5)
+  });
+  
+  return result;
 };
 
 /**
