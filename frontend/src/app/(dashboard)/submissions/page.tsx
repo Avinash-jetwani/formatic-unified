@@ -528,7 +528,7 @@ export default function SubmissionsDashboard() {
         className="grid grid-cols-2 lg:grid-cols-4 gap-4"
       >
         <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -547,7 +547,7 @@ export default function SubmissionsDashboard() {
         </motion.div>
 
         <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -575,7 +575,7 @@ export default function SubmissionsDashboard() {
         </motion.div>
 
         <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -594,7 +594,7 @@ export default function SubmissionsDashboard() {
         </motion.div>
 
         <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900">
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -613,154 +613,323 @@ export default function SubmissionsDashboard() {
         </motion.div>
       </motion.div>
 
-      {/* Enhanced Main Content Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="lg:col-span-2"
-        >
-          <Card className="border-gray-200 dark:border-gray-700 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-t-lg">
-              <CardTitle className="text-xl font-semibold">Submissions Overview</CardTitle>
-              <CardDescription>View and manage all form submissions with advanced filtering</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              {/* Enhanced Search and Filter Section */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="bg-white dark:bg-black/20 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm mb-6"
-              >
-                <Tabs defaultValue="all" className="mb-6" onValueChange={setCurrentTab}>
-                  <TabsList className="grid grid-cols-4 mb-4 w-full h-10 bg-gray-100 dark:bg-gray-800">
-                    <TabsTrigger value="all" className="text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">All</TabsTrigger>
-                    <TabsTrigger value="new" className="text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">New</TabsTrigger>
-                    <TabsTrigger value="viewed" className="text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">Viewed</TabsTrigger>
-                    <TabsTrigger value="archived" className="text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">Archived</TabsTrigger>
+      {/* Revolutionary Form-Grouped Submissions View */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="space-y-6"
+      >
+        {/* Enhanced Search and Filter Section */}
+        <Card className="border-gray-200 dark:border-gray-700 shadow-lg">
+          <CardContent className="p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search forms and submissions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-4 h-11 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                />
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                <Tabs defaultValue="all" onValueChange={setCurrentTab}>
+                  <TabsList className="h-10 bg-gray-100 dark:bg-gray-800">
+                    <TabsTrigger value="all" className="text-sm text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">All</TabsTrigger>
+                    <TabsTrigger value="new" className="text-sm text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">New</TabsTrigger>
+                    <TabsTrigger value="viewed" className="text-sm text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">Viewed</TabsTrigger>
+                    <TabsTrigger value="archived" className="text-sm text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">Archived</TabsTrigger>
                   </TabsList>
-                  
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
-                    <div className="relative flex-1 max-w-md">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder="Search submissions by form name or content..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-9 pr-4 h-11 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
-                      />
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      <Select value={formFilter} onValueChange={setFormFilter}>
-                        <SelectTrigger className="w-[180px] h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                          <SelectValue placeholder="Filter by form" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Forms</SelectItem>
-                          {uniqueForms.map(form => (
-                            <SelectItem key={form.id} value={form.id}>
-                              {form.title}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select value={dateFilter} onValueChange={setDateFilter}>
-                        <SelectTrigger className="w-[180px] h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                          <SelectValue placeholder="Filter by date" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Time</SelectItem>
-                          <SelectItem value="today">Today</SelectItem>
-                          <SelectItem value="week">This Week</SelectItem>
-                          <SelectItem value="month">This Month</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                </Tabs>
+                
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger className="w-[150px] h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <SelectValue placeholder="Date filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              <TabsContent value="all" className="m-0">
-                {renderSubmissionsTable(filteredSubmissions)}
-              </TabsContent>
-              <TabsContent value="new" className="m-0">
-                {renderSubmissionsTable(filteredSubmissions.filter(s => s.status === 'new'))}
-              </TabsContent>
-              <TabsContent value="viewed" className="m-0">
-                {renderSubmissionsTable(filteredSubmissions.filter(s => s.status === 'viewed'))}
-              </TabsContent>
-              <TabsContent value="archived" className="m-0">
-                {renderSubmissionsTable(filteredSubmissions.filter(s => s.status === 'archived'))}
-              </TabsContent>
-            </Tabs>
-              </motion.div>
-            </CardContent>
-          </Card>
-        </motion.div>
-        
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <Card className="border-gray-200 dark:border-gray-700 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-t-lg">
-              <CardTitle className="text-xl font-semibold">Submissions by Form</CardTitle>
-              <CardDescription>Distribution of submissions across your forms</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <ScrollArea className="h-80">
-                <div className="space-y-4">
-                  <AnimatePresence>
-                    {stats.byForm.map((formStat, index) => (
-                      <motion.div 
-                        key={formStat.formId} 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.3, delay: index * 0.1 }}
-                        className="space-y-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium truncate flex-1 mr-2" title={formStat.formTitle}>
-                            {formStat.formTitle}
-                          </span>
-                          <Badge variant="secondary" className="text-xs">
-                            {formStat.count}
-                          </Badge>
-                        </div>
-                        <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
-                          <motion.div 
-                            className="h-full bg-gradient-to-r from-green-500 to-teal-500 rounded-full" 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(formStat.count / stats.total) * 100}%` }}
-                            transition={{ duration: 1, delay: index * 0.1 }}
-                          />
-                        </div>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                  
-                  {stats.byForm.length === 0 && (
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-center py-8 text-sm text-muted-foreground"
-                    >
-                      <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>No submissions data available</p>
-                    </motion.div>
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
+        {/* Form-Grouped Submissions */}
+        {renderFormGroupedSubmissions()}
+      </motion.div>
     </div>
   );
   
+  // Revolutionary Form-Grouped Submissions Renderer
+  function renderFormGroupedSubmissions() {
+    if (loading) {
+      return (
+        <div className="space-y-6">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="border-gray-200 dark:border-gray-700">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <Skeleton className="h-6 w-48" />
+                  <Skeleton className="h-8 w-20" />
+                </div>
+                <div className="space-y-3">
+                  {[1, 2].map((j) => (
+                    <Skeleton key={j} className="h-16 w-full" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    // Group submissions by form
+    const submissionsByForm = filteredSubmissions.reduce((acc, submission) => {
+      const formId = submission.form.id;
+      if (!acc[formId]) {
+        acc[formId] = {
+          form: submission.form,
+          submissions: []
+        };
+      }
+      acc[formId].submissions.push(submission);
+      return acc;
+    }, {} as Record<string, { form: { id: string; title: string; slug: string }; submissions: Submission[] }>);
+
+    // Filter submissions based on current tab
+    const getFilteredSubmissionsForTab = (submissions: Submission[]) => {
+      if (currentTab === 'all') return submissions;
+      return submissions.filter(s => s.status === currentTab);
+    };
+
+    const formGroups = Object.values(submissionsByForm)
+      .map(group => ({
+        ...group,
+        submissions: getFilteredSubmissionsForTab(group.submissions)
+      }))
+      .filter(group => group.submissions.length > 0)
+      .sort((a, b) => b.submissions.length - a.submissions.length);
+
+    if (formGroups.length === 0) {
+      return (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12"
+        >
+          <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+          <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">No submissions found</h3>
+          <p className="text-gray-500 dark:text-gray-500 mb-6">
+            {searchTerm ? `No submissions match "${searchTerm}"` : 
+             currentTab !== 'all' ? `No ${currentTab} submissions found` : 
+             'No submissions have been received yet'}
+          </p>
+          {(searchTerm || currentTab !== 'all') && (
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setSearchTerm('');
+                setCurrentTab('all');
+                setDateFilter('all');
+              }}
+            >
+              Clear all filters
+            </Button>
+          )}
+        </motion.div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <AnimatePresence>
+          {formGroups.map((group, groupIndex) => {
+            const formSubmissions = group.submissions;
+            const newCount = formSubmissions.filter(s => s.status === 'new').length;
+            const viewedCount = formSubmissions.filter(s => s.status === 'viewed').length;
+            const archivedCount = formSubmissions.filter(s => s.status === 'archived').length;
+
+            return (
+              <motion.div
+                key={group.form.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3, delay: groupIndex * 0.1 }}
+              >
+                <Card className="border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                  {/* Form Header with Metrics */}
+                  <CardHeader className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
+                          <FileText className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                            {group.form.title}
+                          </CardTitle>
+                          <CardDescription className="mt-1">
+                            {formSubmissions.length} submission{formSubmissions.length !== 1 ? 's' : ''} 
+                            {currentTab !== 'all' && ` (${currentTab})`}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        {newCount > 0 && (
+                          <Badge variant="default" className="bg-blue-500 hover:bg-blue-600">
+                            {newCount} New
+                          </Badge>
+                        )}
+                        {viewedCount > 0 && (
+                          <Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400">
+                            {viewedCount} Viewed
+                          </Badge>
+                        )}
+                        {archivedCount > 0 && (
+                          <Badge variant="secondary">
+                            {archivedCount} Archived
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  {/* Submissions List */}
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                      <AnimatePresence>
+                        {formSubmissions.map((submission, submissionIndex) => (
+                          <motion.div
+                            key={submission.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ duration: 0.2, delay: submissionIndex * 0.05 }}
+                            className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                            onClick={() => router.push(`/submissions/${submission.id}`)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-gray-400" />
+                                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                                      {formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}
+                                    </span>
+                                  </div>
+                                  {getStatusBadge(submission.status || 'viewed')}
+                                </div>
+                                
+                                {/* Submission Data Preview */}
+                                <div className="space-y-1">
+                                  {Object.entries(submission.data || {}).slice(0, 2).map(([key, value]) => (
+                                    <div key={key} className="flex items-start gap-2 text-sm">
+                                      <span className="font-medium text-gray-700 dark:text-gray-300 min-w-0 flex-shrink-0">
+                                        {key}:
+                                      </span>
+                                      <span className="text-gray-600 dark:text-gray-400 truncate">
+                                        {typeof value === 'string' ? value.substring(0, 100) : String(value).substring(0, 100)}
+                                        {(typeof value === 'string' ? value.length : String(value).length) > 100 && '...'}
+                                      </span>
+                                    </div>
+                                  ))}
+                                  {Object.keys(submission.data || {}).length > 2 && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-500">
+                                      +{Object.keys(submission.data || {}).length - 2} more fields
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-2 ml-4">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/submissions/${submission.id}`);
+                                  }}
+                                  className="h-8 px-3"
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View
+                                </Button>
+                                
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateSubmissionStatus(submission.id, 'new');
+                                      }}
+                                      disabled={submission.status === 'new'}
+                                    >
+                                      <Badge className="bg-blue-500 h-3 w-3 mr-2 p-0" />
+                                      Mark as New
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateSubmissionStatus(submission.id, 'viewed');
+                                      }}
+                                      disabled={submission.status === 'viewed'}
+                                    >
+                                      <CheckCircle2 className="h-3 w-3 mr-2 text-green-500" />
+                                      Mark as Viewed
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateSubmissionStatus(submission.id, 'archived');
+                                      }}
+                                      disabled={submission.status === 'archived'}
+                                    >
+                                      <Archive className="h-3 w-3 mr-2 text-gray-500" />
+                                      Archive
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className="text-red-600"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(submission.id);
+                                      }}
+                                    >
+                                      <Trash className="h-3 w-3 mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
   function renderSubmissionsTable(submissions: Submission[]) {
     if (loading) {
       return (
