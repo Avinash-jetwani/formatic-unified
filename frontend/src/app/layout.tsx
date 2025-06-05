@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from "@/components/ui/toaster";
 import { useEffect } from 'react';
 import { SessionProvider } from 'next-auth/react';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 // Initialize the Inter font
 const inter = Inter({
@@ -27,15 +28,17 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <SessionProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-            <Toaster />
-          </ThemeProvider>
+          <AuthProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+              <Toaster />
+            </ThemeProvider>
+          </AuthProvider>
         </SessionProvider>
       </body>
     </html>

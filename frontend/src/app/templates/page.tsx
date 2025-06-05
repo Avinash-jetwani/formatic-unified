@@ -552,7 +552,7 @@ const TEMPLATE_GALLERY: FormTemplate[] = [
 
 const PublicTemplateGalleryPage = () => {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -560,6 +560,9 @@ const PublicTemplateGalleryPage = () => {
   const [selectedIndustry, setSelectedIndustry] = useState('All');
   const [sortBy, setSortBy] = useState('popularity');
   const [previewTemplate, setPreviewTemplate] = useState<FormTemplate | null>(null);
+
+  // Debug authentication state
+  console.log('Templates page - Auth state:', { user, isAuthenticated, loading });
 
   // Get unique values for filters
   const categories = ['All', ...Array.from(new Set(TEMPLATE_GALLERY.map(t => t.category)))];
@@ -601,12 +604,17 @@ const PublicTemplateGalleryPage = () => {
 
   // Handle template selection
   const handleUseTemplate = async (template: FormTemplate) => {
+    console.log('handleUseTemplate called:', { template: template.title, isAuthenticated, user });
+    
     if (!isAuthenticated) {
+      console.log('User not authenticated, redirecting to signup');
       // Store template selection in localStorage for after signup
       localStorage.setItem('selectedTemplate', JSON.stringify(template));
       router.push('/register?from=template');
       return;
     }
+
+    console.log('User authenticated, creating form from template');
 
     // For authenticated users, create form from template
     try {
@@ -627,6 +635,18 @@ const PublicTemplateGalleryPage = () => {
       console.error('Error creating form from template:', error);
     }
   };
+
+  // Show loading state while authentication is being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading templates...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">

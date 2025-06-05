@@ -1,7 +1,6 @@
 'use client';
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { AuthProvider } from '@/contexts/AuthContext';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 export default function DashboardLayoutWrapper({
@@ -10,10 +9,8 @@ export default function DashboardLayoutWrapper({
   children: React.ReactNode;
 }) {
   return (
-    <AuthProvider>
-      <ErrorBoundary>
-        <DashboardLayout>{children}</DashboardLayout>
-      </ErrorBoundary>
-    </AuthProvider>
+    <ErrorBoundary>
+      <DashboardLayout>{children}</DashboardLayout>
+    </ErrorBoundary>
   );
 } 
