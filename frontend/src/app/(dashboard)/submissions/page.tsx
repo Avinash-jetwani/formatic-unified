@@ -236,6 +236,7 @@ export default function SubmissionsDashboard() {
   const [currentTab, setCurrentTab] = useState('all');
   const [savedStatusMap, setSavedStatusMap] = useState<Record<string, 'new' | 'viewed' | 'archived'>>({});
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     today: 0,
@@ -251,17 +252,18 @@ export default function SubmissionsDashboard() {
   const [submissionsPerForm, setSubmissionsPerForm] = useState(10);
   const [expandedForms, setExpandedForms] = useState<Record<string, boolean>>({});
 
-  // Detect mobile screens on client side
+  // Detect screen sizes for responsive design
   useEffect(() => {
-    const checkIfMobile = () => {
+    const checkScreenSize = () => {
       if (typeof window !== 'undefined') {
         setIsMobile(window.innerWidth < 640);
+        setIsTablet(window.innerWidth >= 640 && window.innerWidth < 1024);
       }
     };
     
-    checkIfMobile();
-    window.addEventListener('resize', checkIfMobile);
-    return () => window.removeEventListener('resize', checkIfMobile);
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
   useEffect(() => {
@@ -498,62 +500,86 @@ export default function SubmissionsDashboard() {
   };
 
   const filterSubmissions = () => {
-    return submissions
-      .filter(submission => {
-        if (searchTerm) {
-          const searchLower = searchTerm.toLowerCase();
-          return (
-            submission.form.title.toLowerCase().includes(searchLower) ||
-            JSON.stringify(submission.data).toLowerCase().includes(searchLower)
-          );
-        }
-        return true;
-      })
-      .filter(submission => {
-        if (formFilter === 'all') return true;
-        return submission.formId === formFilter;
-      })
-      .filter(submission => {
-        if (statusFilter === 'all') return true;
-        return submission.status === statusFilter;
-      })
-      .filter(submission => {
-        if (currentTab !== 'all' && currentTab !== statusFilter) {
-          return submission.status === currentTab;
-        }
-        return true;
-      })
-      .filter(submission => {
-        const date = new Date(submission.createdAt);
-        const now = new Date();
+    let filtered = [...submissions];
+
+    // Search filter - search in form title, submission data, and field labels
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(submission => {
+        // Search in form title
+        const formTitleMatch = submission.form.title.toLowerCase().includes(searchLower);
         
+        // Search in submission data values
+        const dataMatch = Object.values(submission.data).some(value => {
+          if (typeof value === 'string') {
+            return value.toLowerCase().includes(searchLower);
+          }
+          if (typeof value === 'object' && value !== null) {
+            return JSON.stringify(value).toLowerCase().includes(searchLower);
+          }
+          return false;
+        });
+        
+        // Search in field labels if available
+        const fieldLabelMatch = submission.form.fields?.some(field => 
+          field.label.toLowerCase().includes(searchLower)
+        ) || false;
+        
+        return formTitleMatch || dataMatch || fieldLabelMatch;
+      });
+    }
+
+    // Form filter
+    if (formFilter !== 'all') {
+      filtered = filtered.filter(submission => submission.form.id === formFilter);
+    }
+
+    // Date filter
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      filtered = filtered.filter(submission => {
+        const submissionDate = new Date(submission.createdAt);
         switch (dateFilter) {
           case 'today':
-            const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            return date >= startOfDay;
+            return submissionDate >= today;
           case 'week':
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(now.getDate() - 7);
-            return date >= startOfWeek;
+            return submissionDate >= weekAgo;
           case 'month':
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            return date >= startOfMonth;
+            return submissionDate >= monthAgo;
           default:
             return true;
         }
-      })
-      .sort((a, b) => {
-        if (sortField === 'createdAt') {
-          return sortDirection === 'asc' 
-            ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-            : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        } else if (sortField === 'form') {
-          return sortDirection === 'asc'
-            ? a.form.title.localeCompare(b.form.title)
-            : b.form.title.localeCompare(a.form.title);
-        }
-        return 0;
       });
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortField) {
+        case 'form':
+          aValue = a.form.title;
+          bValue = b.form.title;
+          break;
+        case 'createdAt':
+        default:
+          aValue = new Date(a.createdAt).getTime();
+          bValue = new Date(b.createdAt).getTime();
+          break;
+      }
+      
+      if (sortDirection === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
   };
 
   const filteredSubmissions = filterSubmissions();
@@ -610,26 +636,26 @@ export default function SubmissionsDashboard() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative overflow-hidden bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-950 dark:via-emerald-950 dark:to-teal-950 rounded-2xl p-8 border border-green-100 dark:border-green-800"
+        className="relative overflow-hidden bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-950 dark:via-emerald-950 dark:to-teal-950 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border border-green-100 dark:border-green-800"
       >
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
+        <div className="relative flex flex-col gap-4 sm:gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2 sm:space-y-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <motion.div 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="p-2 bg-gradient-to-r from-green-500 to-teal-600 rounded-lg"
+                className="p-1.5 sm:p-2 bg-gradient-to-r from-green-500 to-teal-600 rounded-lg"
               >
-                <FileText className="h-6 w-6 text-white" />
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
               </motion.div>
               <div>
                 <motion.h1 
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.5 }}
-                  className="text-4xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent"
+                  className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent"
                 >
                   Submissions Dashboard
                 </motion.h1>
@@ -637,36 +663,40 @@ export default function SubmissionsDashboard() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4, duration: 0.5 }}
-                  className="text-lg text-muted-foreground mt-1"
+                  className="text-sm sm:text-base lg:text-lg text-muted-foreground mt-1"
                 >
-                  Manage, analyze, and track all your form submissions with powerful insights
+                  {isMobile ? "Manage form submissions" : "Manage, analyze, and track all your form submissions with powerful insights"}
                 </motion.p>
               </div>
             </div>
             
-            {/* Quick Stats */}
+            {/* Quick Stats - Responsive */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.5 }}
-              className="flex flex-wrap gap-4 mt-4"
+              className="flex flex-wrap gap-2 sm:gap-3 lg:gap-4 mt-3 sm:mt-4"
             >
-              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
-                <BarChart3 className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium">{stats.total} Total</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-black/20 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
+                <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+                <span className="text-xs sm:text-sm font-medium">{stats.total} Total</span>
               </div>
-              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
-                <Activity className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium">{stats.today} Today</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-black/20 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
+                <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                <span className="text-xs sm:text-sm font-medium">{stats.today} Today</span>
               </div>
-              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
-                <TrendingUp className="h-4 w-4 text-purple-600" />
-                <span className="text-sm font-medium">{stats.thisWeek} This Week</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
-                <CheckCircle2 className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-medium">{stats.thisMonth} This Month</span>
-              </div>
+              {!isMobile && (
+                <>
+                  <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-black/20 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
+                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
+                    <span className="text-xs sm:text-sm font-medium">{stats.thisWeek} This Week</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-black/20 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
+                    <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                    <span className="text-xs sm:text-sm font-medium">{stats.thisMonth} This Month</span>
+                  </div>
+                </>
+              )}
             </motion.div>
           </div>
           
@@ -674,15 +704,15 @@ export default function SubmissionsDashboard() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
-            className="flex items-center gap-4"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4"
           >
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Button 
                 variant="outline" 
                 onClick={() => loadSubmissions(savedStatusMap)}
-                className="relative overflow-hidden bg-gradient-to-r from-green-50 to-teal-50 border-green-200 text-green-700 hover:from-green-100 hover:to-teal-100 dark:from-green-950 dark:to-teal-950 dark:border-green-800 dark:text-green-300 transition-all duration-300 hover:shadow-lg"
+                className="relative overflow-hidden bg-gradient-to-r from-green-50 to-teal-50 border-green-200 text-green-700 hover:from-green-100 hover:to-teal-100 dark:from-green-950 dark:to-teal-950 dark:border-green-800 dark:text-green-300 transition-all duration-300 hover:shadow-lg h-9 sm:h-10 text-xs sm:text-sm"
               >
-                <RefreshCcw className="mr-2 h-4 w-4" />
+                <RefreshCcw className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 Refresh
               </Button>
             </motion.div>
@@ -690,10 +720,10 @@ export default function SubmissionsDashboard() {
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button className="relative overflow-hidden bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <Download className="mr-2 h-4 w-4" />
+                  <Button className="relative overflow-hidden bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all duration-300 h-9 sm:h-10 text-xs sm:text-sm">
+                    <Download className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                     Export
-                    <ChevronDown className="ml-2 h-4 w-4" />
+                    <ChevronDown className="ml-1.5 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -713,12 +743,12 @@ export default function SubmissionsDashboard() {
         </div>
       </motion.div>
 
-      {/* Enhanced Stats Cards Section */}
+      {/* Enhanced Stats Cards Section - Responsive */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
       >
         <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
           <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30">
@@ -815,9 +845,10 @@ export default function SubmissionsDashboard() {
       >
         {/* Enhanced Search and Filter Section */}
         <Card className="border-gray-200 dark:border-gray-700 shadow-lg">
-          <CardContent className="p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-4">
-              <div className="relative flex-1 max-w-md">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4">
+              {/* Search Bar - Full width on mobile */}
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search forms and submissions..."
@@ -827,39 +858,63 @@ export default function SubmissionsDashboard() {
                 />
               </div>
               
-              <div className="flex flex-wrap gap-2">
-                <Tabs defaultValue="all" onValueChange={setCurrentTab}>
-                  <TabsList className="h-10 bg-gray-100 dark:bg-gray-800">
-                    <TabsTrigger value="all" className="text-sm text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">All</TabsTrigger>
-                    <TabsTrigger value="new" className="text-sm text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">New</TabsTrigger>
-                    <TabsTrigger value="viewed" className="text-sm text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">Viewed</TabsTrigger>
-                    <TabsTrigger value="archived" className="text-sm text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">Archived</TabsTrigger>
-                  </TabsList>
-                </Tabs>
+              {/* Filters Row - Responsive layout */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
+                {/* Status Tabs */}
+                <div className="flex-shrink-0">
+                  <Tabs defaultValue="all" onValueChange={setCurrentTab}>
+                    <TabsList className="h-10 bg-gray-100 dark:bg-gray-800 w-full sm:w-auto">
+                      <TabsTrigger value="all" className="text-xs sm:text-sm px-2 sm:px-3 text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">All</TabsTrigger>
+                      <TabsTrigger value="new" className="text-xs sm:text-sm px-2 sm:px-3 text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">New</TabsTrigger>
+                      <TabsTrigger value="viewed" className="text-xs sm:text-sm px-2 sm:px-3 text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">Viewed</TabsTrigger>
+                      <TabsTrigger value="archived" className="text-xs sm:text-sm px-2 sm:px-3 text-gray-700 dark:text-gray-300 data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white">Archived</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
                 
-                <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger className="w-[150px] h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                    <SelectValue placeholder="Date filter" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Time</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="week">This Week</SelectItem>
-                    <SelectItem value="month">This Month</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select value={submissionsPerForm.toString()} onValueChange={(value) => setSubmissionsPerForm(parseInt(value))}>
-                  <SelectTrigger className="w-[120px] h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">Show 5</SelectItem>
-                    <SelectItem value="10">Show 10</SelectItem>
-                    <SelectItem value="20">Show 20</SelectItem>
-                    <SelectItem value="50">Show 50</SelectItem>
-                  </SelectContent>
-                </Select>
+                {/* Filter Dropdowns - Stack on mobile, row on larger screens */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:ml-auto">
+                  {/* Form Filter */}
+                  <Select value={formFilter} onValueChange={setFormFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px] h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                      <SelectValue placeholder="Filter by form" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Forms</SelectItem>
+                      {stats.byForm.map((form) => (
+                        <SelectItem key={form.formId} value={form.formId}>
+                          {form.formTitle} ({form.count})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Date Filter */}
+                  <Select value={dateFilter} onValueChange={setDateFilter}>
+                    <SelectTrigger className="w-full sm:w-[140px] h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                      <SelectValue placeholder="Date filter" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">This Week</SelectItem>
+                      <SelectItem value="month">This Month</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Per Page Filter */}
+                  <Select value={submissionsPerForm.toString()} onValueChange={(value) => setSubmissionsPerForm(parseInt(value))}>
+                    <SelectTrigger className="w-full sm:w-[110px] h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">Show 5</SelectItem>
+                      <SelectItem value="10">Show 10</SelectItem>
+                      <SelectItem value="20">Show 20</SelectItem>
+                      <SelectItem value="50">Show 50</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -1066,7 +1121,7 @@ export default function SubmissionsDashboard() {
                             exit={{ opacity: 0, x: 20 }}
                             transition={{ duration: 0.3, delay: submissionIndex * 0.05 }}
                             className={`
-                              relative
+                              relative overflow-hidden
                               ${submissionIndex % 2 === 0 ? 'bg-white dark:bg-gray-900/30' : 'bg-gray-50/50 dark:bg-gray-800/30'}
                               hover:bg-gradient-to-r hover:from-${colorScheme.from.replace('from-', '')}/5 hover:to-transparent 
                               dark:hover:from-${colorScheme.from.replace('from-', '')}/10 dark:hover:to-transparent 
@@ -1076,32 +1131,37 @@ export default function SubmissionsDashboard() {
                             `}
                             onClick={() => router.push(`/submissions/${submission.id}`)}
                           >
-                            {/* Submission Number Badge */}
-                            <div className={`absolute -left-2 top-6 w-8 h-8 rounded-full bg-gradient-to-r ${colorScheme.from} ${colorScheme.to} flex items-center justify-center text-white text-sm font-bold shadow-lg z-10`}>
+                            {/* Submission Number Badge - Fixed positioning */}
+                            <div className={`absolute left-2 top-4 sm:top-6 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r ${colorScheme.from} ${colorScheme.to} flex items-center justify-center text-white text-xs sm:text-sm font-bold shadow-lg z-10`}>
                               {submissionIndex + 1}
                             </div>
                             
-                            <div className="pl-8 pr-6 py-6">
-                              {/* Submission Header */}
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                  {/* Enhanced Submission ID Badge */}
-                                  <div className={`px-4 py-2 rounded-lg text-sm font-mono font-semibold ${colorScheme.bg} ${colorScheme.text} border-2 ${colorScheme.border} shadow-sm`}>
-                                    Submission #{submission.id.slice(-6).toUpperCase()}
+                            <div className="pl-10 sm:pl-12 pr-4 sm:pr-6 py-4 sm:py-6">
+                              {/* Submission Header - Responsive */}
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                                  {/* Enhanced Submission ID Badge - Responsive */}
+                                  <div className={`px-3 sm:px-4 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-mono font-semibold ${colorScheme.bg} ${colorScheme.text} border-2 ${colorScheme.border} shadow-sm w-fit`}>
+                                    {isMobile ? `#${submission.id.slice(-4).toUpperCase()}` : `Submission #${submission.id.slice(-6).toUpperCase()}`}
                                   </div>
                                   
-                                  {/* Timestamp with enhanced styling */}
-                                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
-                                    <Clock className="h-4 w-4" />
-                                    <span className="font-medium">{formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}</span>
+                                  {/* Timestamp with enhanced styling - Responsive */}
+                                  <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 sm:px-3 py-1 rounded-full w-fit">
+                                    <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                                    <span className="font-medium">
+                                      {isMobile 
+                                        ? formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true }).replace('about ', '')
+                                        : formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })
+                                      }
+                                    </span>
                                   </div>
                                   
                                   {/* Status Badge */}
                                   {getStatusBadge(submission.status || 'viewed')}
                                 </div>
                                 
-                                {/* Action Buttons */}
-                                <div className="flex items-center gap-2 opacity-0 group-hover/submission:opacity-100 transition-opacity duration-200">
+                                {/* Action Buttons - Responsive */}
+                                <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover/submission:opacity-100 transition-opacity duration-200">
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -1109,16 +1169,16 @@ export default function SubmissionsDashboard() {
                                       e.stopPropagation();
                                       router.push(`/submissions/${submission.id}`);
                                     }}
-                                    className="h-8 px-3 hover:bg-white dark:hover:bg-gray-700 shadow-sm"
+                                    className="h-7 sm:h-8 px-2 sm:px-3 text-xs sm:text-sm hover:bg-white dark:hover:bg-gray-700 shadow-sm"
                                   >
-                                    <Eye className="h-4 w-4 mr-1" />
-                                    View
+                                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                                    {!isMobile && "View"}
                                   </Button>
                                   
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-white dark:hover:bg-gray-700 shadow-sm">
-                                        <MoreHorizontal className="h-4 w-4" />
+                                      <Button variant="ghost" size="sm" className="h-7 w-7 sm:h-8 sm:w-8 p-0 hover:bg-white dark:hover:bg-gray-700 shadow-sm">
+                                        <MoreHorizontal className="h-3 w-3 sm:h-4 sm:w-4" />
                                       </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end" className="w-48">
@@ -1175,17 +1235,17 @@ export default function SubmissionsDashboard() {
                                 </div>
                               </div>
                               
-                              {/* Rich Submission Data Preview with enhanced styling */}
-                              <div className="bg-white dark:bg-gray-900/70 rounded-xl border-2 border-gray-200 dark:border-gray-700 p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${colorScheme.from} ${colorScheme.to}`}></div>
-                                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Response Data</span>
+                              {/* Rich Submission Data Preview - Responsive */}
+                              <div className="bg-white dark:bg-gray-900/70 rounded-lg sm:rounded-xl border-2 border-gray-200 dark:border-gray-700 p-3 sm:p-5 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                                  <div className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-gradient-to-r ${colorScheme.from} ${colorScheme.to}`}></div>
+                                  <span className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">Response Data</span>
                                 </div>
-                                {renderSubmissionDataPreview(submission, 2)}
+                                {renderSubmissionDataPreview(submission, isMobile ? 1 : 2)}
                               </div>
                               
-                              {/* Submission Footer with metadata */}
-                              <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                              {/* Submission Footer - Responsive */}
+                              <div className="mt-3 sm:mt-4 pt-2 sm:pt-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 text-xs text-gray-500 dark:text-gray-400">
                                 <span>Submission {submissionIndex + 1} of {formSubmissions.length}</span>
                                 <span className="font-mono">ID: {submission.id.slice(-8)}</span>
                               </div>
