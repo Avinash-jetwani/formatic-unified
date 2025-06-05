@@ -1013,4 +1013,225 @@ export default function SubmissionsDashboard() {
                   {/* Distinctive Form Header with Brand Colors */}
                   <div className={`h-1.5 bg-gradient-to-r ${colorScheme.from} ${colorScheme.to}`} />
                   
-                  <CardHeader className={`
+                  <CardHeader className={`${colorScheme.bg} dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 py-4 sm:py-5`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        {/* Form Icon */}
+                        <div className={`p-2.5 bg-gradient-to-r ${colorScheme.from} ${colorScheme.to} rounded-lg shadow-md`}>
+                          <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+                        </div>
+                        
+                        <div>
+                          <CardTitle className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                            {group.form.title}
+                          </CardTitle>
+                          <CardDescription className="mt-1 flex items-center gap-3 text-sm">
+                            <span className="flex items-center gap-1.5">
+                              <Users className="h-4 w-4" />
+                              {formSubmissions.length} submission{formSubmissions.length !== 1 ? 's' : ''} 
+                            </span>
+                            {currentTab !== 'all' && (
+                              <span className="text-sm font-medium">
+                                Showing {currentTab}
+                              </span>
+                            )}
+                          </CardDescription>
+                        </div>
+                      </div>
+                      
+                      {/* Status Metrics */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {newCount > 0 && (
+                          <Badge className="bg-blue-500 hover:bg-blue-600 shadow-sm text-xs px-2 py-1">
+                            <Zap className="h-3 w-3 mr-1" />
+                            {newCount}
+                          </Badge>
+                        )}
+                        {viewedCount > 0 && (
+                          <Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 text-xs px-2 py-1">
+                            <Eye className="h-3 w-3 mr-1" />
+                            {viewedCount}
+                          </Badge>
+                        )}
+                        {archivedCount > 0 && (
+                          <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700 text-xs px-2 py-1">
+                            <Archive className="h-3 w-3 mr-1" />
+                            {archivedCount}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+
+                  {/* Enhanced Submissions Grid */}
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                      <AnimatePresence>
+                        {formSubmissions
+                          .slice(0, expandedForms[group.form.id] ? formSubmissions.length : submissionsPerForm)
+                          .map((submission, submissionIndex) => (
+                          <motion.div
+                            key={submission.id}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                            transition={{ duration: 0.3, delay: submissionIndex * 0.05 }}
+                            className={`
+                              relative overflow-hidden
+                              ${submissionIndex % 2 === 0 ? 'bg-white dark:bg-gray-900/30' : 'bg-gray-50/50 dark:bg-gray-800/30'}
+                              hover:bg-gradient-to-r hover:from-${colorScheme.from.replace('from-', '')}/5 hover:to-transparent 
+                              dark:hover:from-${colorScheme.from.replace('from-', '')}/10 dark:hover:to-transparent 
+                              transition-all duration-300 cursor-pointer group/submission
+                              border-l-4 border-l-${colorScheme.from.replace('from-', '')} border-l-opacity-20
+                              hover:border-l-opacity-60 hover:shadow-lg
+                            `}
+                            onClick={() => router.push(`/submissions/${submission.id}`)}
+                          >
+                            <div className="pr-4 sm:pr-5 py-4 sm:py-5 px-4 sm:px-6">
+                              {/* Submission Header */}
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                                  {/* Timestamp */}
+                                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full w-fit">
+                                    <Clock className="h-4 w-4" />
+                                    <span className="font-medium">
+                                      {isMobile 
+                                        ? formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true }).replace('about ', '')
+                                        : formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })
+                                      }
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Status Badge */}
+                                  {getStatusBadge(submission.status || 'viewed')}
+                                </div>
+                                
+                                {/* Action Buttons */}
+                                <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover/submission:opacity-100 transition-opacity duration-200">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/submissions/${submission.id}`);
+                                    }}
+                                    className="h-8 sm:h-9 px-3 text-sm hover:bg-white dark:hover:bg-gray-700"
+                                  >
+                                    <Eye className="h-4 w-4 mr-1.5" />
+                                    {!isMobile && "View"}
+                                  </Button>
+                                  
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                      <Button variant="ghost" size="sm" className="h-8 w-8 sm:h-9 sm:w-9 p-0 hover:bg-white dark:hover:bg-gray-700">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48">
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          router.push(`/submissions/${submission.id}`);
+                                        }}
+                                      >
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateSubmissionStatus(submission.id, 'new');
+                                        }}
+                                      >
+                                        <Zap className="mr-2 h-4 w-4" />
+                                        Mark as New
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateSubmissionStatus(submission.id, 'viewed');
+                                        }}
+                                      >
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        Mark as Viewed
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          updateSubmissionStatus(submission.id, 'archived');
+                                        }}
+                                      >
+                                        <Archive className="mr-2 h-4 w-4" />
+                                        Archive
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDelete(submission.id);
+                                        }}
+                                        className="text-red-600 dark:text-red-400"
+                                      >
+                                        <Trash className="mr-2 h-4 w-4" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </div>
+                              
+                              {/* Data Preview */}
+                              <div className="bg-white dark:bg-gray-900/70 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${colorScheme.from} ${colorScheme.to}`}></div>
+                                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Response Data</span>
+                                </div>
+                                {renderSubmissionDataPreview(submission, isMobile ? 1 : 2)}
+                              </div>
+                              
+                              {/* Footer */}
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 text-sm text-gray-500 dark:text-gray-400">
+                                <span className="font-mono text-sm">ID: {submission.id.slice(-8)}</span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                    
+                    {/* Show More/Less Button */}
+                    {formSubmissions.length > submissionsPerForm && (
+                      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                        <Button
+                          variant="ghost"
+                          onClick={() => setExpandedForms(prev => ({
+                            ...prev,
+                            [group.form.id]: !prev[group.form.id]
+                          }))}
+                          className="w-full"
+                        >
+                          {expandedForms[group.form.id] ? (
+                            <>
+                              <ChevronUp className="mr-2 h-4 w-4" />
+                              Show Less
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="mr-2 h-4 w-4" />
+                              Show {formSubmissions.length - submissionsPerForm} More Submissions
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
+      </div>
+    );
+  }
+}
