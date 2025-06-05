@@ -595,7 +595,7 @@ export default function SubmissionsDashboard() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative overflow-hidden bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-950 dark:via-emerald-950 dark:to-teal-950 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border border-green-100 dark:border-green-800"
+        className="relative overflow-hidden bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 dark:bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border border-green-100 dark:border-gray-600"
       >
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
         <div className="relative flex flex-col gap-4 sm:gap-6 md:flex-row md:items-center md:justify-between">
@@ -636,23 +636,23 @@ export default function SubmissionsDashboard() {
               transition={{ delay: 0.5, duration: 0.5 }}
               className="flex flex-wrap gap-2 sm:gap-3 lg:gap-4 mt-3 sm:mt-4"
             >
-              <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-black/20 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-gray-700/80 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
                 <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
-                <span className="text-xs sm:text-sm font-medium">{stats.total} Total</span>
+                <span className="text-xs sm:text-sm font-medium dark:text-gray-200">{stats.total} Total</span>
               </div>
-              <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-black/20 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-gray-700/80 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
                 <Activity className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
-                <span className="text-xs sm:text-sm font-medium">{stats.today} Today</span>
+                <span className="text-xs sm:text-sm font-medium dark:text-gray-200">{stats.today} Today</span>
               </div>
               {!isMobile && (
                 <>
-                  <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-black/20 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
+                  <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-gray-700/80 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
                     <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
-                    <span className="text-xs sm:text-sm font-medium">{stats.thisWeek} This Week</span>
+                    <span className="text-xs sm:text-sm font-medium dark:text-gray-200">{stats.thisWeek} This Week</span>
                   </div>
-                  <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-black/20 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
+                  <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-gray-700/80 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
                     <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
-                    <span className="text-xs sm:text-sm font-medium">{stats.thisMonth} This Month</span>
+                    <span className="text-xs sm:text-sm font-medium dark:text-gray-200">{stats.thisMonth} This Month</span>
                   </div>
                 </>
               )}
@@ -710,10 +710,10 @@ export default function SubmissionsDashboard() {
         className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
       >
         <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30">
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-600 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 dark:bg-gray-800">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-300">
                   Total Submissions
                 </CardTitle>
                 <div className="p-2 bg-blue-500 rounded-lg">
@@ -722,17 +722,17 @@ export default function SubmissionsDashboard() {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.total}</div>
-              <p className="text-xs text-muted-foreground mt-1">All time submissions</p>
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-200">{stats.total}</div>
+              <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1">All time submissions</p>
             </CardContent>
           </Card>
         </motion.div>
 
         <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30">
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-600 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 dark:bg-gray-800">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-300">
                   Today
                 </CardTitle>
                 <div className="p-2 bg-green-500 rounded-lg">
@@ -741,8 +741,8 @@ export default function SubmissionsDashboard() {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-green-700 dark:text-green-300">{stats.today}</div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center">
+              <div className="text-2xl font-bold text-green-700 dark:text-green-200">{stats.today}</div>
+              <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1 flex items-center">
                 {stats.today > 0 ? (
                   <>
                     <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
@@ -757,10 +757,10 @@ export default function SubmissionsDashboard() {
         </motion.div>
 
         <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30">
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-600 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 dark:bg-gray-800">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-300">
                   This Week
                 </CardTitle>
                 <div className="p-2 bg-purple-500 rounded-lg">
@@ -769,17 +769,17 @@ export default function SubmissionsDashboard() {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{stats.thisWeek}</div>
-              <p className="text-xs text-muted-foreground mt-1">Last 7 days</p>
+              <div className="text-2xl font-bold text-purple-700 dark:text-purple-200">{stats.thisWeek}</div>
+              <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1">Last 7 days</p>
             </CardContent>
           </Card>
         </motion.div>
 
         <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30">
+          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-600 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 dark:bg-gray-800">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-300">
                   This Month
                 </CardTitle>
                 <div className="p-2 bg-orange-500 rounded-lg">
@@ -788,8 +788,8 @@ export default function SubmissionsDashboard() {
               </div>
             </CardHeader>
             <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-orange-700 dark:text-orange-300">{stats.thisMonth}</div>
-              <p className="text-xs text-muted-foreground mt-1">Since {format(new Date(new Date().setDate(1)), 'MMM d')}</p>
+              <div className="text-2xl font-bold text-orange-700 dark:text-orange-200">{stats.thisMonth}</div>
+              <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1">Since {format(new Date(new Date().setDate(1)), 'MMM d')}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -803,7 +803,7 @@ export default function SubmissionsDashboard() {
         className="space-y-6"
       >
         {/* Enhanced Search and Filter Section */}
-        <Card className="border-gray-200 dark:border-gray-700 shadow-lg">
+        <Card className="border-gray-200 dark:border-gray-600 shadow-lg dark:bg-gray-800">
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col gap-4">
               {/* Search Bar - Full width on mobile */}
@@ -813,7 +813,7 @@ export default function SubmissionsDashboard() {
                   placeholder="Search forms and submissions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 pr-4 h-11 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                  className="pl-9 pr-4 h-11 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
               
@@ -1013,239 +1013,4 @@ export default function SubmissionsDashboard() {
                   {/* Distinctive Form Header with Brand Colors */}
                   <div className={`h-1.5 bg-gradient-to-r ${colorScheme.from} ${colorScheme.to}`} />
                   
-                  <CardHeader className={`${colorScheme.bg} dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 py-4 sm:py-5`}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        {/* Form Icon */}
-                        <div className={`p-2.5 bg-gradient-to-r ${colorScheme.from} ${colorScheme.to} rounded-lg shadow-md`}>
-                          <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                        </div>
-                        
-                        <div>
-                          <CardTitle className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                            {group.form.title}
-                            <Badge variant="outline" className={`${colorScheme.border} ${colorScheme.text} bg-white dark:bg-gray-800 text-xs`}>
-                              #{group.form.id.slice(-4)}
-                            </Badge>
-                          </CardTitle>
-                          <CardDescription className="mt-1 flex items-center gap-3 text-sm">
-                            <span className="flex items-center gap-1.5">
-                              <Users className="h-4 w-4" />
-                              {formSubmissions.length} submission{formSubmissions.length !== 1 ? 's' : ''} 
-                            </span>
-                            {currentTab !== 'all' && (
-                              <span className="text-sm font-medium">
-                                Showing {currentTab}
-                              </span>
-                            )}
-                          </CardDescription>
-                        </div>
-                      </div>
-                      
-                      {/* Status Metrics */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {newCount > 0 && (
-                          <Badge className="bg-blue-500 hover:bg-blue-600 shadow-sm text-xs px-2 py-1">
-                            <Zap className="h-3 w-3 mr-1" />
-                            {newCount}
-                          </Badge>
-                        )}
-                        {viewedCount > 0 && (
-                          <Badge variant="outline" className="border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 text-xs px-2 py-1">
-                            <Eye className="h-3 w-3 mr-1" />
-                            {viewedCount}
-                          </Badge>
-                        )}
-                        {archivedCount > 0 && (
-                          <Badge variant="secondary" className="bg-gray-100 dark:bg-gray-700 text-xs px-2 py-1">
-                            <Archive className="h-3 w-3 mr-1" />
-                            {archivedCount}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-
-                  {/* Enhanced Submissions Grid */}
-                  <CardContent className="p-0">
-                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                      <AnimatePresence>
-                        {formSubmissions
-                          .slice(0, expandedForms[group.form.id] ? formSubmissions.length : submissionsPerForm)
-                          .map((submission, submissionIndex) => (
-                          <motion.div
-                            key={submission.id}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
-                            transition={{ duration: 0.3, delay: submissionIndex * 0.05 }}
-                            className={`
-                              relative overflow-hidden
-                              ${submissionIndex % 2 === 0 ? 'bg-white dark:bg-gray-900/30' : 'bg-gray-50/50 dark:bg-gray-800/30'}
-                              hover:bg-gradient-to-r hover:from-${colorScheme.from.replace('from-', '')}/5 hover:to-transparent 
-                              dark:hover:from-${colorScheme.from.replace('from-', '')}/10 dark:hover:to-transparent 
-                              transition-all duration-300 cursor-pointer group/submission
-                              border-l-4 border-l-${colorScheme.from.replace('from-', '')} border-l-opacity-20
-                              hover:border-l-opacity-60 hover:shadow-lg
-                            `}
-                            onClick={() => router.push(`/submissions/${submission.id}`)}
-                          >
-                            {/* Submission Number Badge - Fixed positioning */}
-                            <div className={`absolute left-2 top-4 sm:top-6 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r ${colorScheme.from} ${colorScheme.to} flex items-center justify-center text-white text-xs sm:text-sm font-bold shadow-lg z-10`}>
-                              {submissionIndex + 1}
-                            </div>
-                            
-                            <div className="pl-10 sm:pl-12 pr-4 sm:pr-5 py-4 sm:py-5">
-                              {/* Submission Header */}
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4">
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-                                  {/* Submission ID Badge */}
-                                  <div className={`px-3 sm:px-4 py-1.5 rounded-md text-sm font-mono font-medium ${colorScheme.bg} ${colorScheme.text} border ${colorScheme.border} w-fit`}>
-                                    {isMobile ? `#${submission.id.slice(-4).toUpperCase()}` : `#${submission.id.slice(-6).toUpperCase()}`}
-                                  </div>
-                                  
-                                  {/* Timestamp */}
-                                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full w-fit">
-                                    <Clock className="h-4 w-4" />
-                                    <span className="font-medium">
-                                      {isMobile 
-                                        ? formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true }).replace('about ', '')
-                                        : formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })
-                                      }
-                                    </span>
-                                  </div>
-                                  
-                                  {/* Status Badge */}
-                                  {getStatusBadge(submission.status || 'viewed')}
-                                </div>
-                                
-                                {/* Action Buttons */}
-                                <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover/submission:opacity-100 transition-opacity duration-200">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      router.push(`/submissions/${submission.id}`);
-                                    }}
-                                    className="h-8 sm:h-9 px-3 text-sm hover:bg-white dark:hover:bg-gray-700"
-                                  >
-                                    <Eye className="h-4 w-4 mr-1.5" />
-                                    {!isMobile && "View"}
-                                  </Button>
-                                  
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                      <Button variant="ghost" size="sm" className="h-8 w-8 sm:h-9 sm:w-9 p-0 hover:bg-white dark:hover:bg-gray-700">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-48">
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          router.push(`/submissions/${submission.id}`);
-                                        }}
-                                      >
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        View Details
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          updateSubmissionStatus(submission.id, 'new');
-                                        }}
-                                      >
-                                        <Zap className="mr-2 h-4 w-4" />
-                                        Mark as New
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          updateSubmissionStatus(submission.id, 'viewed');
-                                        }}
-                                      >
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        Mark as Viewed
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          updateSubmissionStatus(submission.id, 'archived');
-                                        }}
-                                      >
-                                        <Archive className="mr-2 h-4 w-4" />
-                                        Archive
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDelete(submission.id);
-                                        }}
-                                        className="text-red-600 dark:text-red-400"
-                                      >
-                                        <Trash className="mr-2 h-4 w-4" />
-                                        Delete
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </div>
-                              </div>
-                              
-                              {/* Data Preview */}
-                              <div className="bg-white dark:bg-gray-900/70 rounded-lg border border-gray-200 dark:border-gray-700 p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${colorScheme.from} ${colorScheme.to}`}></div>
-                                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Response Data</span>
-                                </div>
-                                {renderSubmissionDataPreview(submission, isMobile ? 1 : 2)}
-                              </div>
-                              
-                              {/* Footer */}
-                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 text-sm text-gray-500 dark:text-gray-400">
-                                <span>#{submissionIndex + 1} of {formSubmissions.length}</span>
-                                <span className="font-mono text-sm">ID: {submission.id.slice(-8)}</span>
-                              </div>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </AnimatePresence>
-                    </div>
-                    
-                    {/* Show More/Less Button */}
-                    {formSubmissions.length > submissionsPerForm && (
-                      <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                        <Button
-                          variant="ghost"
-                          onClick={() => setExpandedForms(prev => ({
-                            ...prev,
-                            [group.form.id]: !prev[group.form.id]
-                          }))}
-                          className="w-full"
-                        >
-                          {expandedForms[group.form.id] ? (
-                            <>
-                              <ChevronUp className="mr-2 h-4 w-4" />
-                              Show Less
-                            </>
-                          ) : (
-                            <>
-                              <ChevronDown className="mr-2 h-4 w-4" />
-                              Show {formSubmissions.length - submissionsPerForm} More Submissions
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
-      </div>
-    );
-  }
-} 
+                  <CardHeader className={`
