@@ -535,7 +535,18 @@ function EnhancedDashboardContent() {
       // Filter submissions by date range if backend doesn't support query params
       const filteredSubmissions = submissionsData.filter((submission: any) => {
         const submissionDate = new Date(submission.createdAt || submission.submittedAt);
-        return submissionDate >= startDateObj && submissionDate <= endDateObj;
+        const isInRange = submissionDate >= startDateObj && submissionDate <= endDateObj;
+        return isInRange;
+      });
+
+      console.log('Date filtering debug:', {
+        startDate: start,
+        endDate: end,
+        startDateObj: startDateObj.toISOString(),
+        endDateObj: endDateObj.toISOString(),
+        totalSubmissions: submissionsData.length,
+        filteredSubmissions: filteredSubmissions.length,
+        submissionDates: submissionsData.map((s: any) => new Date(s.createdAt || s.submittedAt).toISOString()).slice(0, 3)
       });
       
       // Process form completion rates properly
@@ -549,8 +560,11 @@ function EnhancedDashboardContent() {
           }))
         : generateFormPerformanceFromForms(formsData, filteredSubmissions);
         
-      // Use conversion trends data for submissions chart if available
-      const submissionsTimeline = conversionTrendsData?.length > 0
+      // Use conversion trends data for submissions chart if available and has meaningful data
+      const hasValidConversionData = conversionTrendsData?.length > 0 && 
+        conversionTrendsData.some((item: any) => (item.submissions || 0) > 0);
+      
+      const submissionsTimeline = hasValidConversionData
         ? conversionTrendsData.map((item: any) => ({
             date: item.date,
             value: item.submissions || 0
@@ -559,10 +573,14 @@ function EnhancedDashboardContent() {
 
       console.log('Chart data processing:', {
         conversionTrendsLength: conversionTrendsData?.length || 0,
+        conversionTrendsSample: conversionTrendsData?.slice(0, 3),
+        hasValidConversionData,
         submissionsTimelineLength: submissionsTimeline?.length || 0,
         submissionsTimelineSample: submissionsTimeline?.slice(0, 3),
         formPerformanceLength: formPerformance?.length || 0,
-        formPerformanceSample: formPerformance?.slice(0, 2)
+        formPerformanceSample: formPerformance?.slice(0, 2),
+        filteredSubmissionsCount: filteredSubmissions?.length || 0,
+        actualSubmissionsSample: filteredSubmissions?.slice(0, 2)
       });
 
       // Calculate trends based on filtered data
