@@ -255,18 +255,37 @@ const FORM_TEMPLATES: FormTemplate[] = [
 
 const FormsPage = () => {
   const router = useRouter();
-  const { isAdmin, user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
+  
+  // State management
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'published' | 'draft' | 'templates'>('all');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
+  const [clientFilter, setClientFilter] = useState<'all' | 'mine' | 'clients'>('all');
   const [formToDelete, setFormToDelete] = useState<string | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  
+  // Responsive state management
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
 
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [clientFilter, setClientFilter] = useState<'all' | 'mine' | 'clients'>('all');
-  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  // Detect screen sizes for responsive design
+  useEffect(() => {
+    const checkScreenSize = () => {
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth < 640);
+        setIsTablet(window.innerWidth >= 640 && window.innerWidth < 1024);
+      }
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Load forms on component mount
   useEffect(() => {
@@ -512,31 +531,31 @@ const FormsPage = () => {
   return (
     <ErrorBoundary>
       <div className="space-y-8">
-      {/* Enhanced Header Section */}
+      {/* Enhanced Header Section - Matching Submissions Dashboard */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative overflow-hidden bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950 dark:via-indigo-950 dark:to-purple-950 rounded-2xl p-8 border border-blue-100 dark:border-blue-800"
+        className="relative overflow-hidden bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 dark:bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 border border-blue-100 dark:border-gray-600"
       >
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
+        <div className="relative flex flex-col gap-4 sm:gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-2 sm:space-y-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <motion.div 
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-                className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg"
+                className="p-1.5 sm:p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg"
               >
-                <FileText className="h-6 w-6 text-white" />
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
               </motion.div>
               <div>
                 <motion.h1 
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.5 }}
-                  className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+                  className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
                 >
                   Forms Dashboard
                 </motion.h1>
@@ -544,32 +563,34 @@ const FormsPage = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.4, duration: 0.5 }}
-                  className="text-lg text-muted-foreground mt-1"
+                  className="text-sm sm:text-base lg:text-lg text-muted-foreground mt-1"
                 >
-                  Create, manage, and track your forms with powerful analytics
+                  {isMobile ? "Create and manage forms" : "Create, manage, and track your forms with powerful analytics"}
                 </motion.p>
               </div>
             </div>
             
-            {/* Quick Stats */}
+            {/* Quick Stats - Responsive */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.5 }}
-              className="flex flex-wrap gap-4 mt-4"
+              className="flex flex-wrap gap-2 sm:gap-3 lg:gap-4 mt-3 sm:mt-4"
             >
-              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
-                <FileText className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium">{filteredForms.length} Forms</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-gray-700/80 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
+                <FileText className="h-3 w-3 sm:h-4 sm:w-4 text-blue-600" />
+                <span className="text-xs sm:text-sm font-medium dark:text-gray-200">{filteredForms.length} Forms</span>
               </div>
-              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium">{filteredForms.filter(f => f.published).length} Published</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-gray-700/80 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
+                <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+                <span className="text-xs sm:text-sm font-medium dark:text-gray-200">{filteredForms.filter(f => f.published).length} Published</span>
               </div>
-              <div className="flex items-center gap-2 bg-white/70 dark:bg-black/20 rounded-full px-4 py-2 backdrop-blur-sm">
-                <Edit className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-medium">{filteredForms.filter(f => !f.published).length} Drafts</span>
-              </div>
+              {!isMobile && (
+                <div className="flex items-center gap-1.5 sm:gap-2 bg-white/70 dark:bg-gray-700/80 rounded-full px-2.5 sm:px-3 lg:px-4 py-1.5 sm:py-2 backdrop-blur-sm">
+                  <Edit className="h-3 w-3 sm:h-4 sm:w-4 text-orange-600" />
+                  <span className="text-xs sm:text-sm font-medium dark:text-gray-200">{filteredForms.filter(f => !f.published).length} Drafts</span>
+                </div>
+              )}
             </motion.div>
           </div>
           
@@ -577,25 +598,25 @@ const FormsPage = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
-            className="flex items-center gap-4"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4"
           >
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Button
                 variant="outline"
                 onClick={() => router.push('/templates')}
-                className="relative overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-purple-100 dark:from-blue-950 dark:to-purple-950 dark:border-blue-800 dark:text-blue-300 transition-all duration-300 hover:shadow-lg"
+                className="relative overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 text-blue-700 hover:from-blue-100 hover:to-purple-100 dark:from-blue-950 dark:to-purple-950 dark:border-blue-800 dark:text-blue-300 transition-all duration-300 hover:shadow-lg h-9 sm:h-10 text-xs sm:text-sm"
               >
-                <Sparkles className="mr-2 h-4 w-4" />
-                Browse Templates
+                <Sparkles className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                {isMobile ? "Templates" : "Browse Templates"}
               </Button>
             </motion.div>
             
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Button 
                 onClick={navigateToCreateForm} 
-                className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300"
+                className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-300 h-9 sm:h-10 text-xs sm:text-sm"
               >
-                <PlusCircle className="mr-2 h-4 w-4" />
+                <PlusCircle className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 Create Form
               </Button>
             </motion.div>
@@ -603,21 +624,21 @@ const FormsPage = () => {
         </div>
       </motion.div>
 
-      {/* Enhanced Search and Filter Section */}
+      {/* Enhanced Search and Filter Section - Matching Submissions Dashboard */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="bg-white dark:bg-black/20 rounded-xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm"
+        className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-600 shadow-sm"
       >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search forms by title, description, or tags..."
+              placeholder={isMobile ? "Search forms..." : "Search forms by title, description, or tags..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 pr-4 h-11 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="pl-9 pr-4 h-10 sm:h-11 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             />
           </div>
           
@@ -626,10 +647,14 @@ const FormsPage = () => {
         {/* Status filter dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="whitespace-nowrap">
-              <Filter className="mr-2 h-4 w-4" />
-              {filter === 'all' ? 'All Forms' : filter === 'published' ? 'Published' : filter === 'draft' ? 'Drafts' : 'Templates'}
-              <ChevronDown className="ml-2 h-4 w-4" />
+            <Button variant="outline" className="whitespace-nowrap h-10 text-xs sm:text-sm">
+              <Filter className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+              {isMobile ? (
+                filter === 'all' ? 'All' : filter === 'published' ? 'Pub' : filter === 'draft' ? 'Draft' : 'Temp'
+              ) : (
+                filter === 'all' ? 'All Forms' : filter === 'published' ? 'Published' : filter === 'draft' ? 'Drafts' : 'Templates'
+              )}
+              <ChevronDown className="ml-1.5 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -656,18 +681,18 @@ const FormsPage = () => {
         {uniqueCategories.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="whitespace-nowrap">
-                <FolderIcon className="mr-2 h-4 w-4" />
-                {categoryFilter || 'Category'}
-                <ChevronDown className="ml-2 h-4 w-4" />
+              <Button variant="outline" className="whitespace-nowrap h-10 text-xs sm:text-sm">
+                <FolderIcon className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                {isMobile ? (categoryFilter || 'Cat') : (categoryFilter || 'All Categories')}
+                <ChevronDown className="ml-1.5 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setCategoryFilter(null)}>
+              <DropdownMenuItem onClick={() => setCategoryFilter('')}>
                 {!categoryFilter && <Check className="mr-2 h-4 w-4" />}
                 All Categories
               </DropdownMenuItem>
-              {uniqueCategories.map(category => (
+              {uniqueCategories.map((category) => (
                 <DropdownMenuItem key={category} onClick={() => setCategoryFilter(category)}>
                   {categoryFilter === category && <Check className="mr-2 h-4 w-4" />}
                   {category}
@@ -676,24 +701,24 @@ const FormsPage = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-
-        {/* Tags filter dropdown */}
-        {uniqueTags.length > 0 && (
+        
+        {/* Tag filter dropdown */}
+        {uniqueTags.length > 0 && !isMobile && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="whitespace-nowrap">
-                <Tag className="mr-2 h-4 w-4" />
-                {tagFilter || 'Tags'}
-                <ChevronDown className="ml-2 h-4 w-4" />
+              <Button variant="outline" className="whitespace-nowrap h-10 text-xs sm:text-sm">
+                <Tag className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                {tagFilter || 'All Tags'}
+                <ChevronDown className="ml-1.5 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setTagFilter(null)}>
+              <DropdownMenuItem onClick={() => setTagFilter('')}>
                 {!tagFilter && <Check className="mr-2 h-4 w-4" />}
                 All Tags
               </DropdownMenuItem>
-              {uniqueTags.map((tag, index) => (
-                <DropdownMenuItem key={`unique-tag-${index}-${tag}`} onClick={() => setTagFilter(tag)}>
+              {uniqueTags.map((tag) => (
+                <DropdownMenuItem key={tag} onClick={() => setTagFilter(tag)}>
                   {tagFilter === tag && <Check className="mr-2 h-4 w-4" />}
                   {tag}
                 </DropdownMenuItem>
@@ -703,13 +728,13 @@ const FormsPage = () => {
         )}
         
         {/* Client filter dropdown - only for super admin */}
-        {isAdmin && (
+        {isAdmin && !isMobile && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="whitespace-nowrap">
-                <Layers className="mr-2 h-4 w-4" />
+              <Button variant="outline" className="whitespace-nowrap h-10 text-xs sm:text-sm">
+                <Layers className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 {clientFilter === 'all' ? 'All Owners' : clientFilter === 'mine' ? 'My Forms' : 'Client Forms'}
-                <ChevronDown className="ml-2 h-4 w-4" />
+                <ChevronDown className="ml-1.5 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -732,208 +757,213 @@ const FormsPage = () => {
         </div>
       </motion.div>
       
-      {/* Forms grid for mobile and tablet */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
+      {/* Forms grid - Responsive for all screen sizes */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 xl:hidden">
         {loading ? (
           // Loading skeletons for cards
-          Array(4).fill(null).map((_, i) => (
+          Array(6).fill(null).map((_, i) => (
             <Card key={i} className="overflow-hidden">
               <CardHeader className="pb-3">
-                <Skeleton className="h-6 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-5 sm:h-6 w-3/4 mb-2" />
+                <Skeleton className="h-3 sm:h-4 w-1/2" />
               </CardHeader>
               <CardContent className="pb-2">
                 <div className="flex justify-between mb-3">
-                  <Skeleton className="h-5 w-1/3" />
-                  <Skeleton className="h-5 w-1/4" />
+                  <Skeleton className="h-4 sm:h-5 w-1/3" />
+                  <Skeleton className="h-4 sm:h-5 w-1/4" />
                 </div>
-                <Skeleton className="h-4 w-full mb-2" />
-                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-3 sm:h-4 w-full mb-2" />
+                <Skeleton className="h-3 sm:h-4 w-2/3" />
               </CardContent>
               <CardFooter className="flex justify-between pt-3 border-t">
-                <Skeleton className="h-9 w-20" />
-                <Skeleton className="h-9 w-9" />
+                <Skeleton className="h-8 sm:h-9 w-16 sm:w-20" />
+                <Skeleton className="h-8 sm:h-9 w-8 sm:w-9" />
               </CardFooter>
             </Card>
           ))
         ) : filteredForms.length === 0 ? (
-          <div className="col-span-full p-6 text-center border rounded-lg">
-            <FileText className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-            <h3 className="font-medium">No forms found</h3>
-            <p className="text-sm text-muted-foreground mt-1">
+          <div className="col-span-full p-6 sm:p-8 text-center border rounded-lg">
+            <FileText className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 text-muted-foreground" />
+            <h3 className="font-medium text-sm sm:text-base">No forms found</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {searchTerm 
                 ? `No forms match "${searchTerm}". Try a different search term.` 
                 : filter !== 'all' 
                   ? `You don't have any ${filter} forms.` 
                   : "You haven't created any forms yet."}
             </p>
-            <div className="flex flex-col gap-2 mt-4">
-              <Button onClick={navigateToCreateForm}>
+            <div className="flex flex-col sm:flex-row gap-2 mt-4 justify-center">
+              <Button onClick={navigateToCreateForm} size={isMobile ? "sm" : "default"}>
                 <PlusCircle className="mr-2 h-4 w-4" /> Create Form
               </Button>
-              <Button variant="outline" onClick={() => router.push('/templates')}>
+              <Button variant="outline" onClick={() => router.push('/templates')} size={isMobile ? "sm" : "default"}>
                 Browse Templates
               </Button>
             </div>
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <AnimatePresence>
-              {filteredForms.map((form, index) => (
-                <motion.div
-                  key={form.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                >
-                  <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 border-gray-200 dark:border-gray-700">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <div 
-                      className="space-y-1 cursor-pointer flex-1 hover:opacity-80 transition-opacity"
-                      onClick={() => router.push(`/forms/${form.id}`)}
-                      title="Click to edit form"
-                    >
-                      <CardTitle className="flex items-center gap-2 hover:text-blue-600 transition-colors">
-                        {form.title}
-                        {form.isTemplate && (
-                          <Badge variant="outline" className="ml-2 text-xs">Template</Badge>
-                        )}
-                      </CardTitle>
-                      <CardDescription className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                        {form.description?.substring(0, 120) || 'No description'}
-                        {form.description && form.description.length > 120 ? '...' : ''}
-                      </CardDescription>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-5 w-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.push(`/forms/${form.id}`)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push(`/forms/${form.id}/builder`)}>
-                          <PencilRuler className="mr-2 h-4 w-4" />
-                          Form Builder
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push(`/forms/${form.id}/preview`)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Preview
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDuplicateForm(form.id)}>
-                          <Copy className="mr-2 h-4 w-4" />
-                          Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleTogglePublish(form.id, form.published)}>
-                          {form.published ? (
-                            <><EyeOff className="mr-2 h-4 w-4" />Unpublish</>
-                          ) : (
-                            <><Globe className="mr-2 h-4 w-4" />Publish</>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setFormToDelete(form.id);
-                            setIsDeleteOpen(true);
-                          }}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  
-                  {/* Category and Tags */}
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {form.category && (
-                      <Badge variant="secondary" className="text-xs">
-                        {form.category}
-                      </Badge>
-                    )}
-                    {Array.isArray(form.tags) && form.tags.map((tag, index) => (
-                      <Badge key={`${form.id}-tag-${index}-${tag}`} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="pb-2">
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <div className="flex items-center mr-4">
-                      <CalendarIcon className="mr-1 h-4 w-4" />
-                      {formatDistanceToNow(new Date(form.updatedAt), { addSuffix: true })}
-                    </div>
-                    {isAdmin && form.client && form.clientId !== user?.id && (
-                      <div className="flex items-center">
-                        <User className="mr-1 h-4 w-4" />
-                        {form.client.name || form.client.email}
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-                
-                <CardFooter className="flex justify-between pt-2">
-                  <div className="flex items-center gap-4">
-                    <Badge variant={form.published ? "default" : "outline"}>
-                      {form.published ? "Published" : "Draft"}
-                    </Badge>
-                    <div className="flex items-center text-muted-foreground">
-                      <AlignLeftIcon className="mr-1 h-4 w-4" />
-                      {getFieldCount(form)} fields
-                    </div>
-                    <div className="flex items-center text-muted-foreground">
-                      <ClipboardList className="mr-1 h-4 w-4" />
-                      {getSubmissionCount(form)} submissions
-                    </div>
-                  </div>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="ml-auto" 
+          <AnimatePresence>
+            {filteredForms.map((form, index) => (
+              <motion.div
+                key={form.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                whileHover={{ y: -2, transition: { duration: 0.2 } }}
+              >
+                <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-600 h-full">
+              <CardHeader className="pb-2 sm:pb-3">
+                <div className="flex justify-between items-start">
+                  <div 
+                    className="space-y-1 cursor-pointer flex-1 hover:opacity-80 transition-opacity"
                     onClick={() => router.push(`/forms/${form.id}`)}
+                    title="Click to edit form"
                   >
-                    <Edit className="h-4 w-4 mr-2" /> 
-                    Edit
-                  </Button>
-                </CardFooter>
-                  </Card>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+                    <CardTitle className="flex items-center gap-2 hover:text-blue-600 transition-colors text-sm sm:text-base lg:text-lg">
+                      {form.title}
+                      {form.isTemplate && (
+                        <Badge variant="outline" className="ml-2 text-xs">Template</Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors text-xs sm:text-sm">
+                      {isMobile 
+                        ? (form.description?.substring(0, 60) || 'No description') + (form.description && form.description.length > 60 ? '...' : '')
+                        : (form.description?.substring(0, 120) || 'No description') + (form.description && form.description.length > 120 ? '...' : '')
+                      }
+                    </CardDescription>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
+                        <MoreVertical className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => router.push(`/forms/${form.id}`)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push(`/forms/${form.id}/builder`)}>
+                        <PencilRuler className="mr-2 h-4 w-4" />
+                        Form Builder
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => router.push(`/forms/${form.id}/preview`)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Preview
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDuplicateForm(form.id)}>
+                        <Copy className="mr-2 h-4 w-4" />
+                        Duplicate
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleTogglePublish(form.id, form.published)}>
+                        {form.published ? (
+                          <><EyeOff className="mr-2 h-4 w-4" />Unpublish</>
+                        ) : (
+                          <><Globe className="mr-2 h-4 w-4" />Publish</>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setFormToDelete(form.id);
+                          setIsDeleteOpen(true);
+                        }}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                
+                {/* Category and Tags - Responsive */}
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {form.category && (
+                    <Badge variant="secondary" className="text-xs">
+                      {form.category}
+                    </Badge>
+                  )}
+                  {Array.isArray(form.tags) && form.tags.slice(0, isMobile ? 2 : 3).map((tag, index) => (
+                    <Badge key={`${form.id}-tag-${index}-${tag}`} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {Array.isArray(form.tags) && form.tags.length > (isMobile ? 2 : 3) && (
+                    <Badge variant="outline" className="text-xs">
+                      +{form.tags.length - (isMobile ? 2 : 3)}
+                    </Badge>
+                  )}
+                </div>
+              </CardHeader>
+              
+              <CardContent className="pb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center text-xs sm:text-sm text-muted-foreground gap-1 sm:gap-4">
+                  <div className="flex items-center">
+                    <CalendarIcon className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                    {formatDistanceToNow(new Date(form.updatedAt), { addSuffix: true })}
+                  </div>
+                  {isAdmin && form.client && form.clientId !== user?.id && !isMobile && (
+                    <div className="flex items-center">
+                      <User className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                      {form.client.name || form.client.email}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              
+              <CardFooter className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-4 pt-2">
+                <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                  <Badge variant={form.published ? "default" : "outline"} className="text-xs">
+                    {form.published ? "Published" : "Draft"}
+                  </Badge>
+                  <div className="flex items-center text-muted-foreground">
+                    <AlignLeftIcon className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                    {getFieldCount(form)} fields
+                  </div>
+                  <div className="flex items-center text-muted-foreground">
+                    <ClipboardList className="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                    {getSubmissionCount(form)} submissions
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="w-full sm:w-auto text-xs sm:text-sm" 
+                  onClick={() => router.push(`/forms/${form.id}`)}
+                >
+                  <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" /> 
+                  Edit
+                </Button>
+              </CardFooter>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         )}
       </div>
       
-      {/* Forms table for desktop */}
-      <div className="hidden md:block border rounded-lg">
+      {/* Forms table for desktop - Enhanced responsive design */}
+      <div className="hidden xl:block border rounded-lg dark:border-gray-600">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[300px]">Form</TableHead>
-              <TableHead>Status</TableHead>
-              {isAdmin && <TableHead>Owner</TableHead>}
-              <TableHead>Fields</TableHead>
-              <TableHead>Submissions</TableHead>
-              <TableHead>Last Updated</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="dark:border-gray-600">
+              <TableHead className="w-[300px] text-xs sm:text-sm">Form</TableHead>
+              <TableHead className="text-xs sm:text-sm">Status</TableHead>
+              {isAdmin && <TableHead className="text-xs sm:text-sm">Owner</TableHead>}
+              <TableHead className="text-xs sm:text-sm">Fields</TableHead>
+              <TableHead className="text-xs sm:text-sm">Submissions</TableHead>
+              <TableHead className="text-xs sm:text-sm">Last Updated</TableHead>
+              <TableHead className="text-right text-xs sm:text-sm">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               // Loading skeletons for table rows
               Array(5).fill(null).map((_, i) => (
-                <TableRow key={i}>
+                <TableRow key={i} className="dark:border-gray-600">
                   <TableCell>
                     <div className="space-y-2">
                       <Skeleton className="h-4 w-[250px]" />
@@ -972,19 +1002,19 @@ const FormsPage = () => {
               </TableRow>
             ) : (
               filteredForms.map(form => (
-                <TableRow key={form.id}>
+                <TableRow key={form.id} className="dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                   <TableCell 
-                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                    className="cursor-pointer transition-colors"
                     onClick={() => router.push(`/forms/${form.id}`)}
                     title="Click to edit form"
                   >
-                    <div className="font-medium hover:text-blue-600 transition-colors">{form.title}</div>
-                    <div className="text-sm text-muted-foreground truncate max-w-[300px] hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                    <div className="font-medium hover:text-blue-600 transition-colors text-sm">{form.title}</div>
+                    <div className="text-xs text-muted-foreground truncate max-w-[300px] hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                       {form.description || "No description"}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={form.published ? "default" : "outline"}>
+                    <Badge variant={form.published ? "default" : "outline"} className="text-xs">
                       {form.published ? "Published" : "Draft"}
                     </Badge>
                   </TableCell>
@@ -992,20 +1022,20 @@ const FormsPage = () => {
                   {isAdmin && (
                     <TableCell>
                       {form.clientId === user?.id ? (
-                        <Badge variant="secondary">Admin</Badge>
+                        <Badge variant="secondary" className="text-xs">Admin</Badge>
                       ) : form.client ? (
                         <div className="flex flex-col">
                           <span className="font-medium text-xs">{form.client.name || 'Client'}</span>
                           <span className="text-xs text-muted-foreground truncate max-w-[150px]">{form.client.email}</span>
                         </div>
                       ) : (
-                        <span className="text-muted-foreground">-</span>
+                        <span className="text-muted-foreground text-xs">-</span>
                       )}
                     </TableCell>
                   )}
-                  <TableCell>{getFieldCount(form)}</TableCell>
-                  <TableCell>{getSubmissionCount(form)}</TableCell>
-                  <TableCell>{formatDistanceToNow(new Date(form.updatedAt), { addSuffix: true })}</TableCell>
+                  <TableCell className="text-sm">{getFieldCount(form)}</TableCell>
+                  <TableCell className="text-sm">{getSubmissionCount(form)}</TableCell>
+                  <TableCell className="text-sm">{formatDistanceToNow(new Date(form.updatedAt), { addSuffix: true })}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end items-center space-x-1">
                       <Button 
@@ -1013,6 +1043,7 @@ const FormsPage = () => {
                         size="icon"
                         onClick={() => router.push(`/forms/${form.id}`)}
                         title="Edit form"
+                        className="h-8 w-8"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -1021,6 +1052,7 @@ const FormsPage = () => {
                         size="icon"
                         onClick={() => router.push(`/forms/${form.id}/preview`)}
                         title="Preview form"
+                        className="h-8 w-8"
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
@@ -1029,6 +1061,7 @@ const FormsPage = () => {
                         size="icon"
                         onClick={() => handleDuplicateForm(form.id)}
                         title="Duplicate form"
+                        className="h-8 w-8"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
@@ -1037,13 +1070,14 @@ const FormsPage = () => {
                         size="icon"
                         onClick={() => handleTogglePublish(form.id, form.published)}
                         title={form.published ? "Unpublish" : "Publish"}
+                        className="h-8 w-8"
                       >
                         {form.published ? <EyeOff className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="icon"
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive h-8 w-8"
                         onClick={() => {
                           setFormToDelete(form.id);
                           setIsDeleteOpen(true);

@@ -702,104 +702,11 @@ export default function SubmissionsDashboard() {
         </div>
       </motion.div>
 
-      {/* Enhanced Stats Cards Section - Responsive */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
-      >
-        <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-600 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 dark:bg-gray-800">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-300">
-                  Total Submissions
-                </CardTitle>
-                <div className="p-2 bg-blue-500 rounded-lg">
-                  <BarChart3 className="h-4 w-4 text-white" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-blue-700 dark:text-blue-200">{stats.total}</div>
-              <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1">All time submissions</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-600 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 dark:bg-gray-800">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-300">
-                  Today
-                </CardTitle>
-                <div className="p-2 bg-green-500 rounded-lg">
-                  <Activity className="h-4 w-4 text-white" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-green-700 dark:text-green-200">{stats.today}</div>
-              <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1 flex items-center">
-                {stats.today > 0 ? (
-                  <>
-                    <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-                    Active today
-                  </>
-                ) : (
-                  "No submissions today"
-                )}
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-600 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 dark:bg-gray-800">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-300">
-                  This Week
-                </CardTitle>
-                <div className="p-2 bg-purple-500 rounded-lg">
-                  <TrendingUp className="h-4 w-4 text-white" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-purple-700 dark:text-purple-200">{stats.thisWeek}</div>
-              <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1">Last 7 days</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        <motion.div whileHover={{ y: -5, transition: { duration: 0.2 } }}>
-          <Card className="hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-600 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 dark:bg-gray-800">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground dark:text-gray-300">
-                  This Month
-                </CardTitle>
-                <div className="p-2 bg-orange-500 rounded-lg">
-                  <Calendar className="h-4 w-4 text-white" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="text-2xl font-bold text-orange-700 dark:text-orange-200">{stats.thisMonth}</div>
-              <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1">Since {format(new Date(new Date().setDate(1)), 'MMM d')}</p>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </motion.div>
-
       {/* Revolutionary Form-Grouped Submissions View */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
         className="space-y-6"
       >
         {/* Enhanced Search and Filter Section */}
