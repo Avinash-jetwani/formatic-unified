@@ -71,19 +71,30 @@ interface Submission {
     id: string;
     title: string;
     slug: string;
+    fields?: Array<{
+      id: string;
+      label: string;
+      type: string;
+      required: boolean;
+      options?: string[];
+    }>;
+    clientId?: string;
   };
   data: Record<string, any>;
   createdAt: string;
   status?: 'new' | 'viewed' | 'archived';
 }
 
-// Helper function to format submission data
-const formatSubmissionData = (submission: Submission, formFields: Array<{id: string, label: string, type: string}>) => {
+// Helper function to format submission data using real form fields
+const formatSubmissionData = (submission: Submission) => {
   const formattedData: Array<{label: string, value: any, type: string}> = [];
   
   if (!submission.data || typeof submission.data !== 'object') {
     return formattedData;
   }
+
+  // Use the form fields from the submission if available (real backend data)
+  const formFields = submission.form?.fields || [];
 
   // Helper function to safely convert any value to a readable string
   const formatValue = (value: any): string => {
@@ -132,15 +143,15 @@ const formatSubmissionData = (submission: Submission, formFields: Array<{id: str
   };
 
   Object.entries(submission.data).forEach(([key, value]) => {
-    // Try to find the field definition to get a proper label
-    const field = formFields.find(f => f.id === key || f.label === key);
+    // Try to find the field definition from the real form fields
+    const field = formFields.find(f => f.id === key);
     
     let label: string;
     if (field?.label) {
+      // Use the real field label from the form definition
       label = field.label;
     } else {
-      // If no field found, try to make the key more readable
-      // Handle UUID-like keys by checking if they look like UUIDs
+      // Fallback to formatting the key if no field definition found
       if (key.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
         // For UUID keys, try to infer meaning from the value or use a generic label
         if (typeof value === 'string' && ['good', 'bad', 'excellent', 'poor', 'one', 'two', 'three'].includes(value.toLowerCase())) {
@@ -176,10 +187,9 @@ const formatSubmissionData = (submission: Submission, formFields: Array<{id: str
 // Helper function to render submission data in a beautiful format
 const renderSubmissionDataPreview = (
   submission: Submission, 
-  formFields: Array<{id: string, label: string, type: string}>, 
   maxFields: number = 3
 ) => {
-  const formattedData = formatSubmissionData(submission, formFields);
+  const formattedData = formatSubmissionData(submission);
   const previewData = formattedData.slice(0, maxFields);
   const remainingCount = Math.max(0, formattedData.length - maxFields);
   
@@ -1024,8 +1034,8 @@ export default function SubmissionsDashboard() {
                                   {getStatusBadge(submission.status || 'viewed')}
                                 </div>
                                 
-                                                                 {/* Beautiful Submission Data Preview */}
-                                 {renderSubmissionDataPreview(submission, formFields[group.form.id] || [], 2)}
+                                                                                                   {/* Beautiful Submission Data Preview */}
+                                  {renderSubmissionDataPreview(submission, 2)}
                               </div>
                               
                               <div className="flex items-center gap-2 ml-4">
