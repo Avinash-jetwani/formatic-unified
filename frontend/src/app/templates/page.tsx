@@ -73,6 +73,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import Logo from '@/components/ui/logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchApi } from '@/services/api';
+import { useToast } from '@/components/ui/use-toast';
 
 // Template interface (same as dashboard version)
 interface FormTemplate {
@@ -340,30 +341,9 @@ const TEMPLATE_GALLERY: FormTemplate[] = [
       { type: "RADIO", label: "Priority Level", options: ["Low", "Medium", "High", "Critical"], required: true, order: 2 },
       { type: "LONG_TEXT", label: "Detailed Description", placeholder: "Please describe your feedback in detail...", required: true, order: 3 },
       { type: "RADIO", label: "Overall Satisfaction", options: ["Very Satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very Dissatisfied"], required: true, order: 4 }
-    ]
-  },
-  {
-    id: 'subscription-signup',
-    title: 'Subscription Sign-up',
-    description: 'Complete subscription form with plan selection, billing info, and preferences',
-    category: 'Business',
-    industry: 'SaaS',
-    complexity: 'Intermediate',
-    estimatedTime: '3 min',
-    popularity: 83,
-    rating: 4.7,
-    tags: ['subscription', 'billing', 'plans', 'saas'],
-    icon: <CreditCard className="h-6 w-6" />,
-    preview: ['Personal Info', 'Plan Selection', 'Billing Address', 'Payment Method', 'Preferences'],
-    fields: [
-      { type: "TEXT", label: "Full Name", placeholder: "Your full name", required: true, order: 0 },
-      { type: "EMAIL", label: "Email Address", placeholder: "your.email@example.com", required: true, order: 1 },
-      { type: "DROPDOWN", label: "Subscription Plan", options: ["Basic - $9/month", "Pro - $29/month", "Enterprise - $99/month"], required: true, order: 2 },
-      { type: "TEXT", label: "Company Name", placeholder: "Your company (optional)", required: false, order: 3 },
-      { type: "CHECKBOX", label: "Add-ons", options: ["Priority Support", "Advanced Analytics", "Custom Integrations", "White Label"], required: false, order: 4 }
-    ]
-  },
-  {
+          ]
+    },
+    {
     id: 'course-evaluation',
     title: 'Course Evaluation',
     description: 'Comprehensive course evaluation with instructor feedback and learning outcomes assessment',
@@ -553,6 +533,7 @@ const TEMPLATE_GALLERY: FormTemplate[] = [
 const PublicTemplateGalleryPage = () => {
   const router = useRouter();
   const { user, isAuthenticated, loading } = useAuth();
+  const { toast } = useToast();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -561,8 +542,7 @@ const PublicTemplateGalleryPage = () => {
   const [sortBy, setSortBy] = useState('popularity');
   const [previewTemplate, setPreviewTemplate] = useState<FormTemplate | null>(null);
 
-  // Debug authentication state
-  console.log('Templates page - Auth state:', { user, isAuthenticated, loading });
+
 
   // Get unique values for filters
   const categories = ['All', ...Array.from(new Set(TEMPLATE_GALLERY.map(t => t.category)))];
@@ -604,35 +584,49 @@ const PublicTemplateGalleryPage = () => {
 
   // Handle template selection
   const handleUseTemplate = async (template: FormTemplate) => {
-    console.log('handleUseTemplate called:', { template: template.title, isAuthenticated, user });
-    
     if (!isAuthenticated) {
-      console.log('User not authenticated, redirecting to signup');
       // Store template selection in localStorage for after signup
       localStorage.setItem('selectedTemplate', JSON.stringify(template));
       router.push('/register?from=template');
       return;
     }
 
-    console.log('User authenticated, creating form from template');
-
     // For authenticated users, create form from template
     try {
-      const formData = {
-        title: template.title,
-        description: template.description,
-        published: false,
-        fields: template.fields
-      };
-
+      // Step 1: Create the form first (without fields)
       const newForm = await fetchApi('/forms', {
         method: 'POST',
-        data: formData,
+        data: {
+          title: template.title,
+          description: template.description,
+          published: false
+        }
       }) as { id: string };
 
+      // Step 2: Add fields to the form
+      if (template.fields && template.fields.length > 0) {
+        await fetchApi(`/forms/${newForm.id}/fields`, {
+          method: 'PUT',
+          data: { fields: template.fields }
+        });
+      }
+
+
+      
+      toast({
+        title: "Success",
+        description: "Form created successfully from template",
+      });
+      
       router.push(`/forms/${newForm.id}/builder`);
     } catch (error) {
       console.error('Error creating form from template:', error);
+      
+      toast({
+        title: "Error",
+        description: "Failed to create form from template. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
