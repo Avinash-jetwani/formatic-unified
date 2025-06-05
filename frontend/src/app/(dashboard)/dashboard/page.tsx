@@ -475,14 +475,7 @@ function EnhancedDashboardContent() {
 
       
       // Fetch data from multiple API endpoints in parallel
-      const [
-        formsData, 
-        submissionsData, 
-        usersData, 
-        formCompletionRatesData,
-        conversionTrendsData,
-        webhookStats
-      ] = await Promise.all([
+      const promises = [
         fetchApi<any[]>('/forms', { 
           method: 'GET',
           params: { startDate: start, endDate: end, t: timestamp } 
@@ -490,10 +483,6 @@ function EnhancedDashboardContent() {
         fetchApi<any[]>('/submissions', { 
           method: 'GET',
           params: { startDate: start, endDate: end, t: timestamp } 
-        }).catch(() => []),
-        fetchApi<any[]>('/users', { 
-          method: 'GET',
-          params: { startDate: start, endDate: end, t: timestamp }
         }).catch(() => []),
         fetchApi<any>('/analytics/form-completion-rates', { 
           method: 'GET',
@@ -507,9 +496,28 @@ function EnhancedDashboardContent() {
             end: end,
             t: timestamp
           }
-        }).catch(() => []),
-        fetchWebhookStats().catch(() => null)
-      ]);
+        }).catch(() => [])
+      ];
+
+      // Only fetch users data if user is admin
+      if (userRole === 'SUPER_ADMIN') {
+        promises.push(
+          fetchApi<any[]>('/users', { 
+            method: 'GET',
+            params: { startDate: start, endDate: end, t: timestamp }
+          }).catch(() => [])
+        );
+      }
+
+      const results = await Promise.all(promises);
+      
+      const [
+        formsData, 
+        submissionsData, 
+        formCompletionRatesData,
+        conversionTrendsData,
+        usersData = []
+      ] = results;
 
       console.log('Dashboard data loaded:', { 
         forms: formsData.length, 
@@ -525,7 +533,7 @@ function EnhancedDashboardContent() {
       endDateObj.setHours(23, 59, 59, 999);
 
       // Filter submissions by date range if backend doesn't support query params
-      const filteredSubmissions = submissionsData.filter(submission => {
+      const filteredSubmissions = submissionsData.filter((submission: any) => {
         const submissionDate = new Date(submission.createdAt || submission.submittedAt);
         return submissionDate >= startDateObj && submissionDate <= endDateObj;
       });
@@ -548,6 +556,14 @@ function EnhancedDashboardContent() {
             value: item.submissions || 0
           }))
         : generateSubmissionTimeline(filteredSubmissions, start, end);
+
+      console.log('Chart data processing:', {
+        conversionTrendsLength: conversionTrendsData?.length || 0,
+        submissionsTimelineLength: submissionsTimeline?.length || 0,
+        submissionsTimelineSample: submissionsTimeline?.slice(0, 3),
+        formPerformanceLength: formPerformance?.length || 0,
+        formPerformanceSample: formPerformance?.slice(0, 2)
+      });
 
       // Calculate trends based on filtered data
       const trends = {
@@ -576,6 +592,9 @@ function EnhancedDashboardContent() {
         recentUsers: getRecentUsers(usersData)
       };
       
+      // Get webhook stats separately
+      const webhookStats = await fetchWebhookStats().catch(() => null);
+
       // Enhance stats with additional analytics
       const enhancedStats: EnhancedStats = {
         ...dashboardStats,
@@ -612,19 +631,37 @@ function EnhancedDashboardContent() {
 
   const fetchWebhookStats = async () => {
     try {
-      const webhooks = await fetchApi('/webhooks') as any[];
-      const successfulWebhooks = webhooks.filter((w: any) => w.status === 'active');
-      const failedWebhooks = webhooks.filter((w: any) => w.status === 'failed');
+      // Get all forms first, then get webhooks for each form
+      const forms = await fetchApi('/forms') as any[];
+      let allWebhooks: any[] = [];
+      
+      for (const form of forms) {
+        try {
+          const formWebhooks = await fetchApi(`/forms/${form.id}/webhooks`) as any[];
+          allWebhooks = [...allWebhooks, ...formWebhooks];
+        } catch (error) {
+          // Skip if form has no webhooks or access denied
+          continue;
+        }
+      }
+      
+      const activeWebhooks = allWebhooks.filter((w: any) => w.active === true);
+      const inactiveWebhooks = allWebhooks.filter((w: any) => w.active === false);
       
       return {
-        total: webhooks.length,
-        active: successfulWebhooks.length,
-        failed: failedWebhooks.length,
-        successRate: webhooks.length > 0 ? (successfulWebhooks.length / webhooks.length) * 100 : 0
+        total: allWebhooks.length,
+        active: activeWebhooks.length,
+        failed: inactiveWebhooks.length,
+        successRate: allWebhooks.length > 0 ? (activeWebhooks.length / allWebhooks.length) * 100 : 0
       };
     } catch (error) {
       console.error('Failed to fetch webhook stats:', error);
-      return null;
+      return {
+        total: 0,
+        active: 0,
+        failed: 0,
+        successRate: 0
+      };
     }
   };
 
@@ -1083,7 +1120,11 @@ function EnhancedDashboardContent() {
                     <BarChart3 className="h-8 w-8 text-muted-foreground/50" />
                   </div>
                 ) : stats?.charts.submissions && stats.charts.submissions.length > 0 ? (
-                  <div className="h-[350px] w-full">
+                  <>
+                    <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                      Debug: {stats.charts.submissions.length} data points, Max value: {Math.max(...stats.charts.submissions.map(d => d.value || 0), 0)}
+                    </div>
+                    <div className="h-[350px] w-full">
                     <svg width="100%" height="100%" viewBox="0 0 800 350" preserveAspectRatio="none" className="overflow-visible">
                       {/* Enhanced grid pattern */}
                       <defs>
@@ -1168,7 +1209,8 @@ function EnhancedDashboardContent() {
                         );
                       })()}
                     </svg>
-                  </div>
+                    </div>
+                  </>
                 ) : (
                   <div className="h-[350px] w-full flex items-center justify-center">
                     <div className="text-center">
