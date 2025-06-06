@@ -547,16 +547,20 @@ const FormsPage = () => {
     setShowSimpleWizard(false);
   };
 
-  return (
-    <ErrorBoundary>
-      {/* Simple Form Wizard for New Users */}
-      {showSimpleWizard && (
+  // If showing wizard, render only the wizard (full page)
+  if (showSimpleWizard) {
+    return (
+      <ErrorBoundary>
         <SimpleFormWizard
           onComplete={handleWizardComplete}
           onCancel={handleWizardCancel}
         />
-      )}
-      
+      </ErrorBoundary>
+    );
+  }
+
+  return (
+    <ErrorBoundary>
       <div className="space-y-8">
       {/* Enhanced Header Section - Matching Submissions Dashboard */}
       <motion.div 

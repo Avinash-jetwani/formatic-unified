@@ -217,8 +217,20 @@ export const SimpleFormWizard: React.FC<SimpleFormWizardProps> = ({ onComplete, 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl mx-auto">
+    <div className="container mx-auto py-6 px-4">
+      {/* Back to Forms Button */}
+      <div className="mb-6">
+        <Button
+          variant="ghost"
+          onClick={onCancel}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Forms
+        </Button>
+      </div>
+      
+      <Card className="w-full max-w-4xl mx-auto bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-700 border border-blue-100 dark:border-gray-600">
         <CardHeader className="text-center pb-2">
           <div className="flex items-center justify-center mb-4">
             <motion.div 
