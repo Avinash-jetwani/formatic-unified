@@ -13,8 +13,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Menu,
-  X,
   Plus,
   LogOut,
   Link2
@@ -36,7 +34,6 @@ interface SidebarProps {
 const Sidebar = ({ onToggle }: SidebarProps) => {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const { isAdmin, user, logout } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [showAdminSection, setShowAdminSection] = useState(false);
@@ -75,10 +72,9 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
     const handleResize = () => {
       const width = window.innerWidth;
       
-      // Mobile phones (< 640px) - always collapsed and hidden
+      // Mobile phones (< 640px) - always collapsed
       if (width < 640) {
         setCollapsed(true);
-        setMobileOpen(false);
       }
       // Small tablets (640px - 768px) - collapsed but visible
       else if (width < 768) {
@@ -153,9 +149,7 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
     setCollapsed(!collapsed);
   };
   
-  const toggleMobileSidebar = () => {
-    setMobileOpen(!mobileOpen);
-  };
+
 
   // Logout handler
   const handleLogout = async () => {
@@ -313,17 +307,7 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </motion.button>
         )}
-        {mounted && (
-          <motion.button 
-            onClick={toggleMobileSidebar}
-            className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg hover:bg-accent transition-colors"
-            aria-label="Close sidebar"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <X className="h-4 w-4" />
-          </motion.button>
-        )}
+
       </motion.div>
 
       {/* Navigation Section */}
@@ -520,63 +504,31 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
   // Return the enhanced sidebar structure
   return (
     <>
-      {/* Mobile menu button - responsive positioning */}
-      {mounted && (
-        <motion.div 
-          className="fixed top-4 left-4 z-50 sm:hidden"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          <motion.button
-            onClick={toggleMobileSidebar}
-            className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2.5 rounded-xl shadow-lg border border-white/20 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-300"
-            aria-label="Open sidebar"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Menu className="h-5 w-5" />
-          </motion.button>
-        </motion.div>
-      )}
-
-      {/* Mobile sidebar overlay - only appears when mounted and open */}
-      <AnimatePresence>
-        {mounted && mobileOpen && (
-          <motion.div 
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
-            onClick={toggleMobileSidebar}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          />
-        )}
-      </AnimatePresence>
 
       {/* Enhanced Responsive Sidebar */}
       <motion.aside
         className={cn(
           "flex h-screen flex-col border-r border-border/50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl",
-          "transition-all duration-300 ease-in-out shadow-xl",
-          // Mobile: fixed positioning, overlay when open
-          "fixed inset-y-0 left-0 z-40",
-          // Small screens and up: relative positioning (part of flex layout)
-          "sm:relative sm:z-auto",
-          // Mobile visibility - hidden by default, shown when mobileOpen
+          "transition-all duration-300 ease-in-out shadow-xl relative z-10",
+          // Responsive widths - much more compact on mobile
           {
-            "-translate-x-full": !mobileOpen,
-            "translate-x-0": mobileOpen,
-          },
-          // Always visible and positioned correctly on larger screens
-          "sm:translate-x-0",
-          // Responsive widths
-          "w-64 sm:w-14 md:w-14 lg:w-16 xl:w-16 2xl:w-16",
-          {
+            // Mobile collapsed: very compact (48px = 12 * 4)
+            "w-12": collapsed,
+            // Mobile expanded: reasonable width (224px = 56 * 4)  
+            "w-56": !collapsed,
+            // Small tablets (640px+)
+            "sm:w-14": collapsed,
             "sm:w-56": !collapsed,
+            // Medium tablets (768px+)
+            "md:w-16": collapsed,
             "md:w-60": !collapsed,
+            // Large screens (1024px+)
+            "lg:w-16": collapsed,
             "lg:w-64": !collapsed,
+            // Extra large screens (1280px+)
+            "xl:w-16": collapsed,
             "xl:w-64": !collapsed,
+            "2xl:w-16": collapsed,
             "2xl:w-68": !collapsed
           }
         )}
