@@ -558,35 +558,26 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
       <motion.aside
         className={cn(
           "flex h-screen flex-col border-r border-border/50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl",
-          "transition-all duration-300 ease-in-out z-40 shadow-xl",
-          // Mobile: fixed positioning, hidden by default
-          "fixed inset-y-0 left-0",
-          // Small screens and up: show sidebar
-          "sm:relative sm:flex",
-          // More compact responsive widths
+          "transition-all duration-300 ease-in-out shadow-xl",
+          // Mobile: fixed positioning, overlay when open
+          "fixed inset-y-0 left-0 z-40",
+          // Small screens and up: relative positioning (part of flex layout)
+          "sm:relative sm:z-auto",
+          // Mobile visibility - hidden by default, shown when mobileOpen
           {
-            // Mobile (< 640px)
-            "w-64": !collapsed,
-            "w-16": collapsed,
-            // Small tablets (640px+) - more compact
-            "sm:w-14": collapsed,
-            "sm:w-56": !collapsed,
-            // Medium tablets (768px+) - compact
-            "md:w-14": collapsed,
-            "md:w-60": !collapsed,
-            // Large screens (1024px+) - reasonable width
-            "lg:w-16": collapsed,
-            "lg:w-64": !collapsed,
-            // Extra large screens (1280px+) - still compact
-            "xl:w-16": collapsed,
-            "xl:w-64": !collapsed,
-            "2xl:w-16": collapsed,
-            "2xl:w-68": !collapsed
+            "-translate-x-full": !mobileOpen,
+            "translate-x-0": mobileOpen,
           },
-          // Mobile positioning
-          { 
-            "-translate-x-full sm:translate-x-0": !mobileOpen && mounted, 
-            "translate-x-0": mobileOpen || !mounted 
+          // Always visible and positioned correctly on larger screens
+          "sm:translate-x-0",
+          // Responsive widths
+          "w-64 sm:w-14 md:w-14 lg:w-16 xl:w-16 2xl:w-16",
+          {
+            "sm:w-56": !collapsed,
+            "md:w-60": !collapsed,
+            "lg:w-64": !collapsed,
+            "xl:w-64": !collapsed,
+            "2xl:w-68": !collapsed
           }
         )}
         initial={{ x: -100, opacity: 0 }}
@@ -597,12 +588,6 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
         transition={{ 
           duration: 0.3, 
           ease: "easeInOut"
-        }}
-        style={{
-          // More compact dynamic width
-          width: collapsed 
-            ? '4rem' 
-            : 'clamp(14rem, 18vw, 16rem)'
         }}
       >
         {/* Glassmorphism background effect */}

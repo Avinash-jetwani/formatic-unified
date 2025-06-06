@@ -26,9 +26,7 @@ const AppLayout = ({ children, onSidebarToggle }: AppLayoutProps) => {
       <Sidebar onToggle={handleSidebarToggle} />
       
       {/* Main Content Area - Full responsive width */}
-      <main 
-        className="flex-1 overflow-auto w-full max-w-full min-w-0"
-      >
+      <main className="flex-1 overflow-auto w-full max-w-full min-w-0">
         <div className="w-full h-full min-h-screen">
           {children}
         </div>
