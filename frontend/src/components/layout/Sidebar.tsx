@@ -70,6 +70,38 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
     };
     
     checkAdminStatus();
+
+    // Auto-collapse on small screens
+    const handleResize = () => {
+      const width = window.innerWidth;
+      
+      // Mobile phones (< 640px) - always collapsed and hidden
+      if (width < 640) {
+        setCollapsed(true);
+        setMobileOpen(false);
+      }
+      // Small tablets (640px - 768px) - collapsed but visible
+      else if (width < 768) {
+        setCollapsed(true);
+      }
+      // Medium tablets (768px - 1024px) - collapsed
+      else if (width < 1024) {
+        setCollapsed(true);
+      }
+      // Large screens (1024px - 1280px) - can be expanded
+      else if (width < 1280) {
+        // Keep current state, don't force change
+      }
+      // Extra large screens (>= 1280px) - expanded by default
+      else {
+        setCollapsed(false);
+      }
+    };
+
+    handleResize(); // Initial check
+    window.addEventListener('resize', handleResize);
+    
+    return () => window.removeEventListener('resize', handleResize);
   }, [isAdmin]);
 
   // Notify parent component when collapsed state changes
@@ -182,17 +214,18 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3 }}
-        whileHover={{ x: 4 }}
+        whileHover={{ x: collapsed ? 0 : 4 }}
         whileTap={{ scale: 0.98 }}
+        className="relative group"
       >
         <Link
           href={item.href}
           className={cn(
-            "group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 relative overflow-hidden",
+            "group flex items-center rounded-lg text-sm font-medium transition-all duration-300 relative overflow-hidden",
             isActive 
               ? colors.active
               : `text-foreground/70 ${colors.hover}`,
-            collapsed && "justify-center"
+            collapsed ? "justify-center p-2.5" : "justify-start px-3 py-2.5"
           )}
         >
           {/* Animated background for active state */}
@@ -207,7 +240,10 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
           
           {/* Icon with enhanced animations */}
           <motion.span 
-            className="relative mr-3 flex-shrink-0"
+            className={cn(
+              "relative flex-shrink-0",
+              collapsed ? "mr-0" : "mr-3"
+            )}
             whileHover={{ scale: 1.1, rotate: 5 }}
             transition={{ duration: 0.2 }}
           >
@@ -222,7 +258,7 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
                 animate={{ opacity: 1, width: "auto" }}
                 exit={{ opacity: 0, width: 0 }}
                 transition={{ duration: 0.2 }}
-                className="relative"
+                className="relative whitespace-nowrap"
               >
                 {item.name}
               </motion.span>
@@ -232,6 +268,16 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
           {/* Hover effect overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
         </Link>
+        
+        {/* Tooltip for collapsed state */}
+        {collapsed && (
+          <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+            <div className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+              {item.name}
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 dark:bg-gray-100 rotate-45"></div>
+            </div>
+          </div>
+        )}
       </motion.div>
     );
   };
@@ -282,7 +328,10 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
 
       {/* Navigation Section */}
       <motion.div 
-        className="flex-1 px-3 py-4 space-y-2"
+        className={cn(
+          "flex-1 py-4 space-y-1",
+          collapsed ? "px-2" : "px-3"
+        )}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -303,7 +352,10 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
           <AnimatePresence>
             {showAdminSection && (
               <motion.div 
-                className="my-6 border-t border-border/50 pt-4"
+                className={cn(
+                  "my-4 border-t border-border/50 pt-4",
+                  collapsed ? "mx-1" : "mx-0"
+                )}
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
@@ -339,7 +391,10 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
 
       {/* Bottom Section - Theme and Logout */}
       <motion.div 
-        className="mt-auto px-3 py-4 border-t border-border/50 space-y-2"
+        className={cn(
+          "mt-auto py-4 border-t border-border/50 space-y-2",
+          collapsed ? "px-2" : "px-3"
+        )}
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
@@ -347,10 +402,10 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
         {mounted && (
           <motion.div 
             className={cn(
-              "w-full flex items-center rounded-lg px-3 py-2.5 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 dark:hover:from-purple-900/20 dark:hover:to-blue-900/20 transition-all duration-300 cursor-pointer group relative overflow-hidden",
-              collapsed ? "justify-center" : "justify-start"
+              "w-full flex items-center rounded-lg text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 dark:hover:from-purple-900/20 dark:hover:to-blue-900/20 transition-all duration-300 cursor-pointer group relative overflow-hidden",
+              collapsed ? "justify-center p-2" : "justify-start px-3 py-2.5"
             )}
-            whileHover={{ x: 4 }}
+            whileHover={{ x: collapsed ? 0 : 4 }}
             whileTap={{ scale: 0.98 }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
@@ -381,10 +436,10 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
           <motion.button
             onClick={handleLogout}
             className={cn(
-              "w-full flex items-center rounded-lg px-3 py-2.5 text-sm font-medium text-foreground/70 hover:text-red-600 dark:hover:text-red-400 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 transition-all duration-300 group relative overflow-hidden",
-              collapsed && "justify-center"
+              "w-full flex items-center rounded-lg text-sm font-medium text-foreground/70 hover:text-red-600 dark:hover:text-red-400 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 transition-all duration-300 group relative overflow-hidden",
+              collapsed ? "justify-center p-2" : "justify-start px-3 py-2.5"
             )}
-            whileHover={{ x: 4 }}
+            whileHover={{ x: collapsed ? 0 : 4 }}
             whileTap={{ scale: 0.98 }}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg" />
@@ -413,20 +468,23 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
 
       {/* Create Form Button */}
       <motion.div 
-        className="p-3 border-t border-border/50"
+        className={cn(
+          "border-t border-border/50",
+          collapsed ? "p-2" : "p-3"
+        )}
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
         <motion.div
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: collapsed ? 1.05 : 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
           <Link
             href="/forms/create"
             className={cn(
-              'flex items-center rounded-lg p-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden',
-              collapsed && 'justify-center'
+              'flex items-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 group relative overflow-hidden',
+              collapsed ? 'justify-center p-2.5' : 'justify-start p-3'
             )}
           >
             {/* Animated background effect */}
@@ -437,7 +495,7 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
               transition={{ duration: 0.2 }}
               className="relative"
             >
-              <Plus size={20} />
+              <Plus size={collapsed ? 18 : 20} />
             </motion.div>
             
             <AnimatePresence>
@@ -462,17 +520,17 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
   // Return the enhanced sidebar structure
   return (
     <>
-      {/* Mobile menu button - only interactive when mounted */}
+      {/* Mobile menu button - responsive positioning */}
       {mounted && (
         <motion.div 
-          className="fixed top-4 left-4 z-40 md:hidden"
+          className="fixed top-4 left-4 z-50 sm:hidden"
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2 }}
         >
           <motion.button
             onClick={toggleMobileSidebar}
-            className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg p-2 rounded-lg shadow-lg border border-white/20 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-300"
+            className="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2.5 rounded-xl shadow-lg border border-white/20 dark:border-gray-700/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-300"
             aria-label="Open sidebar"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -496,26 +554,55 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
         )}
       </AnimatePresence>
 
-      {/* Enhanced Sidebar */}
+      {/* Enhanced Responsive Sidebar */}
       <motion.aside
         className={cn(
           "flex h-screen flex-col border-r border-border/50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl",
-          "transition-all duration-500 ease-in-out z-50 shadow-xl",
-          "md:relative md:flex", 
+          "transition-all duration-300 ease-in-out z-40 shadow-xl",
+          // Mobile: fixed positioning, hidden by default
           "fixed inset-y-0 left-0",
-          { "md:w-16": collapsed, "md:w-64": !collapsed },
-          { "-translate-x-full md:translate-x-0": !mobileOpen && mounted, "translate-x-0": mobileOpen || !mounted }
+          // Small screens and up: show sidebar
+          "sm:relative sm:flex",
+          // Responsive widths for different screen sizes
+          {
+            // Mobile (< 640px)
+            "w-64": !collapsed,
+            "w-16": collapsed,
+            // Small tablets (640px+)
+            "sm:w-16": collapsed,
+            "sm:w-64": !collapsed,
+            // Medium tablets (768px+)
+            "md:w-16": collapsed,
+            "md:w-72": !collapsed,
+            // Large screens (1024px+)
+            "lg:w-16": collapsed,
+            "lg:w-80": !collapsed,
+            // Extra large screens (1280px+)
+            "xl:w-16": collapsed,
+            "xl:w-80": !collapsed,
+            "2xl:w-16": collapsed,
+            "2xl:w-80": !collapsed
+          },
+          // Mobile positioning
+          { 
+            "-translate-x-full sm:translate-x-0": !mobileOpen && mounted, 
+            "translate-x-0": mobileOpen || !mounted 
+          }
         )}
         initial={{ x: -100, opacity: 0 }}
         animate={{ 
           x: 0, 
-          opacity: 1,
-          width: collapsed ? 64 : 256
+          opacity: 1
         }}
         transition={{ 
-          duration: 0.5, 
-          ease: "easeInOut",
-          width: { duration: 0.3 }
+          duration: 0.3, 
+          ease: "easeInOut"
+        }}
+        style={{
+          // Dynamic width with better responsive handling
+          width: collapsed 
+            ? '4rem' 
+            : 'clamp(16rem, 22vw, 20rem)'
         }}
       >
         {/* Glassmorphism background effect */}
