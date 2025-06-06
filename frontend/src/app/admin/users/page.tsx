@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Table, 
   TableBody, 
@@ -36,7 +37,30 @@ import {
   Filter, 
   ChevronDown,
   Check,
-  Clock
+  Clock,
+  Users,
+  UserPlus,
+  Shield,
+  Activity,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
+  Star,
+  Zap,
+  Globe,
+  Mail,
+  Phone,
+  Building,
+  MapPin,
+  Award,
+  Target,
+  AlertTriangle,
+  CheckCircle2,
+  Ban,
+  Sparkles,
+  BarChart3,
+  Crown,
+  Settings
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { PageLayout } from '@/components/ui/PageLayout';
@@ -54,6 +78,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
 import { formatNumber, getStatusVariant } from '@/components/ui/PageLayout';
 import { adminService, User } from '@/services/admin';
+import { cn } from '@/lib/utils';
 import { 
   Dialog,
   DialogContent,
@@ -84,6 +109,183 @@ import {
 type UserRole = 'CLIENT' | 'SUPER_ADMIN';
 type UserStatus = 'ACTIVE' | 'INACTIVE' | 'LOCKED';
 
+// Enhanced Animation Variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.3,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 24,
+    },
+  },
+};
+
+const cardHoverVariants = {
+  hover: {
+    scale: 1.02,
+    y: -2,
+    transition: {
+      type: "spring",
+      stiffness: 400,
+      damping: 17,
+    },
+  },
+};
+
+const statsVariants = {
+  hidden: { scale: 0.8, opacity: 0 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 260,
+      damping: 20,
+    },
+  },
+};
+
+// Advanced Theme Generator
+const generateUserTheme = (stats: any) => {
+  const totalUsers = stats?.total || 0;
+  const activeRate = stats?.total > 0 ? (stats?.active / stats?.total) * 100 : 0;
+  const adminCount = stats?.admins || 0;
+  
+  if (activeRate >= 90 && totalUsers > 50) {
+    // High engagement theme
+    return {
+      primary: 'from-emerald-400 via-green-500 to-teal-600',
+      secondary: 'from-emerald-50 to-green-100 dark:from-emerald-900/20 dark:to-green-800/20',
+      accent: 'border-emerald-200 dark:border-emerald-700',
+      glow: 'shadow-emerald-500/20',
+      particle: 'bg-emerald-400',
+      text: 'text-emerald-600 dark:text-emerald-400'
+    };
+  } else if (totalUsers > 20) {
+    // Growing community theme
+    return {
+      primary: 'from-blue-400 via-indigo-500 to-purple-600',
+      secondary: 'from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-800/20',
+      accent: 'border-blue-200 dark:border-blue-700',
+      glow: 'shadow-blue-500/20',
+      particle: 'bg-blue-400',
+      text: 'text-blue-600 dark:text-blue-400'
+    };
+  } else if (adminCount > 1) {
+    // Admin focused theme
+    return {
+      primary: 'from-purple-400 via-pink-500 to-rose-600',
+      secondary: 'from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-800/20',
+      accent: 'border-purple-200 dark:border-purple-700',
+      glow: 'shadow-purple-500/20',
+      particle: 'bg-purple-400',
+      text: 'text-purple-600 dark:text-purple-400'
+    };
+  } else {
+    // Default theme
+    return {
+      primary: 'from-slate-400 via-gray-500 to-zinc-600',
+      secondary: 'from-slate-50 to-gray-100 dark:from-slate-900/20 dark:to-gray-800/20',
+      accent: 'border-slate-200 dark:border-slate-700',
+      glow: 'shadow-slate-500/20',
+      particle: 'bg-slate-400',
+      text: 'text-slate-600 dark:text-slate-400'
+    };
+  }
+};
+
+// Floating particles background
+const FloatingParticles = ({ theme }: { theme: any }) => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    {Array.from({ length: 6 }).map((_, i) => (
+      <motion.div
+        key={i}
+        className={`absolute w-2 h-2 ${theme.particle} rounded-full opacity-20`}
+        initial={{
+          x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200),
+          y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
+        }}
+        animate={{
+          x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 1200),
+          y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
+        }}
+        transition={{
+          duration: Math.random() * 15 + 10,
+          repeat: Infinity,
+          repeatType: "reverse",
+          ease: "linear"
+        }}
+        style={{
+          filter: 'blur(1px)',
+        }}
+      />
+    ))}
+  </div>
+);
+
+// Enhanced Counter Animation
+const AnimatedCounter = ({ 
+  value, 
+  duration = 2, 
+  className = "",
+  prefix = "",
+  suffix = ""
+}: {
+  value: string | number;
+  duration?: number;
+  className?: string;
+  prefix?: string;
+  suffix?: string;
+}) => {
+  const [count, setCount] = useState(0);
+  const finalValue = typeof value === 'string' ? parseInt(value.replace(/,/g, '')) || 0 : value;
+
+  useEffect(() => {
+    let startTime: number;
+    let animationFrame: number;
+
+    const animate = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
+      
+      setCount(Math.floor(finalValue * progress));
+      
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [finalValue, duration]);
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  };
+
+  return (
+    <span className={className}>
+      {prefix}{formatNumber(count)}{suffix}
+    </span>
+  );
+};
+
 export default function AdminUsersPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -98,6 +300,10 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'created' | 'login'>('created');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [bulkAction, setBulkAction] = useState<string>('');
   
   // Stats
   const [stats, setStats] = useState({
@@ -105,8 +311,67 @@ export default function AdminUsersPage() {
     active: 0,
     inactive: 0,
     admins: 0,
-    recentlyActive: 0
+    recentlyActive: 0,
+    growthRate: 0,
+    avgFormsPerUser: 0,
+    totalSubmissions: 0
   });
+
+  // Theme based on user data
+  const theme = useMemo(() => generateUserTheme(stats), [stats]);
+  
+  // Enhanced filtering and sorting
+  const filteredUsers = useMemo(() => {
+    let filtered = users.filter(user => {
+      const matchesSearch = searchQuery === '' || 
+        user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.company?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesTab = currentTab === 'all' || 
+        (currentTab === 'active' && user.status === 'ACTIVE') ||
+        (currentTab === 'inactive' && user.status === 'INACTIVE') ||
+        (currentTab === 'locked' && user.status === 'LOCKED') ||
+        (currentTab === 'admin' && user.role === 'SUPER_ADMIN');
+      
+      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+      const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+      
+      return matchesSearch && matchesTab && matchesRole && matchesStatus;
+    });
+
+    // Sort users
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortBy) {
+        case 'name':
+          aValue = a.name || a.email;
+          bValue = b.name || b.email;
+          break;
+        case 'email':
+          aValue = a.email;
+          bValue = b.email;
+          break;
+        case 'created':
+          aValue = new Date(a.createdAt);
+          bValue = new Date(b.createdAt);
+          break;
+        case 'login':
+          aValue = a.lastLogin ? new Date(a.lastLogin) : new Date(0);
+          bValue = b.lastLogin ? new Date(b.lastLogin) : new Date(0);
+          break;
+        default:
+          return 0;
+      }
+      
+      if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [users, searchQuery, currentTab, roleFilter, statusFilter, sortBy, sortOrder]);
 
   // New user form state
   const [newUser, setNewUser] = useState({
@@ -148,6 +413,11 @@ export default function AdminUsersPage() {
   const calculateStats = (userData: User[]) => {
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    
+    const recentUsers = userData.filter(user => new Date(user.createdAt) > monthAgo).length;
+    const totalForms = userData.reduce((sum, user) => sum + (user.formsCount || 0), 0);
+    const totalSubmissions = userData.reduce((sum, user) => sum + (user.submissionsCount || 0), 0);
     
     setStats({
       total: userData.length,
@@ -156,7 +426,10 @@ export default function AdminUsersPage() {
       admins: userData.filter(user => user.role === 'SUPER_ADMIN').length,
       recentlyActive: userData.filter(user => 
         user.lastLogin && new Date(user.lastLogin) > weekAgo
-      ).length
+      ).length,
+      growthRate: userData.length > 0 ? (recentUsers / userData.length) * 100 : 0,
+      avgFormsPerUser: userData.length > 0 ? totalForms / userData.length : 0,
+      totalSubmissions
     });
   };
 
@@ -301,64 +574,12 @@ export default function AdminUsersPage() {
     router.push(`/admin/users/${userId}/edit`);
   };
 
-  const filteredUsers = users
-    .filter(user => {
-      // Search query filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return (
-          (user.name?.toLowerCase() || '').includes(query) ||
-          user.email.toLowerCase().includes(query) ||
-          (user.company?.toLowerCase() || '').includes(query)
-        );
-      }
-      return true;
-    })
-    .filter(user => {
-      // Status filter
-      if (statusFilter === 'all') return true;
-      return user.status === statusFilter;
-    })
-    .filter(user => {
-      // Role filter
-      if (roleFilter === 'all') return true;
-      return user.role === roleFilter;
-    })
-    .filter(user => {
-      // Tab filter
-      if (currentTab === 'all') return true;
-      if (currentTab === 'active') return user.status === 'ACTIVE';
-      if (currentTab === 'inactive') return user.status === 'INACTIVE';
-      if (currentTab === 'locked') return user.status === 'LOCKED';
-      if (currentTab === 'admin') return user.role === 'SUPER_ADMIN';
-      return true;
-    })
-    .sort((a, b) => {
-      // Sorting
-      if (sortBy === 'name') {
-        const nameA = a.name || '';
-        const nameB = b.name || '';
-        return sortOrder === 'asc' 
-          ? nameA.localeCompare(nameB)
-          : nameB.localeCompare(nameA);
-      }
-      if (sortBy === 'email') {
-        return sortOrder === 'asc'
-          ? a.email.localeCompare(b.email)
-          : b.email.localeCompare(a.email);
-      }
-      if (sortBy === 'created') {
-        return sortOrder === 'asc'
-          ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-          : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-      if (sortBy === 'login') {
-        const timeA = a.lastLogin ? new Date(a.lastLogin).getTime() : 0;
-        const timeB = b.lastLogin ? new Date(b.lastLogin).getTime() : 0;
-        return sortOrder === 'asc' ? timeA - timeB : timeB - timeA;
-      }
-      return 0;
-    });
+  // Enhanced refresh with loading state
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadUsers();
+    setIsRefreshing(false);
+  };
 
   const handleSort = (field: 'name' | 'email' | 'created' | 'login') => {
     if (sortBy === field) {
@@ -393,80 +614,197 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Create action buttons for header
+  // Enhanced action buttons for header
   const headerActions = (
     <>
-      <Button variant="outline" size="sm" onClick={loadUsers}>
-        <RefreshCw className="mr-2 h-4 w-4" />
+      <Button 
+        variant="outline" 
+        size="sm" 
+        onClick={handleRefresh}
+        disabled={isRefreshing}
+        className="gap-2"
+      >
+        <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
         Refresh
       </Button>
-      <Button variant="outline" size="sm">
-        <Download className="mr-2 h-4 w-4" />
+      <Button variant="outline" size="sm" className="gap-2">
+        <Download className="h-4 w-4" />
         Export
       </Button>
-      <Button size="sm" onClick={() => setIsCreateDialogOpen(true)}>
-        <PlusCircle className="mr-2 h-4 w-4" />
-        Add User
-      </Button>
+      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <Button 
+          size="sm" 
+          onClick={() => setIsCreateDialogOpen(true)}
+          className={cn("gap-2 bg-gradient-to-r", theme.primary)}
+        >
+          <UserPlus className="h-4 w-4" />
+          Add User
+        </Button>
+      </motion.div>
     </>
   );
 
   return (
-    <PageLayout 
-      title="User Management" 
-      description="View and manage all users in the system"
-      actions={headerActions}
-    >
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 md:gap-4">
-        <Card>
-          <CardHeader className="pb-2 px-3 sm:px-4">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Total Users</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-4">
-            <div className="text-xl sm:text-2xl font-bold">{formatNumber(stats.total)}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2 px-3 sm:px-4">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Active Users</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-4">
-            <div className="text-xl sm:text-2xl font-bold">{formatNumber(stats.active)}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2 px-3 sm:px-4">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Inactive</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-4">
-            <div className="text-xl sm:text-2xl font-bold">{formatNumber(stats.inactive)}</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="col-span-1 sm:col-span-1">
-          <CardHeader className="pb-2 px-3 sm:px-4">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Admins</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-4">
-            <div className="text-xl sm:text-2xl font-bold">{formatNumber(stats.admins)}</div>
-          </CardContent>
-        </Card>
-        
-        <Card className="col-span-1 sm:col-span-1">
-          <CardHeader className="pb-2 px-3 sm:px-4">
-            <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Recently Active</CardTitle>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-4">
-            <div className="text-xl sm:text-2xl font-bold">{formatNumber(stats.recentlyActive)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Last 7 days</p>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="relative min-h-screen">
+      <FloatingParticles theme={theme} />
+      <div className="relative z-10">
+        <PageLayout 
+          title="User Management"
+          description="Manage your community with advanced user controls and insights"
+          actions={headerActions}
+        >
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+          >
 
-      <Card>
+          {/* Enhanced Stats Grid */}
+          <motion.div 
+            variants={itemVariants}
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8"
+          >
+            {/* Total Users */}
+            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+              <Card className={cn("overflow-hidden", theme.glow)}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                      <p className="text-2xl font-bold">
+                        <AnimatedCounter value={stats.total} />
+                      </p>
+                    </div>
+                    <div className={cn("p-2 rounded-lg bg-gradient-to-r", theme.secondary)}>
+                      <Users className={cn("h-5 w-5", theme.text)} />
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    <span>+{stats.growthRate.toFixed(1)}% this month</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Active Users */}
+            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Active Users</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        <AnimatedCounter value={stats.active} />
+                      </p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                    <span>{((stats.active / Math.max(stats.total, 1)) * 100).toFixed(1)}% of total</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Admins */}
+            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Admins</p>
+                      <p className="text-2xl font-bold text-purple-600">
+                        <AnimatedCounter value={stats.admins} />
+                      </p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
+                      <Crown className="h-5 w-5 text-purple-600" />
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                    <Shield className="h-3 w-3 mr-1" />
+                    <span>Admin access</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Recently Active */}
+            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Recent Activity</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        <AnimatedCounter value={stats.recentlyActive} />
+                      </p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20">
+                      <Activity className="h-5 w-5 text-blue-600" />
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3 mr-1" />
+                    <span>Last 7 days</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Avg Forms */}
+            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Avg Forms</p>
+                      <p className="text-2xl font-bold text-amber-600">
+                        <AnimatedCounter value={stats.avgFormsPerUser.toFixed(1)} />
+                      </p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/20">
+                      <BarChart3 className="h-5 w-5 text-amber-600" />
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                    <Target className="h-3 w-3 mr-1" />
+                    <span>Per user</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Total Submissions */}
+            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+              <Card className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Submissions</p>
+                      <p className="text-2xl font-bold text-indigo-600">
+                        <AnimatedCounter value={stats.totalSubmissions} />
+                      </p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/20">
+                      <Zap className="h-5 w-5 text-indigo-600" />
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    <span>Total collected</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
+
+          {/* Enhanced Main Content Card */}
+          <motion.div variants={itemVariants}>
+            <Card className={cn("overflow-hidden", theme.accent)}>
         <CardHeader className="pb-4">
           <CardTitle>Users</CardTitle>
           <CardDescription>
@@ -907,7 +1245,8 @@ export default function AdminUsersPage() {
             )}
           </div>
         </CardContent>
-      </Card>
+            </Card>
+          </motion.div>
 
       {/* Create User Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -1085,6 +1424,9 @@ export default function AdminUsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </PageLayout>
+          </motion.div>
+        </PageLayout>
+      </div>
+    </div>
   );
 } 
