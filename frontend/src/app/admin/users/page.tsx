@@ -317,8 +317,7 @@ export default function AdminUsersPage() {
     totalSubmissions: 0
   });
 
-  // Theme based on user data
-  const theme = useMemo(() => generateUserTheme(stats), [stats]);
+
   
   // Enhanced filtering and sorting
   const filteredUsers = useMemo(() => {
@@ -635,7 +634,7 @@ export default function AdminUsersPage() {
         <Button 
           size="sm" 
           onClick={() => setIsCreateDialogOpen(true)}
-          className={cn("gap-2 bg-gradient-to-r", theme.primary)}
+          className="gap-2 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
         >
           <UserPlus className="h-4 w-4" />
           Add User
@@ -645,171 +644,196 @@ export default function AdminUsersPage() {
   );
 
   return (
-    <div className="relative min-h-screen">
-      <FloatingParticles theme={theme} />
-      <div className="relative z-10">
-        <PageLayout 
-          title="User Management"
-          description="Manage your community with advanced user controls and insights"
-          actions={headerActions}
-        >
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-          >
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="space-y-6"
+    >
+      {/* Enhanced Header Card */}
+      <motion.div variants={itemVariants}>
+        <Card className="overflow-hidden">
+          <CardContent className="p-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600">
+                  <Users className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    User Management
+                  </h1>
+                  <p className="text-muted-foreground mt-1">
+                    Manage your community with advanced user controls and insights
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {headerActions}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-          {/* Enhanced Stats Grid */}
-          <motion.div 
-            variants={itemVariants}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8"
-          >
-            {/* Total Users */}
-            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
-              <Card className={cn("overflow-hidden", theme.glow)}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-                      <p className="text-2xl font-bold">
-                        <AnimatedCounter value={stats.total} />
-                      </p>
-                    </div>
-                    <div className={cn("p-2 rounded-lg bg-gradient-to-r", theme.secondary)}>
-                      <Users className={cn("h-5 w-5", theme.text)} />
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    <span>+{stats.growthRate.toFixed(1)}% this month</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+      {/* Enhanced Stats Grid */}
+      <motion.div 
+        variants={itemVariants}
+        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"
+      >
+        {/* Total Users */}
+        <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+          <Card className="overflow-hidden border-0 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Users</p>
+                  <p className="text-2xl font-bold">
+                    <AnimatedCounter value={stats.total} />
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800">
+                  <Users className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                <span>+{stats.growthRate.toFixed(1)}% this month</span>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-            {/* Active Users */}
-            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Active Users</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        <AnimatedCounter value={stats.active} />
-                      </p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
-                    <span>{((stats.active / Math.max(stats.total, 1)) * 100).toFixed(1)}% of total</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+        {/* Active Users */}
+        <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+          <Card className="overflow-hidden border-0 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Active Users</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    <AnimatedCounter value={stats.active} />
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                <span>{((stats.active / Math.max(stats.total, 1)) * 100).toFixed(1)}% of total</span>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-            {/* Admins */}
-            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Admins</p>
-                      <p className="text-2xl font-bold text-purple-600">
-                        <AnimatedCounter value={stats.admins} />
-                      </p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
-                      <Crown className="h-5 w-5 text-purple-600" />
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
-                    <Shield className="h-3 w-3 mr-1" />
-                    <span>Admin access</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+        {/* Admins */}
+        <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+          <Card className="overflow-hidden border-0 bg-gradient-to-br from-purple-50 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Admins</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    <AnimatedCounter value={stats.admins} />
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/20">
+                  <Crown className="h-5 w-5 text-purple-600" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                <Shield className="h-3 w-3 mr-1" />
+                <span>Admin access</span>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-            {/* Recently Active */}
-            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Recent Activity</p>
-                      <p className="text-2xl font-bold text-blue-600">
-                        <AnimatedCounter value={stats.recentlyActive} />
-                      </p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20">
-                      <Activity className="h-5 w-5 text-blue-600" />
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3 mr-1" />
-                    <span>Last 7 days</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+        {/* Recently Active */}
+        <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+          <Card className="overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-900/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Recent Activity</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    <AnimatedCounter value={stats.recentlyActive} />
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20">
+                  <Activity className="h-5 w-5 text-blue-600" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                <Clock className="h-3 w-3 mr-1" />
+                <span>Last 7 days</span>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-            {/* Avg Forms */}
-            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Avg Forms</p>
-                      <p className="text-2xl font-bold text-amber-600">
-                        <AnimatedCounter value={stats.avgFormsPerUser.toFixed(1)} />
-                      </p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/20">
-                      <BarChart3 className="h-5 w-5 text-amber-600" />
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
-                    <Target className="h-3 w-3 mr-1" />
-                    <span>Per user</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+        {/* Avg Forms */}
+        <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+          <Card className="overflow-hidden border-0 bg-gradient-to-br from-amber-50 to-orange-100 dark:from-amber-900/20 dark:to-orange-900/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Avg Forms</p>
+                  <p className="text-2xl font-bold text-amber-600">
+                    <AnimatedCounter value={stats.avgFormsPerUser.toFixed(1)} />
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/20">
+                  <BarChart3 className="h-5 w-5 text-amber-600" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                <Target className="h-3 w-3 mr-1" />
+                <span>Per user</span>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-            {/* Total Submissions */}
-            <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
-              <Card className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Submissions</p>
-                      <p className="text-2xl font-bold text-indigo-600">
-                        <AnimatedCounter value={stats.totalSubmissions} />
-                      </p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/20">
-                      <Zap className="h-5 w-5 text-indigo-600" />
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center text-xs text-muted-foreground">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    <span>Total collected</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </motion.div>
+        {/* Total Submissions */}
+        <motion.div variants={statsVariants} whileHover={cardHoverVariants.hover}>
+          <Card className="overflow-hidden border-0 bg-gradient-to-br from-indigo-50 to-violet-100 dark:from-indigo-900/20 dark:to-violet-900/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Submissions</p>
+                  <p className="text-2xl font-bold text-indigo-600">
+                    <AnimatedCounter value={stats.totalSubmissions} />
+                  </p>
+                </div>
+                <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/20">
+                  <Zap className="h-5 w-5 text-indigo-600" />
+                </div>
+              </div>
+              <div className="mt-2 flex items-center text-xs text-muted-foreground">
+                <Sparkles className="h-3 w-3 mr-1" />
+                <span>Total collected</span>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </motion.div>
 
-          {/* Enhanced Main Content Card */}
-          <motion.div variants={itemVariants}>
-            <Card className={cn("overflow-hidden", theme.accent)}>
-        <CardHeader className="pb-4">
-          <CardTitle>Users</CardTitle>
-          <CardDescription>
-            Manage user accounts and their permissions
-          </CardDescription>
+      {/* Enhanced Main Content Card */}
+      <motion.div variants={itemVariants}>
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20">
+                <Settings className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Users</CardTitle>
+                <CardDescription>
+                  Manage user accounts and their permissions
+                </CardDescription>
+              </div>
+            </div>
           
           <div className="mt-4 overflow-x-auto">
             <Tabs defaultValue="all" className="w-full" onValueChange={setCurrentTab}>
@@ -1424,9 +1448,6 @@ export default function AdminUsersPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-          </motion.div>
-        </PageLayout>
-      </div>
-    </div>
+    </motion.div>
   );
 } 
