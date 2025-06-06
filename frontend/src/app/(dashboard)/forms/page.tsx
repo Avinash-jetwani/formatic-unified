@@ -33,7 +33,9 @@ import {
   Tag,
   FolderIcon,
   Layers,
-  Sparkles
+  Sparkles,
+  BarChart3,
+  Zap
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -299,11 +301,7 @@ const FormsPage = () => {
       const data = await fetchApi<Form[]>('/forms');
       setForms(data);
       
-      // Show templates if user has no forms
-      if (data.length === 0) {
-        // Navigate to template gallery instead
-      router.push('/templates');
-      }
+      // Don't redirect new users - let them see the onboarding guide instead
     } catch (error) {
       console.error('Failed to load forms:', error);
     } finally {
@@ -782,25 +780,168 @@ const FormsPage = () => {
             </Card>
           ))
         ) : filteredForms.length === 0 ? (
-          <div className="col-span-full p-6 sm:p-8 text-center border rounded-lg">
-            <FileText className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 text-muted-foreground" />
-            <h3 className="font-medium text-sm sm:text-base">No forms found</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              {searchTerm 
-                ? `No forms match "${searchTerm}". Try a different search term.` 
-                : filter !== 'all' 
-                  ? `You don't have any ${filter} forms.` 
-                  : "You haven't created any forms yet."}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-2 mt-4 justify-center">
-              <Button onClick={navigateToCreateForm} size={isMobile ? "sm" : "default"}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Create Form
-              </Button>
-              <Button variant="outline" onClick={() => router.push('/templates')} size={isMobile ? "sm" : "default"}>
-                Browse Templates
-              </Button>
+          // Enhanced onboarding guide for new users
+          forms.length === 0 && !searchTerm && filter === 'all' ? (
+            <div className="col-span-full">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-700 rounded-2xl p-8 border border-blue-100 dark:border-gray-600"
+              >
+                <div className="text-center mb-8">
+                  <motion.div 
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                    className="inline-flex p-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4"
+                  >
+                    <Sparkles className="h-8 w-8 text-white" />
+                  </motion.div>
+                  <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                    Welcome to Datizmo Forms!
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-300 text-lg max-w-2xl mx-auto">
+                    Create powerful, customizable forms in minutes. Collect data, engage users, and grow your business.
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6 mb-8">
+                  <motion.div 
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all duration-300"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <PlusCircle className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Create from Scratch</h3>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">
+                      Build a custom form tailored to your exact needs with our intuitive drag-and-drop builder.
+                    </p>
+                    <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Drag & drop form fields
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Custom styling options
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Advanced field types
+                      </li>
+                    </ul>
+                    <Button onClick={navigateToCreateForm} className="w-full">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Create New Form
+                    </Button>
+                  </motion.div>
+
+                  <motion.div 
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all duration-300"
+                  >
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                        <Layers className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Use Templates</h3>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">
+                      Get started quickly with professionally designed templates for common use cases.
+                    </p>
+                    <ul className="space-y-2 text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Pre-built form structures
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Industry best practices
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Fully customizable
+                      </li>
+                    </ul>
+                    <Button variant="outline" onClick={() => router.push('/templates')} className="w-full">
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Browse Templates
+                    </Button>
+                  </motion.div>
+                </div>
+
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
+                  className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-600"
+                >
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">
+                    What you can do with Datizmo Forms
+                  </h3>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg inline-flex mb-2">
+                        <ClipboardList className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <h4 className="font-medium text-sm text-gray-900 dark:text-white">Collect Data</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Gather information from customers, leads, and users</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg inline-flex mb-2">
+                        <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <h4 className="font-medium text-sm text-gray-900 dark:text-white">Share Anywhere</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Embed on websites or share via direct links</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg inline-flex mb-2">
+                        <BarChart3 className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      </div>
+                      <h4 className="font-medium text-sm text-gray-900 dark:text-white">Track Analytics</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Monitor submissions and form performance</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg inline-flex mb-2">
+                        <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <h4 className="font-medium text-sm text-gray-900 dark:text-white">Automate</h4>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Set up webhooks and integrations</p>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
             </div>
-          </div>
+          ) : (
+            // Regular empty state for filtered results
+            <div className="col-span-full p-6 sm:p-8 text-center border rounded-lg">
+              <FileText className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-2 text-muted-foreground" />
+              <h3 className="font-medium text-sm sm:text-base">No forms found</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                {searchTerm 
+                  ? `No forms match "${searchTerm}". Try a different search term.` 
+                  : filter !== 'all' 
+                    ? `You don't have any ${filter} forms.` 
+                    : "You haven't created any forms yet."}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 mt-4 justify-center">
+                <Button onClick={navigateToCreateForm} size={isMobile ? "sm" : "default"}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> Create Form
+                </Button>
+                <Button variant="outline" onClick={() => router.push('/templates')} size={isMobile ? "sm" : "default"}>
+                  Browse Templates
+                </Button>
+              </div>
+            </div>
+          )
         ) : (
           <AnimatePresence>
             {filteredForms.map((form, index) => (
@@ -981,23 +1122,43 @@ const FormsPage = () => {
             ) : filteredForms.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={isAdmin ? 7 : 6} className="h-32 text-center">
-                  <FileText className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                  <h3 className="font-medium">No forms found</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {searchTerm 
-                      ? `No forms match "${searchTerm}". Try a different search term.` 
-                      : filter !== 'all' 
-                        ? `You don't have any ${filter} forms.` 
-                        : "You haven't created any forms yet."}
-                  </p>
-                  <div className="flex justify-center gap-2 mt-4">
-                    <Button onClick={navigateToCreateForm}>
-                      <PlusCircle className="mr-2 h-4 w-4" /> Create Form
-                    </Button>
-                    <Button variant="outline" onClick={() => router.push('/templates')}>
-                      Browse Templates
-                    </Button>
-                  </div>
+                  {forms.length === 0 && !searchTerm && filter === 'all' ? (
+                    <div>
+                      <Sparkles className="h-10 w-10 mx-auto mb-2 text-blue-500" />
+                      <h3 className="font-medium">Welcome to Datizmo Forms!</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Create your first form to get started with collecting data.
+                      </p>
+                      <div className="flex justify-center gap-2 mt-4">
+                        <Button onClick={navigateToCreateForm}>
+                          <PlusCircle className="mr-2 h-4 w-4" /> Create Form
+                        </Button>
+                        <Button variant="outline" onClick={() => router.push('/templates')}>
+                          <Sparkles className="mr-2 h-4 w-4" /> Browse Templates
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <FileText className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
+                      <h3 className="font-medium">No forms found</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {searchTerm 
+                          ? `No forms match "${searchTerm}". Try a different search term.` 
+                          : filter !== 'all' 
+                            ? `You don't have any ${filter} forms.` 
+                            : "You haven't created any forms yet."}
+                      </p>
+                      <div className="flex justify-center gap-2 mt-4">
+                        <Button onClick={navigateToCreateForm}>
+                          <PlusCircle className="mr-2 h-4 w-4" /> Create Form
+                        </Button>
+                        <Button variant="outline" onClick={() => router.push('/templates')}>
+                          Browse Templates
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </TableCell>
               </TableRow>
             ) : (
