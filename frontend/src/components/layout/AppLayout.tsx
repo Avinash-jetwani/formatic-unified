@@ -21,28 +21,15 @@ const AppLayout = ({ children, onSidebarToggle }: AppLayoutProps) => {
   };
 
   return (
-    <div className="h-screen flex bg-background overflow-hidden">
-      {/* Sidebar Container - Hidden on mobile, visible on sm+ */}
-      <div className="h-full flex-shrink-0 hidden sm:block">
-        <Sidebar onToggle={handleSidebarToggle} />
-      </div>
+    <div className="min-h-screen max-h-screen flex bg-background overflow-hidden w-full">
+      {/* Unified Sidebar - Single component for all screen sizes */}
+      <Sidebar onToggle={handleSidebarToggle} />
       
-      {/* Mobile Sidebar - Only visible on mobile */}
-      <div className="sm:hidden">
-        <Sidebar onToggle={handleSidebarToggle} />
-      </div>
-      
-      {/* Main Content Area */}
+      {/* Main Content Area - Full responsive width */}
       <main 
-        className={cn(
-          "flex-1 overflow-auto transition-all duration-300 ease-in-out",
-          // Full width on mobile, adjusted on larger screens
-          "w-full sm:w-auto",
-          // Responsive content spacing
-          "min-h-screen"
-        )}
+        className="flex-1 overflow-auto w-full max-w-full min-w-0"
       >
-        <div className="h-full w-full max-w-full">
+        <div className="w-full h-full min-h-screen">
           {children}
         </div>
       </main>

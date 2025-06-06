@@ -563,25 +563,25 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
           "fixed inset-y-0 left-0",
           // Small screens and up: show sidebar
           "sm:relative sm:flex",
-          // Responsive widths for different screen sizes
+          // More compact responsive widths
           {
             // Mobile (< 640px)
             "w-64": !collapsed,
             "w-16": collapsed,
-            // Small tablets (640px+)
-            "sm:w-16": collapsed,
-            "sm:w-64": !collapsed,
-            // Medium tablets (768px+)
-            "md:w-16": collapsed,
-            "md:w-72": !collapsed,
-            // Large screens (1024px+)
+            // Small tablets (640px+) - more compact
+            "sm:w-14": collapsed,
+            "sm:w-56": !collapsed,
+            // Medium tablets (768px+) - compact
+            "md:w-14": collapsed,
+            "md:w-60": !collapsed,
+            // Large screens (1024px+) - reasonable width
             "lg:w-16": collapsed,
-            "lg:w-80": !collapsed,
-            // Extra large screens (1280px+)
+            "lg:w-64": !collapsed,
+            // Extra large screens (1280px+) - still compact
             "xl:w-16": collapsed,
-            "xl:w-80": !collapsed,
+            "xl:w-64": !collapsed,
             "2xl:w-16": collapsed,
-            "2xl:w-80": !collapsed
+            "2xl:w-68": !collapsed
           },
           // Mobile positioning
           { 
@@ -599,10 +599,10 @@ const Sidebar = ({ onToggle }: SidebarProps) => {
           ease: "easeInOut"
         }}
         style={{
-          // Dynamic width with better responsive handling
+          // More compact dynamic width
           width: collapsed 
             ? '4rem' 
-            : 'clamp(16rem, 22vw, 20rem)'
+            : 'clamp(14rem, 18vw, 16rem)'
         }}
       >
         {/* Glassmorphism background effect */}

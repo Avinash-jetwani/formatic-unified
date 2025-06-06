@@ -34,22 +34,22 @@ const DashboardLayout = ({
   
   return (
     <AppLayout onSidebarToggle={handleSidebarToggle}>
-      <div className="flex flex-col min-h-screen max-h-screen overflow-hidden">
+      <div className="flex flex-col min-h-screen w-full">
         <Navbar 
           sidebarCollapsed={sidebarCollapsed} 
           onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} 
         />
         
-        <div className="flex-grow overflow-y-auto">
-          {/* Main content area with consistent padding */}
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="flex-grow overflow-y-auto w-full">
+          {/* Main content area with responsive padding */}
+          <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-6 max-w-full">
             {/* Page header with title and actions */}
             {(title || breadcrumbs || actions) && (
-              <div className="mb-6">
+              <div className="mb-6 w-full">
                 {/* Breadcrumbs */}
                 {breadcrumbs && breadcrumbs.length > 0 && (
                   <nav className="mb-2">
-                    <ol className="flex items-center text-sm text-muted-foreground">
+                    <ol className="flex items-center text-sm text-muted-foreground flex-wrap">
                       {breadcrumbs.map((item, i) => (
                         <React.Fragment key={i}>
                           {i > 0 && <span className="mx-2">/</span>}
@@ -71,10 +71,10 @@ const DashboardLayout = ({
                 )}
                 
                 {/* Title and actions */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between w-full">
+                  <div className="min-w-0 flex-1">
                     {title && (
-                      <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+                      <h1 className="text-2xl font-bold tracking-tight truncate">{title}</h1>
                     )}
                     {description && (
                       <p className="mt-1 text-sm text-muted-foreground">{description}</p>
@@ -82,7 +82,7 @@ const DashboardLayout = ({
                   </div>
                   
                   {actions && (
-                    <div className="flex flex-shrink-0 items-center gap-2">
+                    <div className="flex flex-shrink-0 items-center gap-2 flex-wrap">
                       {actions}
                     </div>
                   )}
@@ -91,7 +91,7 @@ const DashboardLayout = ({
             )}
             
             {/* Main content */}
-            <div className="w-full">
+            <div className="w-full max-w-full">
               {children}
             </div>
           </div>

@@ -11,10 +11,10 @@ interface FooterProps {
 const Footer = ({ className }: FooterProps) => {
   return (
     <footer className={cn(
-      "border-t border-border py-2 bg-background/80",
+      "border-t border-border py-2 bg-background/80 w-full",
       className
     )}>
-      <div className="container flex flex-col items-center justify-between md:flex-row">
+      <div className="w-full flex flex-col items-center justify-between md:flex-row px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
         <p className="text-xs text-muted-foreground">
           &copy; {new Date().getFullYear()} Datizmo. All rights reserved.
         </p>

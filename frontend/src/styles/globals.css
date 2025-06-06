@@ -117,9 +117,18 @@
     @apply border-border;
   }
   
+  html, body {
+    @apply w-full max-w-full min-w-0;
+  }
+  
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  /* Ensure full width for main layout containers */
+  #__next, main, [data-nextjs-scroll-focus-boundary] {
+    @apply w-full max-w-full min-w-0;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -152,6 +161,15 @@
 
 @layer components {
   .container-content {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16;
+  }
+  
+  /* Utility classes for full-width responsive design */
+  .responsive-container {
+    @apply w-full max-w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16;
+  }
+  
+  .full-width-responsive {
+    @apply w-full max-w-full min-w-0;
   }
 } 

@@ -72,18 +72,18 @@ export function Navbar({ sidebarCollapsed, onToggleSidebar }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-30 h-16 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center px-4 md:px-6">
+      <div className="flex h-16 items-center w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
         {/* Mobile menu button - only visible on mobile */}
         <button
           onClick={onToggleSidebar}
-          className="mr-4 md:hidden rounded-md p-1.5 hover:bg-accent"
+          className="mr-4 sm:hidden rounded-md p-1.5 hover:bg-accent"
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           <Menu className="h-5 w-5" />
         </button>
         
         {/* Logo - only visible on mobile when sidebar is collapsed */}
-        <div className="md:hidden flex items-center">
+        <div className="sm:hidden flex items-center">
           <Link 
             href="/dashboard" 
             className="flex items-center"
