@@ -84,6 +84,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import { SimpleFormWizard } from '@/components/form/SimpleFormWizard';
 
 // Form data interface
 interface Form {
@@ -270,6 +271,7 @@ const FormsPage = () => {
   const [clientFilter, setClientFilter] = useState<'all' | 'mine' | 'clients'>('all');
   const [formToDelete, setFormToDelete] = useState<string | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [showSimpleWizard, setShowSimpleWizard] = useState(false);
   
   // Responsive state management
   const [isMobile, setIsMobile] = useState(false);
@@ -473,7 +475,12 @@ const FormsPage = () => {
   
   // Function to navigate to create form page
   const navigateToCreateForm = () => {
-    router.push('/forms/create');
+    // Show simplified wizard for new users (0 forms), complex create page for experienced users
+    if (forms.length === 0) {
+      setShowSimpleWizard(true);
+    } else {
+      router.push('/forms/create');
+    }
   };
 
   // Memoized filter forms based on search term, published status, client filter, category and tags
@@ -526,8 +533,30 @@ const FormsPage = () => {
     ) : [];
   }, [forms, isAdmin]);
 
+  // Handle wizard completion
+  const handleWizardComplete = (formId: string) => {
+    setShowSimpleWizard(false);
+    // Reload forms to show the new form
+    loadForms();
+    // Navigate to the form builder
+    router.push(`/forms/${formId}/builder`);
+  };
+
+  // Handle wizard cancellation
+  const handleWizardCancel = () => {
+    setShowSimpleWizard(false);
+  };
+
   return (
     <ErrorBoundary>
+      {/* Simple Form Wizard for New Users */}
+      {showSimpleWizard && (
+        <SimpleFormWizard
+          onComplete={handleWizardComplete}
+          onCancel={handleWizardCancel}
+        />
+      )}
+      
       <div className="space-y-8">
       {/* Enhanced Header Section - Matching Submissions Dashboard */}
       <motion.div 
