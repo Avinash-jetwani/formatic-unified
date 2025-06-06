@@ -30,7 +30,13 @@ import {
   Target,
   Link,
   Download,
-  Sparkles
+  Sparkles,
+  QrCode,
+  Facebook,
+  Twitter,
+  Linkedin,
+  Mail,
+  MessageCircle
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -208,6 +214,8 @@ const FormEditPage = () => {
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [notificationEmails, setNotificationEmails] = useState<string[]>([]);
   const [notificationType, setNotificationType] = useState<'all' | 'digest'>('all');
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [showSocialShare, setShowSocialShare] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
   // Set baseUrl only on client side to avoid hydration mismatch
@@ -399,6 +407,82 @@ const FormEditPage = () => {
         variant: "destructive"
       });
     });
+  };
+
+  // Function to generate QR code
+  const generateQRCode = async () => {
+    if (!form || !baseUrl) return;
+    
+    const formUrl = `${baseUrl}/forms/public/${form.slug}`;
+    // Using QR Server API for QR code generation
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(formUrl)}`;
+    setQrCodeUrl(qrUrl);
+    
+    toast({
+      title: "Success",
+      description: "QR code generated successfully",
+    });
+  };
+
+  // Function to download QR code
+  const downloadQRCode = async () => {
+    if (!qrCodeUrl) return;
+    
+    try {
+      const response = await fetch(qrCodeUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${form?.title || 'form'}-qr-code.png`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: "Success",
+        description: "QR code downloaded successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download QR code",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Function to share on social media
+  const shareOnSocial = (platform: string) => {
+    if (!form || !baseUrl) return;
+    
+    const formUrl = `${baseUrl}/forms/public/${form.slug}`;
+    const text = `Check out this form: ${form.title}`;
+    
+    let shareUrl = '';
+    
+    switch (platform) {
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(formUrl)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(formUrl)}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(formUrl)}`;
+        break;
+      case 'email':
+        shareUrl = `mailto:?subject=${encodeURIComponent(form.title)}&body=${encodeURIComponent(`${text}\n\n${formUrl}`)}`;
+        break;
+      case 'whatsapp':
+        shareUrl = `https://wa.me/?text=${encodeURIComponent(`${text} ${formUrl}`)}`;
+        break;
+    }
+    
+    if (shareUrl) {
+      window.open(shareUrl, '_blank', 'width=600,height=400');
+    }
   };
   
   // Function to delete the form
@@ -1275,8 +1359,10 @@ const FormEditPage = () => {
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-3">
-                              <div className="bg-gray-100 p-3 rounded-lg font-mono text-sm overflow-x-auto">
-                                {baseUrl ? `<iframe src="${baseUrl}/forms/embed/${form.slug}" width="100%" height="600" frameborder="0"></iframe>` : ''}
+                              <div className="bg-gray-900 border border-gray-600 p-3 rounded-lg font-mono text-sm overflow-x-auto">
+                                <code className="text-green-400">
+                                  {baseUrl ? `<iframe src="${baseUrl}/forms/embed/${form.slug}" width="100%" height="600" frameborder="0"></iframe>` : ''}
+                                </code>
                               </div>
                               <Button 
                                 variant="outline" 
@@ -1300,26 +1386,106 @@ const FormEditPage = () => {
                           </CardContent>
                         </Card>
                         
-                        <Card>
+                        <Card className="bg-gray-700 border-gray-600">
                           <CardHeader>
-                            <CardTitle className="text-base">QR Code</CardTitle>
-                            <CardDescription>
+                            <CardTitle className="text-base text-white">QR Code</CardTitle>
+                            <CardDescription className="text-gray-400">
                               Generate a QR code for easy mobile access
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
                             <div className="text-center">
-                              <div className="w-32 h-32 bg-gray-100 mx-auto mb-3 rounded-lg flex items-center justify-center">
-                                <span className="text-gray-500 text-sm">QR Code</span>
+                              <div className="w-32 h-32 bg-gray-800 border border-gray-600 mx-auto mb-3 rounded-lg flex items-center justify-center">
+                                {qrCodeUrl ? (
+                                  <img src={qrCodeUrl} alt="QR Code" className="w-full h-full rounded-lg" />
+                                ) : (
+                                  <QrCode className="h-8 w-8 text-gray-400" />
+                                )}
                               </div>
-                              <Button variant="outline" size="sm">
-                                <Download className="mr-2 h-4 w-4" />
-                                Generate QR Code
-                              </Button>
+                              <div className="space-y-2">
+                                {!qrCodeUrl ? (
+                                  <Button variant="outline" size="sm" onClick={generateQRCode} className="border-gray-600 text-gray-300 hover:bg-gray-600">
+                                    <QrCode className="mr-2 h-4 w-4" />
+                                    Generate QR Code
+                                  </Button>
+                                ) : (
+                                  <div className="flex gap-2 justify-center">
+                                    <Button variant="outline" size="sm" onClick={downloadQRCode} className="border-gray-600 text-gray-300 hover:bg-gray-600">
+                                      <Download className="mr-2 h-4 w-4" />
+                                      Download
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => setQrCodeUrl('')} className="border-gray-600 text-gray-300 hover:bg-gray-600">
+                                      <X className="mr-2 h-4 w-4" />
+                                      Clear
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
                       </div>
+                    </div>
+
+                    {/* Social Media Sharing */}
+                    <div className="mt-6">
+                      <Card className="bg-gray-700 border-gray-600">
+                        <CardHeader>
+                          <CardTitle className="text-base text-white">Social Media Sharing</CardTitle>
+                          <CardDescription className="text-gray-400">
+                            Share your form on social media platforms
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => shareOnSocial('facebook')}
+                              className="border-blue-600 text-blue-400 hover:bg-blue-900/20"
+                            >
+                              <Facebook className="mr-2 h-4 w-4" />
+                              Facebook
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => shareOnSocial('twitter')}
+                              className="border-sky-600 text-sky-400 hover:bg-sky-900/20"
+                            >
+                              <Twitter className="mr-2 h-4 w-4" />
+                              Twitter
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => shareOnSocial('linkedin')}
+                              className="border-blue-700 text-blue-300 hover:bg-blue-900/20"
+                            >
+                              <Linkedin className="mr-2 h-4 w-4" />
+                              LinkedIn
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => shareOnSocial('whatsapp')}
+                              className="border-green-600 text-green-400 hover:bg-green-900/20"
+                            >
+                              <MessageCircle className="mr-2 h-4 w-4" />
+                              WhatsApp
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => shareOnSocial('email')}
+                              className="border-gray-600 text-gray-300 hover:bg-gray-600"
+                            >
+                              <Mail className="mr-2 h-4 w-4" />
+                              Email
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   )}
                 </div>
@@ -1447,6 +1613,161 @@ const FormEditPage = () => {
                           </div>
                         </CardContent>
                       </Card>
+
+                      {/* Form Restrictions */}
+                      <Card className="bg-gray-800 border-gray-700">
+                        <CardHeader>
+                          <CardTitle className="text-white">Form Restrictions</CardTitle>
+                          <CardDescription className="text-gray-400">
+                            Control access and submission limits for your form
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                          <div>
+                            <Label htmlFor="expirationDate" className="text-gray-300">Expiration Date</Label>
+                            <Input
+                              id="expirationDate"
+                              type="datetime-local"
+                              value={expirationDate || ''}
+                              onChange={(e) => setExpirationDate(e.target.value)}
+                              className="mt-1 bg-gray-700 border-gray-600 text-white"
+                            />
+                            <p className="text-xs text-gray-400 mt-1">Form will stop accepting submissions after this date</p>
+                          </div>
+
+                          <div>
+                            <Label htmlFor="maxSubmissions" className="text-gray-300">Maximum Submissions</Label>
+                            <Input
+                              id="maxSubmissions"
+                              type="number"
+                              placeholder="Leave empty for unlimited"
+                              value={maxSubmissions || ''}
+                              onChange={(e) => setMaxSubmissions(e.target.value ? parseInt(e.target.value) : null)}
+                              className="mt-1 bg-gray-700 border-gray-600 text-white"
+                            />
+                            <p className="text-xs text-gray-400 mt-1">Form will stop accepting submissions after reaching this limit</p>
+                          </div>
+
+                          <div>
+                            <Label className="text-gray-300">Access Restriction</Label>
+                            <Select value={accessRestriction} onValueChange={(value: 'none' | 'email' | 'password') => setAccessRestriction(value)}>
+                              <SelectTrigger className="mt-1 bg-gray-700 border-gray-600 text-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No restrictions</SelectItem>
+                                <SelectItem value="email">Restrict by email</SelectItem>
+                                <SelectItem value="password">Password protected</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {accessRestriction === 'email' && (
+                            <div>
+                              <Label htmlFor="allowedEmails" className="text-gray-300">Allowed Email Addresses</Label>
+                              <Textarea
+                                id="allowedEmails"
+                                placeholder="Enter email addresses, one per line"
+                                value={allowedEmails.join('\n')}
+                                onChange={(e) => setAllowedEmails(e.target.value.split('\n').filter(Boolean))}
+                                className="mt-1 bg-gray-700 border-gray-600 text-white"
+                              />
+                            </div>
+                          )}
+
+                          {accessRestriction === 'password' && (
+                            <div>
+                              <Label htmlFor="accessPassword" className="text-gray-300">Form Password</Label>
+                              <Input
+                                id="accessPassword"
+                                type="password"
+                                placeholder="Enter password for form access"
+                                value={accessPassword || ''}
+                                onChange={(e) => setAccessPassword(e.target.value)}
+                                className="mt-1 bg-gray-700 border-gray-600 text-white"
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between p-4 border border-gray-600 rounded-lg bg-gray-700">
+                            <div>
+                              <h4 className="font-medium text-white">Require Consent</h4>
+                              <p className="text-sm text-gray-400">
+                                Require users to agree to terms before submitting
+                              </p>
+                            </div>
+                            <Switch 
+                              checked={requireConsent}
+                              onCheckedChange={setRequireConsent}
+                            />
+                          </div>
+
+                          {requireConsent && (
+                            <div>
+                              <Label htmlFor="consentText" className="text-gray-300">Consent Text</Label>
+                              <Textarea
+                                id="consentText"
+                                placeholder="I agree to the terms and conditions..."
+                                value={consentText || ''}
+                                onChange={(e) => setConsentText(e.target.value)}
+                                className="mt-1 bg-gray-700 border-gray-600 text-white"
+                              />
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Email Notifications */}
+                      <Card className="bg-gray-800 border-gray-700">
+                        <CardHeader>
+                          <CardTitle className="text-white">Email Notifications</CardTitle>
+                          <CardDescription className="text-gray-400">
+                            Get notified when new submissions are received
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                          <div className="flex items-center justify-between p-4 border border-gray-600 rounded-lg bg-gray-700">
+                            <div>
+                              <h4 className="font-medium text-white">Enable Email Notifications</h4>
+                              <p className="text-sm text-gray-400">
+                                Receive email alerts for new form submissions
+                              </p>
+                            </div>
+                            <Switch 
+                              checked={emailNotifications}
+                              onCheckedChange={setEmailNotifications}
+                            />
+                          </div>
+
+                          {emailNotifications && (
+                            <>
+                              <div>
+                                <Label htmlFor="notificationEmails" className="text-gray-300">Notification Email Addresses</Label>
+                                <Textarea
+                                  id="notificationEmails"
+                                  placeholder="Enter email addresses, one per line"
+                                  value={notificationEmails.join('\n')}
+                                  onChange={(e) => setNotificationEmails(e.target.value.split('\n').filter(Boolean))}
+                                  className="mt-1 bg-gray-700 border-gray-600 text-white"
+                                />
+                              </div>
+
+                              <div>
+                                <Label className="text-gray-300">Notification Type</Label>
+                                <Select value={notificationType} onValueChange={(value: 'all' | 'digest') => setNotificationType(value)}>
+                                  <SelectTrigger className="mt-1 bg-gray-700 border-gray-600 text-white">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="all">Immediate (every submission)</SelectItem>
+                                    <SelectItem value="digest">Daily digest</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
                     </div>
                     
                     {/* Settings Actions Sidebar */}
@@ -1551,10 +1872,10 @@ const FormEditPage = () => {
               </TabsContent>
               
               {/* Analytics Tab */}
-              <TabsContent value="analytics" className="mt-6 space-y-6">
+              <TabsContent value="analytics" className="mt-4 space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold">Form Analytics</h3>
-                  <p className="text-muted-foreground">
+                  <h3 className="text-base font-semibold text-white">Form Analytics</h3>
+                  <p className="text-gray-400">
                     Track your form's performance and submission trends
                   </p>
                 </div>
