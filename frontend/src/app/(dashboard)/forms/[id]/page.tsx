@@ -1275,6 +1275,7 @@ const FormEditPage = () => {
                       </CardContent>
                     </Card>
                   ) : (
+                    <>
                     <div className="grid gap-6 lg:grid-cols-2">
                       {/* Form Links */}
                       <div className="space-y-4">
@@ -1487,6 +1488,7 @@ const FormEditPage = () => {
                         </CardContent>
                       </Card>
                     </div>
+                    </>
                   )}
                 </div>
               </TabsContent>
