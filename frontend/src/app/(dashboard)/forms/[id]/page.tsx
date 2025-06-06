@@ -570,15 +570,15 @@ const FormEditPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-12 w-64" />
-          <div className="grid gap-6 md:grid-cols-3">
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
+      <div className="min-h-screen bg-gray-900 p-3 sm:p-4 lg:p-6">
+        <div className="max-w-6xl mx-auto space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <div className="grid gap-4 md:grid-cols-3">
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
           </div>
-          <Skeleton className="h-96" />
+          <Skeleton className="h-64" />
         </div>
       </div>
     );
@@ -586,12 +586,12 @@ const FormEditPage = () => {
 
   if (!form) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md bg-gray-800 border-gray-700">
           <CardContent className="p-6 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Form Not Found</h3>
-            <p className="text-muted-foreground mb-4">
+            <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2 text-white">Form Not Found</h3>
+            <p className="text-gray-400 mb-4">
               The form you're looking for doesn't exist or you don't have permission to access it.
             </p>
             <Button onClick={() => router.push('/forms')}>
@@ -605,25 +605,25 @@ const FormEditPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-900 p-3 sm:p-4 lg:p-6">
+      <div className="max-w-6xl mx-auto space-y-4">
         {/* Header with back button and title */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push('/forms')}
-              className="shrink-0"
+              className="shrink-0 text-gray-300 hover:text-white hover:bg-gray-800"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-white">
                 {form.title}
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-gray-400 mt-1 text-sm">
                 Manage your form settings and monitor performance
               </p>
             </div>
@@ -633,8 +633,8 @@ const FormEditPage = () => {
             <Badge 
               variant={published ? "default" : "outline"} 
               className={cn(
-                "px-3 py-1",
-                published ? "bg-green-100 text-green-800 border-green-200" : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                "px-2 py-1 text-xs",
+                published ? "bg-green-900 text-green-100 border-green-700" : "bg-yellow-900 text-yellow-100 border-yellow-700"
               )}
             >
               {published ? (
@@ -654,7 +654,7 @@ const FormEditPage = () => {
               variant="outline"
               size="sm"
               onClick={() => setIsDeleteDialogOpen(true)}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="text-red-400 hover:text-red-300 hover:bg-red-900/20 border-gray-600"
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -662,49 +662,49 @@ const FormEditPage = () => {
         </div>
 
         {/* Hero Section - Form Statistics */}
-        <div className="grid gap-6 md:grid-cols-4">
-          <Card className="md:col-span-2 lg:col-span-2 relative overflow-hidden">
-            <CardContent className="p-6">
+        <div className="grid gap-4 md:grid-cols-4">
+          <Card className="md:col-span-2 lg:col-span-2 relative overflow-hidden bg-gray-800 border-gray-700">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">Form Performance</h3>
-                  <div className="space-y-2">
+                  <h3 className="text-base font-semibold mb-2 text-white">Form Performance</h3>
+                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-blue-600" />
-                      <span className="text-2xl font-bold">{submissionStats.total}</span>
-                      <span className="text-muted-foreground">Total Submissions</span>
+                      <BarChart3 className="h-4 w-4 text-blue-400" />
+                      <span className="text-xl font-bold text-white">{submissionStats.total}</span>
+                      <span className="text-gray-400 text-sm">Total Submissions</span>
                     </div>
                     {submissionStats.total > 0 && (
                       <div className="flex items-center gap-4 text-sm">
                         <div className="flex items-center gap-1">
-                          <Activity className="h-3 w-3 text-green-600" />
-                          <span>{submissionStats.today} today</span>
+                          <Activity className="h-3 w-3 text-green-400" />
+                          <span className="text-gray-300">{submissionStats.today} today</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <TrendingUp className="h-3 w-3 text-purple-600" />
-                          <span>{submissionStats.thisWeek} this week</span>
+                          <TrendingUp className="h-3 w-3 text-purple-400" />
+                          <span className="text-gray-300">{submissionStats.thisWeek} this week</span>
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-3xl font-bold text-green-600">
+                  <div className="text-2xl font-bold text-green-400">
                     {submissionStats.conversionRate}%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-gray-400">
                     Conversion Rate
                   </div>
                 </div>
               </div>
               
               {submissionStats.total === 0 && (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-blue-800">
+                <div className="mt-3 p-3 bg-blue-900/20 border border-blue-700 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-300">
                     <Target className="h-4 w-4" />
-                    <span className="font-medium">Ready to collect submissions!</span>
+                    <span className="font-medium text-sm">Ready to collect submissions!</span>
                   </div>
-                  <p className="text-sm text-blue-700 mt-1">
+                  <p className="text-xs text-blue-400 mt-1">
                     Share your form to start receiving responses from your audience.
                   </p>
                 </div>
@@ -712,19 +712,19 @@ const FormEditPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <FileText className="h-5 w-5 text-purple-600" />
-                <h3 className="font-semibold">Form Fields</h3>
+          <Card className="relative overflow-hidden bg-gray-800 border-gray-700">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <FileText className="h-4 w-4 text-purple-400" />
+                <h3 className="font-semibold text-white text-sm">Form Fields</h3>
               </div>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold">{form.fields?.length || 0}</div>
-                <div className="text-sm text-muted-foreground">
+              <div className="space-y-1">
+                <div className="text-xl font-bold text-white">{form.fields?.length || 0}</div>
+                <div className="text-xs text-gray-400">
                   {form.fields?.filter(f => f.required).length || 0} required fields
                 </div>
                 {form.multiPageEnabled && (
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs border-gray-600 text-gray-300">
                     Multi-page enabled
                   </Badge>
                 )}
@@ -732,20 +732,20 @@ const FormEditPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="relative overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar className="h-5 w-5 text-orange-600" />
-                <h3 className="font-semibold">Last Activity</h3>
+          <Card className="relative overflow-hidden bg-gray-800 border-gray-700">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="h-4 w-4 text-orange-400" />
+                <h3 className="font-semibold text-white text-sm">Last Activity</h3>
               </div>
-              <div className="space-y-2">
-                <div className="text-sm">
+              <div className="space-y-1">
+                <div className="text-sm text-gray-300">
                   {submissionStats.lastSubmission 
                     ? new Date(submissionStats.lastSubmission).toLocaleDateString()
                     : 'No submissions yet'
                   }
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-gray-400">
                   Created {new Date(form.createdAt).toLocaleDateString()}
                 </div>
               </div>
@@ -754,34 +754,34 @@ const FormEditPage = () => {
         </div>
 
         {/* Quick Action Cards */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Quick Actions</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold text-white">Quick Actions</h2>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
             {/* Edit Form Builder */}
-            <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500" onClick={handleEditFields}>
-              <CardContent className="p-6">
+            <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-blue-500 bg-gray-800 border-gray-700 hover:bg-gray-750" onClick={handleEditFields}>
+              <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Edit className="h-5 w-5 text-blue-600" />
+                  <div className="p-2 bg-blue-900/30 rounded-lg">
+                    <Edit className="h-4 w-4 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Edit Fields</h3>
-                    <p className="text-sm text-muted-foreground">Add, remove, or modify form fields</p>
+                    <h3 className="font-semibold text-white text-sm">Edit Fields</h3>
+                    <p className="text-xs text-gray-400">Add, remove, or modify form fields</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Preview Form */}
-            <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-green-500" onClick={handlePreviewForm}>
-              <CardContent className="p-6">
+            <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-green-500 bg-gray-800 border-gray-700 hover:bg-gray-750" onClick={handlePreviewForm}>
+              <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Eye className="h-5 w-5 text-green-600" />
+                  <div className="p-2 bg-green-900/30 rounded-lg">
+                    <Eye className="h-4 w-4 text-green-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">Preview Form</h3>
-                    <p className="text-sm text-muted-foreground">See how your form looks to users</p>
+                    <h3 className="font-semibold text-white text-sm">Preview Form</h3>
+                    <p className="text-xs text-gray-400">See how your form looks to users</p>
                   </div>
                 </div>
               </CardContent>
@@ -789,26 +789,26 @@ const FormEditPage = () => {
 
             {/* Share Form */}
             <Card className={cn(
-              "cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4", 
-              published ? "border-l-purple-500" : "border-l-gray-300"
+              "cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 bg-gray-800 border-gray-700 hover:bg-gray-750", 
+              published ? "border-l-purple-500" : "border-l-gray-500"
             )} onClick={() => published ? setActiveTab('share') : handleTogglePublish}>
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <div className={cn(
                     "p-2 rounded-lg",
-                    published ? "bg-purple-100" : "bg-gray-100"
+                    published ? "bg-purple-900/30" : "bg-gray-700"
                   )}>
                     {published ? (
-                      <Share2 className="h-5 w-5 text-purple-600" />
+                      <Share2 className="h-4 w-4 text-purple-400" />
                     ) : (
-                      <Globe className="h-5 w-5 text-gray-600" />
+                      <Globe className="h-4 w-4 text-gray-400" />
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold">
+                    <h3 className="font-semibold text-white text-sm">
                       {published ? 'Share Form' : 'Publish Form'}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-gray-400">
                       {published ? 'Get shareable links and embed code' : 'Make your form live and accessible'}
                     </p>
                   </div>
@@ -818,17 +818,17 @@ const FormEditPage = () => {
 
             {/* View Submissions */}
             <Card 
-              className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-orange-500" 
+              className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-orange-500 bg-gray-800 border-gray-700 hover:bg-gray-750" 
               onClick={() => router.push(`/submissions?form=${formId}`)}
             >
-              <CardContent className="p-6">
+              <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <Users className="h-5 w-5 text-orange-600" />
+                  <div className="p-2 bg-orange-900/30 rounded-lg">
+                    <Users className="h-4 w-4 text-orange-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">View Submissions</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold text-white text-sm">View Submissions</h3>
+                    <p className="text-xs text-gray-400">
                       {submissionStats.total} responses to review
                     </p>
                   </div>
@@ -840,38 +840,38 @@ const FormEditPage = () => {
 
         {/* Onboarding Guide for New Users */}
         {form.fields?.length === 0 && (
-          <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <div className="p-2 bg-blue-100 rounded-lg shrink-0">
-                  <Sparkles className="h-6 w-6 text-blue-600" />
+          <Card className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-700">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-blue-900/30 rounded-lg shrink-0">
+                  <Sparkles className="h-5 w-5 text-blue-400" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-2">Welcome! Let's set up your form</h3>
-                  <p className="text-blue-800 mb-4">
+                  <h3 className="text-base font-semibold text-blue-300 mb-2">Welcome! Let's set up your form</h3>
+                  <p className="text-blue-400 mb-3 text-sm">
                     Follow these steps to create an effective form that captures the information you need.
                   </p>
-                  <div className="grid gap-3 md:grid-cols-3">
+                  <div className="grid gap-2 md:grid-cols-3">
                     <div className="flex items-center gap-2 text-sm">
-                      <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
-                      <span>Add form fields</span>
+                      <div className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                      <span className="text-gray-300">Add form fields</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
-                      <span>Configure settings</span>
+                      <div className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                      <span className="text-gray-300">Configure settings</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</div>
-                      <span>Publish and share</span>
+                      <div className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                      <span className="text-gray-300">Publish and share</span>
                     </div>
                   </div>
-                  <div className="flex gap-3 mt-4">
-                    <Button onClick={handleEditFields} className="bg-blue-600 hover:bg-blue-700">
-                      <Plus className="mr-2 h-4 w-4" />
+                  <div className="flex gap-2 mt-3">
+                    <Button onClick={handleEditFields} className="bg-blue-600 hover:bg-blue-700 text-sm">
+                      <Plus className="mr-2 h-3 w-3" />
                       Add Your First Field
                     </Button>
-                    <Button variant="outline" onClick={() => setActiveTab('settings')}>
-                      <Settings className="mr-2 h-4 w-4" />
+                    <Button variant="outline" onClick={() => setActiveTab('settings')} className="border-gray-600 text-gray-300 hover:bg-gray-800 text-sm">
+                      <Settings className="mr-2 h-3 w-3" />
                       Configure Settings
                     </Button>
                   </div>
@@ -883,25 +883,25 @@ const FormEditPage = () => {
 
         {/* Prominent Share Section for Published Forms */}
         {published && (
-          <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
-            <CardContent className="p-6">
+          <Card className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border-green-700">
+            <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
+                  <div className="p-2 bg-green-900/30 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-green-400" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-green-900">Your form is live!</h3>
-                    <p className="text-green-800">Share it with your audience to start collecting responses.</p>
+                    <h3 className="text-base font-semibold text-green-300">Your form is live!</h3>
+                    <p className="text-green-400 text-sm">Share it with your audience to start collecting responses.</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleCopyLink} className="border-green-300">
-                    <Copy className="mr-2 h-4 w-4" />
+                  <Button variant="outline" onClick={handleCopyLink} className="border-green-600 text-green-300 hover:bg-green-900/20 text-sm">
+                    <Copy className="mr-2 h-3 w-3" />
                     Copy Link
                   </Button>
-                  <Button onClick={() => setActiveTab('share')} className="bg-green-600 hover:bg-green-700">
-                    <ExternalLink className="mr-2 h-4 w-4" />
+                  <Button onClick={() => setActiveTab('share')} className="bg-green-600 hover:bg-green-700 text-sm">
+                    <ExternalLink className="mr-2 h-3 w-3" />
                     Share Options
                   </Button>
                 </div>
@@ -911,69 +911,69 @@ const FormEditPage = () => {
         )}
 
         {/* Main Content Tabs */}
-        <Card>
-          <CardContent className="p-6">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardContent className="p-4">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="fields">Fields</TabsTrigger>
-                <TabsTrigger value="share">Share</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
-                <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 bg-gray-700 border-gray-600">
+                <TabsTrigger value="overview" className="text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white">Overview</TabsTrigger>
+                <TabsTrigger value="fields" className="text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white">Fields</TabsTrigger>
+                <TabsTrigger value="share" className="text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white">Share</TabsTrigger>
+                <TabsTrigger value="settings" className="text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white">Settings</TabsTrigger>
+                <TabsTrigger value="webhooks" className="text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white">Webhooks</TabsTrigger>
+                <TabsTrigger value="analytics" className="text-gray-300 data-[state=active]:bg-gray-600 data-[state=active]:text-white">Analytics</TabsTrigger>
               </TabsList>
               
               {/* Overview Tab */}
-              <TabsContent value="overview" className="mt-6 space-y-6">
-                <div className="grid gap-6 lg:grid-cols-3">
+              <TabsContent value="overview" className="mt-4 space-y-4">
+                <div className="grid gap-4 lg:grid-cols-3">
                   {/* Form Details */}
-                  <div className="lg:col-span-2 space-y-6">
+                  <div className="lg:col-span-2 space-y-4">
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">Form Details</h3>
-                      <div className="space-y-4">
+                      <h3 className="text-base font-semibold mb-3 text-white">Form Details</h3>
+                      <div className="space-y-3">
                         <div>
-                          <Label htmlFor="formTitle" className="text-sm font-medium">Form Title</Label>
+                          <Label htmlFor="formTitle" className="text-sm font-medium text-gray-300">Form Title</Label>
                           <Input
                             id="formTitle"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="mt-1"
+                            className="mt-1 bg-gray-700 border-gray-600 text-white"
                             placeholder="Enter your form title"
                           />
                         </div>
                         
                         <div>
-                          <Label htmlFor="formDescription" className="text-sm font-medium">Description</Label>
+                          <Label htmlFor="formDescription" className="text-sm font-medium text-gray-300">Description</Label>
                           <Textarea
                             id="formDescription"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="mt-1 min-h-[100px]"
+                            className="mt-1 min-h-[80px] bg-gray-700 border-gray-600 text-white"
                             placeholder="Describe what this form is for..."
                           />
                         </div>
                         
-                        <div className="flex items-center space-x-3 p-4 border rounded-lg">
+                        <div className="flex items-center space-x-3 p-3 border border-gray-600 rounded-lg bg-gray-700">
                           <Switch
                             checked={published}
                             onCheckedChange={handleTogglePublish}
                             id="published"
                           />
                           <div className="flex-1">
-                            <Label htmlFor="published" className="font-medium">
+                            <Label htmlFor="published" className="font-medium text-white">
                               {published ? 'Published' : 'Draft'}
                             </Label>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-gray-400">
                               {published ? 'Your form is live and accepting submissions' : 'Your form is not accepting submissions'}
                             </p>
                           </div>
                         </div>
                         
-                        <div className="flex gap-3">
-                          <Button onClick={handleSaveForm} disabled={saving}>
+                        <div className="flex gap-2">
+                          <Button onClick={handleSaveForm} disabled={saving} className="text-sm">
                             {saving ? 'Saving...' : 'Save Changes'}
                           </Button>
-                          <Button variant="outline" onClick={() => router.push('/forms')}>
+                          <Button variant="outline" onClick={() => router.push('/forms')} className="border-gray-600 text-gray-300 hover:bg-gray-700 text-sm">
                             Cancel
                           </Button>
                         </div>
@@ -982,40 +982,40 @@ const FormEditPage = () => {
                   </div>
                   
                   {/* Form Information Sidebar */}
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Form Information</CardTitle>
+                  <div className="space-y-4">
+                    <Card className="bg-gray-700 border-gray-600">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm text-white">Form Information</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="grid grid-cols-2 gap-1 text-sm">
-                          <span className="text-muted-foreground">Created:</span>
-                          <span>{new Date(form.createdAt).toLocaleDateString()}</span>
+                      <CardContent className="space-y-2 pt-2">
+                        <div className="grid grid-cols-2 gap-1 text-xs">
+                          <span className="text-gray-400">Created:</span>
+                          <span className="text-gray-300">{new Date(form.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-1 text-sm">
-                          <span className="text-muted-foreground">Updated:</span>
-                          <span>{new Date(form.updatedAt).toLocaleDateString()}</span>
+                        <div className="grid grid-cols-2 gap-1 text-xs">
+                          <span className="text-gray-400">Updated:</span>
+                          <span className="text-gray-300">{new Date(form.updatedAt).toLocaleDateString()}</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-1 text-sm">
-                          <span className="text-muted-foreground">Form ID:</span>
-                          <span className="font-mono text-xs break-all">{form.id}</span>
+                        <div className="grid grid-cols-2 gap-1 text-xs">
+                          <span className="text-gray-400">Form ID:</span>
+                          <span className="font-mono text-xs break-all text-gray-300">{form.id}</span>
                         </div>
-                        <div className="grid grid-cols-2 gap-1 text-sm">
-                          <span className="text-muted-foreground">Slug:</span>
-                          <span className="font-mono text-xs break-all">{form.slug}</span>
+                        <div className="grid grid-cols-2 gap-1 text-xs">
+                          <span className="text-gray-400">Slug:</span>
+                          <span className="font-mono text-xs break-all text-gray-300">{form.slug}</span>
                         </div>
                         
                         {/* Show client information for super admin users */}
                         {isAdmin && form.clientId !== user?.id && form.client && (
                           <>
-                            <Separator />
-                            <div className="space-y-2">
-                              <h4 className="font-medium text-sm">Form Owner</h4>
-                              <div className="space-y-1 text-sm">
-                                <div>{form.client.name || 'Not specified'}</div>
-                                <div className="text-muted-foreground">{form.client.email}</div>
+                            <Separator className="bg-gray-600" />
+                            <div className="space-y-1">
+                              <h4 className="font-medium text-xs text-white">Form Owner</h4>
+                              <div className="space-y-1 text-xs">
+                                <div className="text-gray-300">{form.client.name || 'Not specified'}</div>
+                                <div className="text-gray-400">{form.client.email}</div>
                                 {form.client.company && (
-                                  <div className="text-muted-foreground">{form.client.company}</div>
+                                  <div className="text-gray-400">{form.client.company}</div>
                                 )}
                               </div>
                             </div>
@@ -1025,31 +1025,31 @@ const FormEditPage = () => {
                     </Card>
                     
                     {/* Quick Actions */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Quick Actions</CardTitle>
+                    <Card className="bg-gray-700 border-gray-600">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm text-white">Quick Actions</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-2">
-                        <Button onClick={handleEditFields} variant="outline" className="w-full justify-start">
-                          <Edit className="mr-2 h-4 w-4" />
+                      <CardContent className="space-y-2 pt-2">
+                        <Button onClick={handleEditFields} variant="outline" className="w-full justify-start text-xs border-gray-600 text-gray-300 hover:bg-gray-600">
+                          <Edit className="mr-2 h-3 w-3" />
                           Edit Form Builder
                         </Button>
-                        <Button onClick={handlePreviewForm} variant="outline" className="w-full justify-start">
-                          <Eye className="mr-2 h-4 w-4" />
+                        <Button onClick={handlePreviewForm} variant="outline" className="w-full justify-start text-xs border-gray-600 text-gray-300 hover:bg-gray-600">
+                          <Eye className="mr-2 h-3 w-3" />
                           Preview Form
                         </Button>
                         {published && (
-                          <Button onClick={handleCopyLink} variant="outline" className="w-full justify-start">
-                            <Copy className="mr-2 h-4 w-4" />
+                          <Button onClick={handleCopyLink} variant="outline" className="w-full justify-start text-xs border-gray-600 text-gray-300 hover:bg-gray-600">
+                            <Copy className="mr-2 h-3 w-3" />
                             Copy Form Link
                           </Button>
                         )}
                         <Button 
                           onClick={() => router.push(`/submissions?form=${formId}`)} 
                           variant="outline" 
-                          className="w-full justify-start"
+                          className="w-full justify-start text-xs border-gray-600 text-gray-300 hover:bg-gray-600"
                         >
-                          <Users className="mr-2 h-4 w-4" />
+                          <Users className="mr-2 h-3 w-3" />
                           View Submissions ({submissionStats.total})
                         </Button>
                       </CardContent>
@@ -1059,45 +1059,45 @@ const FormEditPage = () => {
               </TabsContent>
               
               {/* Fields Tab */}
-              <TabsContent value="fields" className="mt-6">
-                <div className="space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <TabsContent value="fields" className="mt-4">
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                      <h3 className="text-lg font-semibold">Form Fields</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="text-base font-semibold text-white">Form Fields</h3>
+                      <p className="text-sm text-gray-400">
                         {form.fields?.length === 0 
                           ? "No fields added yet" 
                           : `${form.fields.length} field${form.fields.length !== 1 ? 's' : ''} configured`}
                       </p>
                     </div>
-                    <Button onClick={handleEditFields} className="shrink-0">
-                      <Edit className="mr-2 h-4 w-4" />
+                    <Button onClick={handleEditFields} className="shrink-0 text-sm">
+                      <Edit className="mr-2 h-3 w-3" />
                       Open Form Builder
                     </Button>
                   </div>
                   
                   {form.fields?.length === 0 ? (
-                    <Card>
-                      <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                        <div className="p-4 bg-blue-100 rounded-full mb-4">
-                          <Plus className="h-8 w-8 text-blue-600" />
+                    <Card className="bg-gray-700 border-gray-600">
+                      <CardContent className="flex flex-col items-center justify-center p-8 text-center">
+                        <div className="p-3 bg-blue-900/30 rounded-full mb-3">
+                          <Plus className="h-6 w-6 text-blue-400" />
                         </div>
-                        <h3 className="text-lg font-semibold mb-2">No fields added yet</h3>
-                        <p className="text-muted-foreground mb-6 max-w-md">
+                        <h3 className="text-base font-semibold mb-2 text-white">No fields added yet</h3>
+                        <p className="text-gray-400 mb-4 max-w-md text-sm">
                           Get started by adding your first field. You can choose from text inputs, dropdowns, checkboxes, and many more field types.
                         </p>
-                        <Button onClick={handleEditFields} size="lg">
-                          <Plus className="mr-2 h-4 w-4" />
+                        <Button onClick={handleEditFields} className="text-sm">
+                          <Plus className="mr-2 h-3 w-3" />
                           Add Your First Field
                         </Button>
                       </CardContent>
                     </Card>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {form.fields
                         .sort((a, b) => a.order - b.order)
                         .map((field, index) => (
-                          <Card key={field.id} className="hover:shadow-md transition-shadow">
+                          <Card key={field.id} className="hover:shadow-md transition-shadow bg-gray-700 border-gray-600">
                             <CardContent className="p-4">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-4">
