@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Github } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FooterProps {
@@ -42,15 +41,7 @@ const Footer = ({ className }: FooterProps) => {
             </Link>
           </nav>
           
-          <Link
-            href="https://github.com/datizmo"
-            target="_blank"
-            rel="noreferrer"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Github className="h-4 w-4" />
-            <span className="sr-only">GitHub</span>
-          </Link>
+          {/* Removed GitHub link */}
         </div>
       </div>
     </footer>
