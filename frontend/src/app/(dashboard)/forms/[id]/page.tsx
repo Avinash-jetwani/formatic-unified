@@ -36,7 +36,10 @@ import {
   Twitter,
   Linkedin,
   Mail,
-  MessageCircle
+  MessageCircle,
+  Type,
+  List,
+  CheckSquare
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -922,47 +925,155 @@ const FormEditPage = () => {
           </div>
         </div>
 
-        {/* Onboarding Guide for New Users */}
+        {/* Enhanced Onboarding Guide for New Users */}
         {form.fields?.length === 0 && (
-          <Card className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-700">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-blue-900/30 rounded-lg shrink-0">
-                  <Sparkles className="h-5 w-5 text-blue-400" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-base font-semibold text-blue-300 mb-2">Welcome! Let's set up your form</h3>
-                  <p className="text-blue-400 mb-3 text-sm">
-                    Follow these steps to create an effective form that captures the information you need.
+          <div className="space-y-4">
+            {/* Main Welcome Card */}
+            <Card className="bg-gradient-to-br from-blue-900/20 via-indigo-900/20 to-purple-900/20 border-blue-700">
+              <CardContent className="p-6">
+                <div className="text-center mb-6">
+                  <div className="inline-flex p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-3">
+                    <Sparkles className="h-6 w-6 text-white" />
+                  </div>
+                  <h2 className="text-xl font-bold bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent mb-2">
+                    Welcome! Let's Build Your Form
+                  </h2>
+                  <p className="text-blue-400 max-w-2xl mx-auto">
+                    Your form is ready to be customized. Follow these steps to create an effective form that captures exactly what you need.
                   </p>
-                  <div className="grid gap-2 md:grid-cols-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">1</div>
-                      <span className="text-gray-300">Add form fields</span>
+                </div>
+
+                {/* Step-by-step Process */}
+                <div className="grid md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                      <h3 className="font-semibold text-blue-300">Add Fields</h3>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
-                      <span className="text-gray-300">Configure settings</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <div className="w-5 h-5 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">3</div>
-                      <span className="text-gray-300">Publish and share</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <Button onClick={handleEditFields} className="bg-blue-600 hover:bg-blue-700 text-sm">
+                    <p className="text-sm text-gray-300 mb-3">
+                      Start by adding form fields to collect the information you need from your users.
+                    </p>
+                    <ul className="space-y-1 text-xs text-gray-400">
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                        Text inputs & email fields
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                        Dropdowns & multiple choice
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                        File uploads & ratings
+                      </li>
+                    </ul>
+                    <Button onClick={handleEditFields} className="w-full mt-3 bg-blue-600 hover:bg-blue-700 text-sm">
                       <Plus className="mr-2 h-3 w-3" />
-                      Add Your First Field
+                      Add Fields
                     </Button>
-                    <Button variant="outline" onClick={() => setActiveTab('settings')} className="border-gray-600 text-gray-300 hover:bg-gray-800 text-sm">
+                  </div>
+
+                  <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                      <h3 className="font-semibold text-purple-300">Configure</h3>
+                    </div>
+                    <p className="text-sm text-gray-300 mb-3">
+                      Customize your form settings, notifications, and access controls.
+                    </p>
+                    <ul className="space-y-1 text-xs text-gray-400">
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                        Form restrictions & limits
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                        Email notifications
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                        Success messages
+                      </li>
+                    </ul>
+                    <Button variant="outline" onClick={() => setActiveTab('settings')} className="w-full mt-3 border-purple-600 text-purple-300 hover:bg-purple-900/20 text-sm">
                       <Settings className="mr-2 h-3 w-3" />
-                      Configure Settings
+                      Configure
+                    </Button>
+                  </div>
+
+                  <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                      <h3 className="font-semibold text-green-300">Publish & Share</h3>
+                    </div>
+                    <p className="text-sm text-gray-300 mb-3">
+                      Test your form, publish it, and share it with your audience.
+                    </p>
+                    <ul className="space-y-1 text-xs text-gray-400">
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                        Preview & test form
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                        Publish to go live
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                        Share via link or embed
+                      </li>
+                    </ul>
+                    <Button variant="outline" onClick={() => setActiveTab('share')} className="w-full mt-3 border-green-600 text-green-300 hover:bg-green-900/20 text-sm">
+                      <ExternalLink className="mr-2 h-3 w-3" />
+                      Share Options
                     </Button>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+
+                {/* Quick Actions */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Button onClick={handleEditFields} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Start Building Your Form
+                  </Button>
+                  <Button variant="outline" onClick={handlePreviewForm} className="border-gray-600 text-gray-300 hover:bg-gray-800">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview Form
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Progress Indicator */}
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-white">Setup Progress</h3>
+                  <span className="text-sm text-gray-400">0 of 3 steps completed</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded-full border-2 border-gray-600 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-gray-600"></div>
+                    </div>
+                    <span className="text-sm text-gray-400">Add at least one form field</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded-full border-2 border-gray-600 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-gray-600"></div>
+                    </div>
+                    <span className="text-sm text-gray-400">Configure form settings</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-4 h-4 rounded-full border-2 border-gray-600 flex items-center justify-center">
+                      <div className="w-2 h-2 rounded-full bg-gray-600"></div>
+                    </div>
+                    <span className="text-sm text-gray-400">Publish and share your form</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Prominent Share Section for Published Forms */}
@@ -1161,21 +1272,61 @@ const FormEditPage = () => {
                   </div>
                   
                   {form.fields?.length === 0 ? (
-                    <Card className="bg-gray-700 border-gray-600">
-                      <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-                        <div className="p-3 bg-blue-900/30 rounded-full mb-3">
-                          <Plus className="h-6 w-6 text-blue-400" />
-                        </div>
-                        <h3 className="text-base font-semibold mb-2 text-white">No fields added yet</h3>
-                        <p className="text-gray-400 mb-4 max-w-md text-sm">
-                          Get started by adding your first field. You can choose from text inputs, dropdowns, checkboxes, and many more field types.
-                        </p>
-                        <Button onClick={handleEditFields} className="text-sm">
-                          <Plus className="mr-2 h-3 w-3" />
-                          Add Your First Field
-                        </Button>
-                      </CardContent>
-                    </Card>
+                    <div className="space-y-4">
+                      {/* Main empty state */}
+                      <Card className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 border-blue-700">
+                        <CardContent className="p-6 text-center">
+                          <div className="inline-flex p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
+                            <Plus className="h-6 w-6 text-white" />
+                          </div>
+                          <h3 className="text-lg font-semibold mb-2 text-white">Ready to Add Your First Field?</h3>
+                          <p className="text-gray-300 mb-6 max-w-md mx-auto">
+                            Start building your form by adding fields that will collect the information you need from your users.
+                          </p>
+                          <Button onClick={handleEditFields} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                            <Plus className="mr-2 h-4 w-4" />
+                            Open Form Builder
+                          </Button>
+                        </CardContent>
+                      </Card>
+
+                      {/* Field type examples */}
+                      <Card className="bg-gray-800/50 border-gray-700">
+                        <CardContent className="p-4">
+                          <h4 className="font-semibold text-white mb-3">Popular Field Types</h4>
+                          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div className="bg-gray-700/50 rounded-lg p-3 text-center">
+                              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                <Type className="h-4 w-4 text-white" />
+                              </div>
+                              <h5 className="text-sm font-medium text-white">Text Input</h5>
+                              <p className="text-xs text-gray-400">Names, comments, etc.</p>
+                            </div>
+                            <div className="bg-gray-700/50 rounded-lg p-3 text-center">
+                              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                <Mail className="h-4 w-4 text-white" />
+                              </div>
+                              <h5 className="text-sm font-medium text-white">Email</h5>
+                              <p className="text-xs text-gray-400">Email addresses</p>
+                            </div>
+                            <div className="bg-gray-700/50 rounded-lg p-3 text-center">
+                              <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                <List className="h-4 w-4 text-white" />
+                              </div>
+                              <h5 className="text-sm font-medium text-white">Dropdown</h5>
+                              <p className="text-xs text-gray-400">Multiple choice</p>
+                            </div>
+                            <div className="bg-gray-700/50 rounded-lg p-3 text-center">
+                              <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                <CheckSquare className="h-4 w-4 text-white" />
+                              </div>
+                              <h5 className="text-sm font-medium text-white">Checkbox</h5>
+                              <p className="text-xs text-gray-400">Yes/No questions</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       {form.fields

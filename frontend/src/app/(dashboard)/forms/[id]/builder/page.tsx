@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Pencil, Copy, Trash2, GripVertical, PlusCircle, Eye } from 'lucide-react';
+import { ArrowLeft, Pencil, Copy, Trash2, GripVertical, PlusCircle, Eye, Lightbulb } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -2205,8 +2205,150 @@ const FormBuilderPage = () => {
                       ))}
                     </div>
                   ) : fields.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No fields added yet. Click "Add New Field" to get started.</p>
+                    <div className="space-y-6">
+                      {/* Comprehensive Onboarding Guide */}
+                      <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-700 rounded-xl p-6 border border-blue-100 dark:border-gray-600">
+                        <div className="text-center mb-6">
+                          <div className="inline-flex p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-3">
+                            <PlusCircle className="h-6 w-6 text-white" />
+                          </div>
+                          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                            Let's Build Your Form!
+                          </h2>
+                          <p className="text-gray-600 dark:text-gray-300 max-w-md mx-auto">
+                            Follow these simple steps to create an effective form that captures exactly what you need.
+                          </p>
+                        </div>
+
+                        {/* Step-by-step Process */}
+                        <div className="grid md:grid-cols-3 gap-4 mb-6">
+                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                              <h3 className="font-semibold text-gray-900 dark:text-white">Add Fields</h3>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                              Start by adding form fields like text inputs, dropdowns, checkboxes, and more.
+                            </p>
+                            <ul className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                              <li className="flex items-center gap-2">
+                                <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                                Text & Email fields
+                              </li>
+                              <li className="flex items-center gap-2">
+                                <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                                Dropdowns & Radio buttons
+                              </li>
+                              <li className="flex items-center gap-2">
+                                <div className="w-1 h-1 bg-blue-500 rounded-full"></div>
+                                File uploads & Ratings
+                              </li>
+                            </ul>
+                          </div>
+
+                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                              <h3 className="font-semibold text-gray-900 dark:text-white">Configure</h3>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                              Customize field settings, add validation rules, and set up conditional logic.
+                            </p>
+                            <ul className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                              <li className="flex items-center gap-2">
+                                <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                                Required fields
+                              </li>
+                              <li className="flex items-center gap-2">
+                                <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                                Conditional logic
+                              </li>
+                              <li className="flex items-center gap-2">
+                                <div className="w-1 h-1 bg-purple-500 rounded-full"></div>
+                                Field validation
+                              </li>
+                            </ul>
+                          </div>
+
+                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                              <h3 className="font-semibold text-gray-900 dark:text-white">Publish</h3>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                              Test your form, then publish and share it with your audience.
+                            </p>
+                            <ul className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                              <li className="flex items-center gap-2">
+                                <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                                Preview & test
+                              </li>
+                              <li className="flex items-center gap-2">
+                                <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                                Publish form
+                              </li>
+                              <li className="flex items-center gap-2">
+                                <div className="w-1 h-1 bg-green-500 rounded-full"></div>
+                                Share & embed
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+
+                        {/* Call-to-action buttons */}
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                          <Button onClick={handleAddField} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Add Your First Field
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            onClick={() => router.push(`/forms/${formId}/preview`)}
+                            className="border-gray-300 dark:border-gray-600"
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Preview Form
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Quick Start Tips */}
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                        <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                          <Lightbulb className="h-4 w-4 text-yellow-500" />
+                          Quick Start Tips
+                        </h3>
+                        <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div>
+                              <span className="font-medium text-gray-900 dark:text-white">Start Simple:</span>
+                              <span className="text-gray-600 dark:text-gray-300 ml-1">Begin with basic fields like name and email</span>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-purple-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div>
+                              <span className="font-medium text-gray-900 dark:text-white">Test Early:</span>
+                              <span className="text-gray-600 dark:text-gray-300 ml-1">Use the preview to test your form as you build</span>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div>
+                              <span className="font-medium text-gray-900 dark:text-white">Drag & Drop:</span>
+                              <span className="text-gray-600 dark:text-gray-300 ml-1">Reorder fields by dragging them up or down</span>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div>
+                              <span className="font-medium text-gray-900 dark:text-white">Save Often:</span>
+                              <span className="text-gray-600 dark:text-gray-300 ml-1">Changes are saved automatically when you edit fields</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <DndContext
