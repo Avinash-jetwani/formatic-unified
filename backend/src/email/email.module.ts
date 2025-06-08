@@ -7,21 +7,12 @@ import { EmailService } from './email.service';
 @Module({
   imports: [
     MailerModule.forRoot({
-      // In development, use a null transport that just logs emails
-      transport: process.env.NODE_ENV === 'production' 
-        ? {
-            host: process.env.MAIL_HOST || 'smtp.example.com',
-            port: parseInt(process.env.MAIL_PORT || '587', 10),
-            auth: {
-              user: process.env.MAIL_USER || 'user',
-              pass: process.env.MAIL_PASSWORD || 'password',
-            },
-          }
-        : {
-            jsonTransport: true, // This is a "no-op" transport that doesn't actually send emails
-          },
+      // Use a simple transport configuration that won't interfere with AWS SES
+      transport: {
+        jsonTransport: true, // This is a "no-op" transport for fallback
+      },
       defaults: {
-        from: `"Formatic" <${process.env.MAIL_FROM || 'noreply@formatic.com'}>`,
+        from: `"${process.env.APP_NAME || 'Datizmo'}" <${process.env.MAIL_FROM || 'noreply@datizmo.com'}>`,
       },
       template: {
         dir: join(__dirname, 'templates'),

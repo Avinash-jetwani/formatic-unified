@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Role, WebhookEventType } from '@prisma/client';
 import * as PDFDocument from 'pdfkit';
 import { WebhookDeliveryService } from '../webhooks/webhook-delivery.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class SubmissionsService {
@@ -12,13 +13,23 @@ export class SubmissionsService {
 
   constructor(
     private prisma: PrismaService,
-    private webhookDeliveryService: WebhookDeliveryService
+    private webhookDeliveryService: WebhookDeliveryService,
+    private emailService: EmailService
   ) {}
 
   async create(createSubmissionDto: CreateSubmissionDto) {
     // Check if form exists and is published
     const form = await this.prisma.form.findUnique({
       where: { id: createSubmissionDto.formId },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        }
+      }
     });
     
     if (!form || !form.published) {
@@ -40,6 +51,28 @@ export class SubmissionsService {
         location: createSubmissionDto.location,
       },
     });
+
+    // Send email notification to form owner
+    try {
+      await this.emailService.sendFormSubmissionNotification(
+        {
+          email: form.client.email,
+          name: form.client.name,
+          id: form.client.id,
+        },
+        {
+          formTitle: form.title,
+          formId: form.id,
+          submissionId: submission.id,
+          submittedBy: 'Anonymous', // Could be enhanced to capture user info
+                     submissionData: submission.data as Record<string, any>,
+          submissionDate: submission.createdAt,
+        }
+      );
+    } catch (error) {
+      this.logger.error(`Failed to send form submission notification: ${error.message}`, error.stack);
+      // Don't fail the submission if email fails
+    }
 
     // Trigger webhooks for this form
     this.triggerWebhooks(form.id, submission);
