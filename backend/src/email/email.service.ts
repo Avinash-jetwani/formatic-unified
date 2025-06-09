@@ -1,9 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as handlebars from 'handlebars';
 
 export interface EmailUser {
   email: string;
@@ -26,79 +22,8 @@ export class EmailService {
   private readonly isDev = process.env.NODE_ENV !== 'production';
   private readonly appName = process.env.APP_NAME || 'Datizmo';
   private readonly frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-  private readonly emailProvider = process.env.EMAIL_PROVIDER || 'smtp';
-  private readonly fromEmail = process.env.MAIL_FROM || 'noreply@datizmo.com';
-  private sesClient: SESClient | null = null;
 
-  constructor(private mailerService: MailerService) {
-    // Initialize AWS SES if configured
-    if (this.emailProvider === 'aws-ses') {
-      this.initializeAWSSES();
-    }
-  }
-
-  private initializeAWSSES(): void {
-    try {
-      this.sesClient = new SESClient({
-        region: process.env.AWS_REGION || 'us-east-1',
-        credentials: {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-        },
-      });
-      this.logger.log('AWS SES client initialized successfully');
-    } catch (error) {
-      this.logger.error('Failed to initialize AWS SES client:', error);
-      this.sesClient = null;
-    }
-  }
-
-  private async sendEmailViaSES(to: string, subject: string, htmlContent: string): Promise<void> {
-    if (!this.sesClient) {
-      throw new Error('AWS SES client not initialized');
-    }
-
-    const command = new SendEmailCommand({
-      Source: this.fromEmail,
-      Destination: {
-        ToAddresses: [to],
-      },
-      Message: {
-        Subject: {
-          Data: subject,
-          Charset: 'UTF-8',
-        },
-        Body: {
-          Html: {
-            Data: htmlContent,
-            Charset: 'UTF-8',
-          },
-        },
-      },
-    });
-
-    await this.sesClient.send(command);
-    this.logger.log(`Email sent via AWS SES to ${to}`);
-  }
-
-  private async renderTemplate(templateName: string, context: Record<string, any>): Promise<string> {
-    const templatePath = path.join(__dirname, 'templates', `${templateName}.hbs`);
-    
-    // Check if template exists in dist folder first, then src folder
-    let finalTemplatePath = templatePath;
-    if (!fs.existsSync(templatePath)) {
-      const srcTemplatePath = path.join(process.cwd(), 'src', 'email', 'templates', `${templateName}.hbs`);
-      if (fs.existsSync(srcTemplatePath)) {
-        finalTemplatePath = srcTemplatePath;
-      } else {
-        throw new Error(`Template ${templateName} not found at ${templatePath} or ${srcTemplatePath}`);
-      }
-    }
-
-    const templateContent = fs.readFileSync(finalTemplatePath, 'utf-8');
-    const template = handlebars.compile(templateContent);
-    return template(context);
-  }
+  constructor(private mailerService: MailerService) {}
 
   private async sendEmail(to: string, subject: string, templateName: string, context: Record<string, any>): Promise<void> {
     if (this.isDev) {
@@ -106,17 +31,17 @@ export class EmailService {
       return;
     }
 
-    if (this.emailProvider === 'aws-ses' && this.sesClient) {
-      const htmlContent = await this.renderTemplate(templateName, context);
-      await this.sendEmailViaSES(to, subject, htmlContent);
-    } else {
-      // Fallback to SMTP via MailerService
+    try {
       await this.mailerService.sendMail({
         to,
         subject,
         template: `./${templateName}`,
         context,
       });
+      this.logger.log(`Email sent via SMTP to ${to}`);
+    } catch (error) {
+      this.logger.error(`Failed to send email to ${to}:`, error);
+      throw error;
     }
   }
 
@@ -238,7 +163,7 @@ export class EmailService {
     this.logger.log('='.repeat(50));
     this.logger.log(`To: ${to}`);
     this.logger.log(`Subject: ${subject}`);
-    this.logger.log(`Provider: ${this.emailProvider}`);
+    this.logger.log(`Provider: SMTP`);
     this.logger.log('Context:', JSON.stringify(context, null, 2));
     this.logger.log('='.repeat(50));
   }

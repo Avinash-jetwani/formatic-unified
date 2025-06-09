@@ -7,12 +7,20 @@ import { EmailService } from './email.service';
 @Module({
   imports: [
     MailerModule.forRoot({
-      // Use a simple transport configuration that won't interfere with AWS SES
       transport: {
-        jsonTransport: true, // This is a "no-op" transport for fallback
+        host: process.env.MAIL_HOST || 'smtp-mail.outlook.com',
+        port: parseInt(process.env.MAIL_PORT || '587'),
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: process.env.MAIL_USER,
+          pass: process.env.MAIL_PASS,
+        },
+        tls: {
+          ciphers: 'SSLv3',
+        },
       },
       defaults: {
-        from: `"${process.env.APP_NAME || 'Datizmo'}" <${process.env.MAIL_FROM || 'noreply@datizmo.com'}>`,
+        from: `"${process.env.APP_NAME || 'Datizmo'}" <${process.env.MAIL_FROM || 'no-reply@datizmo.com'}>`,
       },
       template: {
         dir: join(__dirname, 'templates'),

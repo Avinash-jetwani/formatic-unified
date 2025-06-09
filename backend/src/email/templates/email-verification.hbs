@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your {{appName}} Account</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .container { max-width: 600px; margin: 0 auto; background: white; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; }
+        .logo { color: white; font-size: 32px; font-weight: bold; margin: 0; }
+        .content { padding: 40px 20px; }
+        .title { color: #333; font-size: 24px; margin: 0 0 20px 0; text-align: center; }
+        .text { color: #666; line-height: 1.6; margin: 0 0 20px 0; }
+        .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; margin: 20px 0; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px; }
+        .security-note { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; }
+        @media (max-width: 600px) { .container { margin: 0 10px; } .content { padding: 20px 15px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo">{{appName}}</h1>
+        </div>
+        
+        <div class="content">
+            <h2 class="title">Verify Your Email Address</h2>
+            
+            <p class="text">Hi {{name}},</p>
+            
+            <p class="text">
+                Thank you for signing up for {{appName}}! To complete your registration and start creating amazing forms, 
+                please verify your email address by clicking the button below:
+            </p>
+            
+            <div style="text-align: center;">
+                <a href="{{verifyUrl}}" class="button">Verify Email Address</a>
+            </div>
+            
+            <p class="text">
+                If the button doesn't work, you can copy and paste this link into your browser:
+                <br><a href="{{verifyUrl}}" style="color: #667eea;">{{verifyUrl}}</a>
+            </p>
+            
+            <div class="security-note">
+                <p class="text" style="margin: 0; font-size: 14px;">
+                    <strong>Security Note:</strong> This verification link will expire in 24 hours for your security. 
+                    If you didn't create an account with {{appName}}, you can safely ignore this email.
+                </p>
+            </div>
+            
+            <p class="text">
+                Welcome to {{appName}}!<br>
+                The {{appName}} Team
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>This email was sent to verify your {{appName}} account.</p>
+            <p>If you didn't sign up for {{appName}}, please ignore this email.</p>
+        </div>
+    </div>
+</body>
+</html> 

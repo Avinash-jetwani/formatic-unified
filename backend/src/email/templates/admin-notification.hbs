@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{appName}} Admin Alert</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; }
+        .container { max-width: 600px; margin: 0 auto; background: white; border: 1px solid #dee2e6; }
+        .header { background: #dc3545; padding: 30px 20px; text-align: center; }
+        .logo { color: white; font-size: 28px; font-weight: bold; margin: 0; }
+        .alert-type { background: rgba(255,255,255,0.1); color: white; padding: 5px 15px; border-radius: 4px; font-size: 12px; text-transform: uppercase; margin-top: 10px; }
+        .content { padding: 30px 20px; }
+        .title { color: #dc3545; font-size: 22px; margin: 0 0 20px 0; }
+        .text { color: #495057; line-height: 1.6; margin: 0 0 15px 0; }
+        .info-box { background: #f8f9fa; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0; }
+        .button { display: inline-block; background: #dc3545; color: white; text-decoration: none; padding: 12px 25px; border-radius: 6px; font-weight: bold; margin: 15px 0; }
+        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #6c757d; font-size: 13px; border-top: 1px solid #dee2e6; }
+        .timestamp { color: #6c757d; font-size: 12px; margin-top: 10px; }
+        @media (max-width: 600px) { .container { margin: 0 10px; } .content { padding: 20px 15px; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="logo">{{appName}} Admin</h1>
+            <div class="alert-type">System Alert</div>
+        </div>
+        
+        <div class="content">
+            <h2 class="title">{{subject}}</h2>
+            
+            <div class="info-box">
+                <p class="text" style="margin: 0; font-weight: bold;">{{message}}</p>
+            </div>
+            
+            <p class="text">
+                This is an automated notification from the {{appName}} system. Please review the alert details and take appropriate action if necessary.
+            </p>
+            
+            <div style="text-align: center;">
+                <a href="{{dashboardUrl}}" class="button">Go to Admin Dashboard</a>
+            </div>
+            
+            <div class="timestamp">
+                <strong>Timestamp:</strong> {{timestamp}}
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated admin notification from {{appName}}.</p>
+            <p>If you believe this is an error, please check your system logs.</p>
+        </div>
+    </div>
+</body>
+</html> 
