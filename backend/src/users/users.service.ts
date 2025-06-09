@@ -150,6 +150,46 @@ export class UsersService {
     // Check if user exists
     await this.findOne(id);
     
+    // Get all forms created by this user
+    const userForms = await this.prisma.form.findMany({
+      where: { clientId: id },
+      select: { id: true }
+    });
+    
+    const formIds = userForms.map(form => form.id);
+    
+    if (formIds.length > 0) {
+      // Delete all webhook deliveries for forms owned by this user
+      await this.prisma.webhookDelivery.deleteMany({
+        where: {
+          webhook: {
+            formId: { in: formIds }
+          }
+        }
+      });
+      
+      // Delete all webhooks for forms owned by this user
+      await this.prisma.webhook.deleteMany({
+        where: { formId: { in: formIds } }
+      });
+      
+      // Delete all submissions for forms owned by this user
+      await this.prisma.submission.deleteMany({
+        where: { formId: { in: formIds } }
+      });
+      
+      // Delete all form fields for forms owned by this user
+      await this.prisma.formField.deleteMany({
+        where: { formId: { in: formIds } }
+      });
+      
+      // Delete all forms owned by this user
+      await this.prisma.form.deleteMany({
+        where: { clientId: id }
+      });
+    }
+    
+    // Finally, delete the user
     await this.prisma.user.delete({ where: { id } });
     return { id };
   }
