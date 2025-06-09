@@ -2,11 +2,15 @@ import { Injectable, ConflictException, NotFoundException } from '@nestjs/common
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     const { email, password, name, role, status, company, phone, website } = createUserDto;
@@ -37,6 +41,18 @@ export class UsersService {
         lastLogin: null, // Initialize lastLogin as null
       },
     });
+
+    // Send welcome email for new user registrations
+    try {
+      await this.emailService.sendWelcomeEmail({
+        email: user.email,
+        name: user.name || 'User',
+        id: user.id,
+      });
+    } catch (error) {
+      console.error('Failed to send welcome email:', error);
+      // Don't fail user registration if email fails
+    }
 
     // Exclude password from response
     const { password: _, ...result } = user;
