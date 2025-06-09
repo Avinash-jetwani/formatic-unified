@@ -46,44 +46,44 @@ export class EmailService {
   }
 
   /**
-   * Send welcome email to new users
+   * Send welcome email to new users - Updated with modern templates
    */
   async sendWelcomeEmail(user: EmailUser): Promise<void> {
-    const subject = `Welcome to ${this.appName}!`;
+    const subject = `🎉 Welcome to ${this.appName} - Start Building Amazing Forms!`;
     
     await this.sendEmail(user.email, subject, 'welcome', {
       name: user.name,
       appName: this.appName,
       loginUrl: `${this.frontendUrl}/login`,
       dashboardUrl: `${this.frontendUrl}/dashboard`,
-      supportEmail: process.env.SUPPORT_EMAIL || 'support@datizmo.com',
+      // Modern template with features showcase - no support email line
     });
   }
 
   /**
-   * Send password reset email
+   * Send password reset email - Updated with modern security design
    */
   async sendPasswordResetEmail(email: string, token: string, name: string): Promise<void> {
     const resetUrl = `${this.frontendUrl}/reset-password?token=${token}`;
-    const subject = `Reset Your ${this.appName} Password`;
+    const subject = `🔐 Reset Your ${this.appName} Password`;
     
     await this.sendEmail(email, subject, 'password-reset', {
       name,
       appName: this.appName,
       resetUrl,
-      expiresIn: '24 hours',
-      supportEmail: process.env.SUPPORT_EMAIL || 'support@datizmo.com',
+      expiresIn: '1 hour',
+      // Modern security-focused template with best practices
     });
   }
 
   /**
-   * Send form submission notification to form owner
+   * Send form submission notification to form owner - Updated with celebration design
    */
   async sendFormSubmissionNotification(
     formOwner: EmailUser,
     submissionData: FormSubmissionEmailData
   ): Promise<void> {
-    const subject = `New submission for "${submissionData.formTitle}"`;
+    const subject = `🎉 New submission for "${submissionData.formTitle}"`;
     
     await this.sendEmail(formOwner.email, subject, 'form-submission', {
       ownerName: formOwner.name,
@@ -96,6 +96,7 @@ export class EmailService {
       viewSubmissionUrl: `${this.frontendUrl}/submissions/${submissionData.submissionId}`,
       formUrl: `${this.frontendUrl}/forms/${submissionData.formId}`,
       submissionData: submissionData.submissionData,
+      // Modern celebration design with quick actions and tips
     });
   }
 
@@ -124,17 +125,18 @@ export class EmailService {
   }
 
   /**
-   * Send email verification email for new registrations
+   * Send email verification email for new registrations - Updated with modern blue design
    */
   async sendEmailVerification(user: EmailUser, token: string): Promise<void> {
-    const verifyUrl = `${this.frontendUrl}/verify-email?token=${token}&email=${encodeURIComponent(user.email)}`;
-    const subject = `Verify your ${this.appName} account`;
+    const verificationUrl = `${this.frontendUrl}/verify-email?token=${token}&email=${encodeURIComponent(user.email)}`;
+    const subject = `✅ Verify Your ${this.appName} Email`;
     
     await this.sendEmail(user.email, subject, 'email-verification', {
       name: user.name,
+      email: user.email,
       appName: this.appName,
-      verifyUrl,
-      supportEmail: process.env.SUPPORT_EMAIL || 'support@datizmo.com',
+      verificationUrl,
+      // Modern blue-themed design with benefits and troubleshooting
     });
   }
 
