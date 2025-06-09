@@ -1,64 +1,318 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Your {{appName}} Account</title>
+    <title>✅ Verify Your Email - {{appName}}</title>
     <style>
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .container { max-width: 600px; margin: 0 auto; background: white; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; }
-        .logo { color: white; font-size: 32px; font-weight: bold; margin: 0; }
-        .content { padding: 40px 20px; }
-        .title { color: #333; font-size: 24px; margin: 0 0 20px 0; text-align: center; }
-        .text { color: #666; line-height: 1.6; margin: 0 0 20px 0; }
-        .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; padding: 15px 30px; border-radius: 8px; font-weight: bold; margin: 20px 0; }
-        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px; }
-        .security-note { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0; }
-        @media (max-width: 600px) { .container { margin: 0 10px; } .content { padding: 20px 15px; } }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 50%, #1E40AF 100%);
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+            animation: verify-pulse 3s ease-in-out infinite;
+        }
+        @keyframes verify-pulse {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+            50% { transform: scale(1.05) rotate(180deg); opacity: 1; }
+        }
+        .verify-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            position: relative;
+            z-index: 2;
+        }
+        .header-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 2;
+        }
+        .header-subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 16px;
+            position: relative;
+            z-index: 2;
+        }
+        .content {
+            padding: 40px 30px;
+            background: white;
+        }
+        .greeting {
+            font-size: 20px;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .verification-message {
+            font-size: 16px;
+            color: #4a5568;
+            margin-bottom: 30px;
+            line-height: 1.7;
+        }
+        .verification-card {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            border-left: 5px solid #3B82F6;
+            text-align: center;
+        }
+        .verify-button-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .verify-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: white;
+            text-decoration: none;
+            padding: 18px 36px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        .verify-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+        .verify-button:hover::before {
+            left: 100%;
+        }
+        .time-notice {
+            background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+            border-left: 4px solid #f59e0b;
+            display: flex;
+            align-items: center;
+        }
+        .time-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .time-text {
+            font-size: 14px;
+            color: #92400e;
+            font-weight: 500;
+        }
+        .benefits-section {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        .benefits-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #065f46;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .benefits-list {
+            list-style: none;
+            padding: 0;
+        }
+        .benefits-list li {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #047857;
+        }
+        .benefits-list li::before {
+            content: '✅';
+            margin-right: 10px;
+            margin-top: 2px;
+        }
+        .alternative-section {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .alternative-text {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 15px;
+        }
+        .alternative-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        .footer {
+            background: #f9fafb;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+        }
+        .footer-text {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 15px;
+        }
+        .support-notice {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            border-left: 4px solid #0284c7;
+        }
+        .support-notice-text {
+            font-size: 13px;
+            color: #0c4a6e;
+            font-weight: 500;
+        }
+        @media (max-width: 600px) {
+            .email-container { margin: 10px; border-radius: 15px; }
+            .header { padding: 30px 20px; }
+            .content { padding: 30px 20px; }
+            .verification-card { padding: 20px; }
+            .benefits-section { padding: 20px; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="email-container">
         <div class="header">
-            <h1 class="logo">{{appName}}</h1>
+            <div class="verify-icon">
+                <svg width="30" height="30" fill="white" viewBox="0 0 24 24">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div class="header-title">✅ Verify Your Email</div>
+            <div class="header-subtitle">Almost there! Just one click to activate your account</div>
         </div>
         
         <div class="content">
-            <h2 class="title">Verify Your Email Address</h2>
+            <div class="greeting">Hello {{name}}! 👋</div>
             
-            <p class="text">Hi {{name}},</p>
-            
-            <p class="text">
-                Thank you for signing up for {{appName}}! To complete your registration and start creating amazing forms, 
-                please verify your email address by clicking the button below:
-            </p>
-            
-            <div style="text-align: center;">
-                <a href="{{verifyUrl}}" class="button">Verify Email Address</a>
+            <div class="verification-message">
+                Thanks for joining {{appName}}! To start creating amazing forms and unlock all features, please verify your email address. This helps us keep your account secure and ensures you receive important updates.
             </div>
-            
-            <p class="text">
-                If the button doesn't work, you can copy and paste this link into your browser:
-                <br><a href="{{verifyUrl}}" style="color: #667eea;">{{verifyUrl}}</a>
-            </p>
-            
-            <div class="security-note">
-                <p class="text" style="margin: 0; font-size: 14px;">
-                    <strong>Security Note:</strong> This verification link will expire in 24 hours for your security. 
-                    If you didn't create an account with {{appName}}, you can safely ignore this email.
-                </p>
+
+            <div class="verification-card">
+                <div class="verify-button-icon">
+                    <svg width="24" height="24" fill="white" viewBox="0 0 24 24">
+                        <path d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div style="font-size: 18px; font-weight: 600; color: #1e40af; margin-bottom: 15px;">
+                    Verify Your Email Address
+                </div>
+                <div style="font-size: 14px; color: #1d4ed8; margin-bottom: 20px;">
+                    Click the button below to confirm your email and activate your account
+                </div>
+                <a href="{{verificationUrl}}" class="verify-button">
+                    📧 Verify Email Now
+                </a>
             </div>
-            
-            <p class="text">
-                Welcome to {{appName}}!<br>
-                The {{appName}} Team
-            </p>
+
+            <div class="time-notice">
+                <svg class="time-icon" fill="#f59e0b" viewBox="0 0 24 24">
+                    <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <div class="time-text">
+                    <strong>Important:</strong> This verification link expires in 24 hours. If it expires, you can request a new verification email from your account settings.
+                </div>
+            </div>
+
+            <div class="benefits-section">
+                <div class="benefits-title">
+                    <svg width="20" height="20" fill="#065f46" viewBox="0 0 24 24" style="margin-right: 8px;">
+                        <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                    What You'll Get After Verification
+                </div>
+                <ul class="benefits-list">
+                    <li>Full access to form creation and customization tools</li>
+                    <li>Real-time form submission notifications</li>
+                    <li>Advanced analytics and insights</li>
+                    <li>Priority customer support</li>
+                    <li>Webhook integrations and API access</li>
+                </ul>
+            </div>
+
+            <div class="alternative-section">
+                <div class="alternative-text">
+                    Can't click the button? Copy and paste this link into your browser:
+                </div>
+                <a href="{{verificationUrl}}" class="alternative-link">{{verificationUrl}}</a>
+            </div>
+
+            <div class="support-notice">
+                <div class="support-notice-text">
+                    💡 Having trouble? The verification link should work in most browsers. If you continue having issues, try copying the link to a private/incognito browser window.
+                </div>
+            </div>
         </div>
         
         <div class="footer">
-            <p>This email was sent to verify your {{appName}} account.</p>
-            <p>If you didn't sign up for {{appName}}, please ignore this email.</p>
+            <div class="footer-text">
+                Welcome to {{appName}}! We're excited to see what amazing forms you'll create.
+            </div>
+            <div style="font-size: 12px; color: #9ca3af; margin-top: 15px;">
+                © 2024 {{appName}}. This email was sent to {{email}} because you created an account.
+            </div>
         </div>
     </div>
 </body>
