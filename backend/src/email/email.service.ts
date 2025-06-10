@@ -224,11 +224,16 @@ export class EmailService {
     user: EmailUser,
     approvalData: WebhookApprovalEmailData
   ): Promise<void> {
+    this.logger.log(`🔍 WEBHOOK APPROVAL EMAIL DEBUG - Starting sendWebhookApprovalNotification`);
+    this.logger.log(`📧 Recipient: ${user.email}, Name: ${user.name}`);
+    this.logger.log(`🔗 Webhook: ${approvalData.webhookName} (${approvalData.webhookId})`);
+    this.logger.log(`✅ Approved: ${approvalData.approved}`);
+    
     const subject = approvalData.approved 
       ? `✅ Webhook "${approvalData.webhookName}" approved and active`
       : `❌ Webhook "${approvalData.webhookName}" rejected`;
     
-    await this.sendEmail(user.email, subject, 'webhook-approval', {
+    const emailContext = {
       userName: user.name,
       appName: this.appName,
       webhookName: approvalData.webhookName,
@@ -238,8 +243,19 @@ export class EmailService {
       adminName: approvalData.adminName,
       adminNotes: approvalData.adminNotes || (approvalData.approved ? 'Your webhook has been approved and is now active.' : 'Your webhook has been rejected.'),
       webhookUrl_manage: `${this.frontendUrl}/dashboard/forms/${approvalData.formId}/webhooks`,
+      webhookUrl_logs: `${this.frontendUrl}/dashboard/forms/${approvalData.formId}/webhooks/${approvalData.webhookId}/logs`,
       dashboardUrl: `${this.frontendUrl}/dashboard`,
-    });
+    };
+    
+    this.logger.log(`📝 Email context: ${JSON.stringify(emailContext, null, 2)}`);
+    
+    try {
+      await this.sendEmail(user.email, subject, 'webhook-approval', emailContext);
+      this.logger.log(`✅ sendWebhookApprovalNotification completed successfully`);
+    } catch (error) {
+      this.logger.error(`❌ sendWebhookApprovalNotification failed: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**
@@ -249,11 +265,16 @@ export class EmailService {
     user: EmailUser,
     testData: WebhookTestEmailData
   ): Promise<void> {
+    this.logger.log(`🔍 WEBHOOK TEST EMAIL DEBUG - Starting sendWebhookTestNotification`);
+    this.logger.log(`📧 Recipient: ${user.email}, Name: ${user.name}`);
+    this.logger.log(`🔗 Webhook: ${testData.webhookName} (${testData.webhookId})`);
+    this.logger.log(`✅ Test Success: ${testData.success}`);
+    
     const subject = testData.success 
       ? `✅ Webhook test successful - "${testData.webhookName}"`
       : `❌ Webhook test failed - "${testData.webhookName}"`;
     
-    await this.sendEmail(user.email, subject, 'webhook-test-result', {
+    const emailContext = {
       userName: user.name,
       appName: this.appName,
       webhookName: testData.webhookName,
@@ -276,7 +297,17 @@ export class EmailService {
       webhookUrl_manage: `${this.frontendUrl}/dashboard/forms/${testData.formId}/webhooks`,
       webhookUrl_logs: `${this.frontendUrl}/dashboard/forms/${testData.formId}/webhooks/${testData.webhookId}/logs`,
       dashboardUrl: `${this.frontendUrl}/dashboard`,
-    });
+    };
+    
+    this.logger.log(`📝 Email context: ${JSON.stringify(emailContext, null, 2)}`);
+    
+    try {
+      await this.sendEmail(user.email, subject, 'webhook-test-result', emailContext);
+      this.logger.log(`✅ sendWebhookTestNotification completed successfully`);
+    } catch (error) {
+      this.logger.error(`❌ sendWebhookTestNotification failed: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**
@@ -286,12 +317,17 @@ export class EmailService {
     user: EmailUser,
     failureData: WebhookFailureEmailData
   ): Promise<void> {
+    this.logger.log(`🔍 WEBHOOK FAILURE EMAIL DEBUG - Starting sendWebhookFailureAlert`);
+    this.logger.log(`📧 Recipient: ${user.email}, Name: ${user.name}`);
+    this.logger.log(`🔗 Webhook: ${failureData.webhookName} (${failureData.webhookId})`);
+    this.logger.log(`🚨 Failure: Attempt ${failureData.attemptCount}/${failureData.maxRetries}`);
+    
     const isMaxRetriesReached = failureData.attemptCount >= failureData.maxRetries;
     const subject = isMaxRetriesReached
       ? `🚨 Webhook "${failureData.webhookName}" permanently failed`
       : `⚠️ Webhook "${failureData.webhookName}" delivery failed`;
     
-    await this.sendEmail(user.email, subject, 'webhook-failure-alert', {
+    const emailContext = {
       userName: user.name,
       appName: this.appName,
       webhookName: failureData.webhookName,
@@ -327,7 +363,17 @@ export class EmailService {
       webhookUrl_logs: `${this.frontendUrl}/dashboard/forms/${failureData.formId}/webhooks/${failureData.webhookId}/logs`,
       submissionUrl: `${this.frontendUrl}/dashboard/submissions/${failureData.submissionId}`,
       dashboardUrl: `${this.frontendUrl}/dashboard`,
-    });
+    };
+    
+    this.logger.log(`📝 Email context: ${JSON.stringify(emailContext, null, 2)}`);
+    
+    try {
+      await this.sendEmail(user.email, subject, 'webhook-failure-alert', emailContext);
+      this.logger.log(`✅ sendWebhookFailureAlert completed successfully`);
+    } catch (error) {
+      this.logger.error(`❌ sendWebhookFailureAlert failed: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**
@@ -337,9 +383,14 @@ export class EmailService {
     user: EmailUser,
     performanceData: WebhookPerformanceEmailData
   ): Promise<void> {
-    const subject = `📊 Webhook performance report - "${performanceData.webhookName}"`;
+    this.logger.log(`🔍 WEBHOOK PERFORMANCE EMAIL DEBUG - Starting sendWebhookPerformanceReport`);
+    this.logger.log(`📧 Recipient: ${user.email}, Name: ${user.name}`);
+    this.logger.log(`🔗 Webhook: ${performanceData.webhookName} (${performanceData.webhookId})`);
+    this.logger.log(`📊 Performance: ${performanceData.successRate}% success rate`);
     
-    await this.sendEmail(user.email, subject, 'webhook-performance-report', {
+    const subject = `📊 Webhook Performance Report - "${performanceData.webhookName}" (${performanceData.period})`;
+    
+    const emailContext = {
       userName: user.name,
       appName: this.appName,
       webhookName: performanceData.webhookName,
@@ -349,14 +400,34 @@ export class EmailService {
       totalDeliveries: performanceData.totalDeliveries,
       successfulDeliveries: performanceData.successfulDeliveries,
       failedDeliveries: performanceData.failedDeliveries,
-      successRate: performanceData.successRate.toFixed(1),
-      averageResponseTime: Math.round(performanceData.averageResponseTime),
-      recentFailures: performanceData.recentFailures,
+      successRate: performanceData.successRate,
+      averageResponseTime: performanceData.averageResponseTime,
+      recentFailures: performanceData.recentFailures.map(failure => ({
+        date: failure.date.toLocaleDateString('en-US', { 
+          year: 'numeric',
+          month: 'short', 
+          day: 'numeric'
+        }),
+        reason: failure.reason,
+        submissionId: failure.submissionId
+      })),
       webhookUrl_manage: `${this.frontendUrl}/dashboard/forms/${performanceData.formId}/webhooks`,
       webhookUrl_logs: `${this.frontendUrl}/dashboard/forms/${performanceData.formId}/webhooks/${performanceData.webhookId}/logs`,
       dashboardUrl: `${this.frontendUrl}/dashboard`,
-    });
+    };
+    
+    this.logger.log(`📝 Email context: ${JSON.stringify(emailContext, null, 2)}`);
+    
+    try {
+      await this.sendEmail(user.email, subject, 'webhook-performance-report', emailContext);
+      this.logger.log(`✅ sendWebhookPerformanceReport completed successfully`);
+    } catch (error) {
+      this.logger.error(`❌ sendWebhookPerformanceReport failed: ${error.message}`, error.stack);
+      throw error;
+    }
   }
+
+
 
   /**
    * Send admin notification for important events
