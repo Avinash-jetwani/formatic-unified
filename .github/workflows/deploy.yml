@@ -156,6 +156,13 @@ jobs:
             tar -xzf ../backend-build.tar.gz
             rm ../backend-build.tar.gz
             echo "✅ Backend extracted successfully"
+            
+            # Fix webhook email templates path issue
+            echo "=== Fixing webhook email templates ==="
+            if [ -d "dist/email/templates" ] && [ -d "dist/src/email/templates" ]; then
+              cp dist/email/templates/webhook-*.hbs dist/src/email/templates/ 2>/dev/null || echo "No webhook templates to copy"
+              echo "✅ Webhook email templates copied to correct location"
+            fi
           else
             echo "❌ Backend build not found"
             exit 1
