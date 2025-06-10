@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{#if success}}✅ Webhook Test Successful{{else}}❌ Webhook Test Failed{{/if}} - {{webhookName}}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: linear-gradient(135deg, {{#if success}}#10B981 0%, #059669 100%{{else}}#F59E0B 0%, #D97706 100%{{/if}});
+      padding: 20px;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, {{#if success}}#10B981 0%, #059669 50%, #047857 100%{{else}}#F59E0B 0%, #D97706 50%, #B45309 100%{{/if}});
+      padding: 40px 30px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+      animation: pulse 4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+      50% { transform: scale(1.1) rotate(180deg); opacity: 1; }
+    }
+    .test-icon {
+      width: 60px;
+      height: 60px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      position: relative;
+      z-index: 2;
+    }
+    .header-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 2;
+    }
+    .header-subtitle {
+      color: rgba(255,255,255,0.9);
+      font-size: 16px;
+      position: relative;
+      z-index: 2;
+    }
+    .content {
+      padding: 40px 30px;
+      background: white;
+    }
+    .greeting {
+      font-size: 20px;
+      color: #1a1a1a;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    .intro-text {
+      font-size: 16px;
+      color: #4a5568;
+      margin-bottom: 30px;
+      line-height: 1.7;
+    }
+    .test-card {
+      background: linear-gradient(135deg, {{#if success}}#f0fdf4 0%, #dcfce7 100%{{else}}#fef3c7 0%, #fde68a 100%{{/if}});
+      border-radius: 15px;
+      padding: 30px;
+      margin: 30px 0;
+      border-left: 5px solid {{#if success}}#10B981{{else}}#F59E0B{{/if}};
+    }
+    .test-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .test-icon-small {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, {{#if success}}#10B981 0%, #059669 100%{{else}}#F59E0B 0%, #D97706 100%{{/if}});
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+    }
+    .test-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: {{#if success}}#065f46{{else}}#92400e{{/if}};
+    }
+    .test-details {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 15px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    .detail-label {
+      font-weight: 600;
+      color: #374151;
+      font-size: 14px;
+      min-width: 120px;
+    }
+    .detail-value {
+      color: #6b7280;
+      font-size: 14px;
+      text-align: right;
+      word-break: break-all;
+      flex: 1;
+    }
+    .status-code {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      {{#if success}}
+      background: #dcfce7;
+      color: #166534;
+      {{else}}
+      background: #fef3c7;
+      color: #92400e;
+      {{/if}}
+    }
+    .result-section {
+      background: linear-gradient(135deg, {{#if success}}#d1fae5 0%, #a7f3d0 100%{{else}}#fef3c7 0%, #fde68a 100%{{/if}});
+      border-radius: 15px;
+      padding: 25px;
+      margin: 30px 0;
+      border-left: 5px solid {{#if success}}#10B981{{else}}#F59E0B{{/if}};
+    }
+    .result-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: {{#if success}}#065f46{{else}}#92400e{{/if}};
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+    .result-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 8px;
+    }
+    .result-text {
+      font-size: 14px;
+      color: {{#if success}}#047857{{else}}#a16207{{/if}};
+      line-height: 1.6;
+    }
+    {{#unless success}}
+    .error-details {
+      background: #fef2f2;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+      border-left: 4px solid #ef4444;
+    }
+    .error-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #991b1b;
+      margin-bottom: 8px;
+    }
+    .error-text {
+      font-size: 14px;
+      color: #dc2626;
+      line-height: 1.5;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      background: #fff5f5;
+      padding: 10px;
+      border-radius: 6px;
+    }
+    {{/unless}}
+    {{#if responseData}}
+    .response-section {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+      border-left: 4px solid #6b7280;
+    }
+    .response-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    .response-data {
+      font-size: 12px;
+      color: #6b7280;
+      line-height: 1.5;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      background: white;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    {{/if}}
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin: 30px 0;
+    }
+    .action-button {
+      display: inline-block;
+      padding: 15px 25px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .primary-action {
+      background: linear-gradient(135deg, {{#if success}}#10B981 0%, #059669 100%{{else}}#F59E0B 0%, #D97706 100%{{/if}});
+      color: white;
+      box-shadow: 0 8px 20px rgba({{#if success}}16, 185, 129{{else}}245, 158, 11{{/if}}, 0.3);
+    }
+    .secondary-action {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      color: #374151;
+      border: 1px solid #d1d5db;
+    }
+    .tips-section {
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      margin: 30px 0;
+    }
+    .tips-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: {{#if success}}#d1fae5{{else}}#fef3c7{{/if}};
+    }
+    .tips-list {
+      list-style: none;
+      padding: 0;
+    }
+    .tips-list li {
+      font-size: 14px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+      padding-left: 20px;
+      position: relative;
+    }
+    .tips-list li::before {
+      content: '{{#if success}}✓{{else}}💡{{/if}}';
+      position: absolute;
+      left: 0;
+      color: {{#if success}}#60a5fa{{else}}#fbbf24{{/if}};
+      font-weight: bold;
+    }
+    .footer {
+      background: #f7fafc;
+      padding: 30px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+    .footer-text {
+      font-size: 14px;
+      color: #718096;
+      margin-bottom: 15px;
+    }
+    .footer-links {
+      margin-top: 20px;
+    }
+    .footer-link {
+      color: {{#if success}}#10B981{{else}}#F59E0B{{/if}};
+      text-decoration: none;
+      font-size: 14px;
+      margin: 0 15px;
+    }
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+    @media (max-width: 600px) {
+      .email-container { margin: 10px; border-radius: 15px; }
+      .header { padding: 30px 20px; }
+      .content { padding: 30px 20px; }
+      .quick-actions { grid-template-columns: 1fr; }
+      .detail-row { flex-direction: column; align-items: flex-start; }
+      .detail-value { text-align: left; margin-top: 5px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <div class="test-icon">
+        {{#if success}}
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="white">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+        {{else}}
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        {{/if}}
+      </div>
+      <h1 class="header-title">{{#if success}}Test Successful!{{else}}Test Failed{{/if}}</h1>
+      <p class="header-subtitle">{{#if success}}Your webhook is working correctly{{else}}Your webhook test encountered an issue{{/if}}</p>
+    </div>
+
+    <div class="content">
+      <h2 class="greeting">Hi {{userName}}! 👋</h2>
+      
+      <p class="intro-text">
+        {{#if success}}
+        Great news! The test for your webhook "<strong>{{webhookName}}</strong>" completed successfully. 
+        Your endpoint is responding correctly and ready to receive live form submission data.
+        {{else}}
+        The test for your webhook "<strong>{{webhookName}}</strong>" encountered an issue. 
+        Please review the details below to troubleshoot and fix the problem.
+        {{/if}}
+      </p>
+
+      <div class="test-card">
+        <div class="test-header">
+          <div class="test-icon-small">
+            {{#if success}}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+              <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+            {{else}}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            {{/if}}
+          </div>
+          <h3 class="test-title">{{webhookName}}</h3>
+        </div>
+        
+        <div class="test-details">
+          <div class="detail-row">
+            <span class="detail-label">Endpoint URL:</span>
+            <span class="detail-value">{{webhookUrl}}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Form:</span>
+            <span class="detail-value">{{formTitle}}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Test Date:</span>
+            <span class="detail-value">{{testDate}} at {{testTime}}</span>
+          </div>
+          {{#if statusCode}}
+          <div class="detail-row">
+            <span class="detail-label">Status Code:</span>
+            <span class="detail-value"><span class="status-code">{{statusCode}}</span></span>
+          </div>
+          {{/if}}
+        </div>
+      </div>
+
+      {{#unless success}}
+      {{#if errorMessage}}
+      <div class="error-details">
+        <div class="error-title">Error Details:</div>
+        <div class="error-text">{{errorMessage}}</div>
+      </div>
+      {{/if}}
+      {{/unless}}
+
+      {{#if responseData}}
+      <div class="response-section">
+        <div class="response-title">Response Data:</div>
+        <div class="response-data">{{responseData}}</div>
+      </div>
+      {{/if}}
+
+      <div class="result-section">
+        <h3 class="result-title">
+          {{#if success}}
+          <svg class="result-icon" viewBox="0 0 24 24" fill="#10B981">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          </svg>
+          Test Completed Successfully
+          {{else}}
+          <svg class="result-icon" viewBox="0 0 24 24" fill="#F59E0B">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          Test Failed - Action Required
+          {{/if}}
+        </h3>
+        <p class="result-text">
+          {{#if success}}
+          Your webhook endpoint responded correctly to the test payload. It's ready to receive live form submission data. 
+          You can now submit forms and monitor the delivery logs to ensure everything is working as expected.
+          {{else}}
+          Your webhook endpoint did not respond as expected. This could be due to various reasons such as network issues, 
+          incorrect endpoint configuration, or server problems. Please check the error details above and try again.
+          {{/if}}
+        </p>
+      </div>
+
+      <div class="quick-actions">
+        <a href="{{webhookUrl_manage}}" class="action-button primary-action">
+          {{#if success}}Manage Webhook{{else}}Fix Webhook{{/if}}
+        </a>
+        <a href="{{webhookUrl_logs}}" class="action-button secondary-action">
+          View Logs
+        </a>
+      </div>
+
+      <div class="tips-section">
+        <h3 class="tips-title">{{#if success}}Next Steps:{{else}}Troubleshooting Tips:{{/if}}</h3>
+        <ul class="tips-list">
+          {{#if success}}
+          <li>Submit a test form to see your webhook in action</li>
+          <li>Monitor delivery logs for any future issues</li>
+          <li>Set up additional webhooks for other forms if needed</li>
+          <li>Configure webhook filters if you want specific data only</li>
+          {{else}}
+          <li>Check that your endpoint URL is correct and accessible</li>
+          <li>Ensure your server is running and responding to HTTP requests</li>
+          <li>Verify that your endpoint accepts POST requests with JSON data</li>
+          <li>Check your server logs for any error messages</li>
+          <li>Test your endpoint manually with a tool like Postman</li>
+          {{/if}}
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p class="footer-text">
+        This email was sent from {{appName}}. {{#if success}}Your webhook is ready to receive data!{{else}}Need help? Contact your administrator for assistance.{{/if}}
+      </p>
+      <div class="footer-links">
+        <a href="{{dashboardUrl}}" class="footer-link">Dashboard</a>
+        <a href="{{webhookUrl_manage}}" class="footer-link">Webhook Settings</a>
+        <a href="{{webhookUrl_logs}}" class="footer-link">View Logs</a>
+      </div>
+      <p class="footer-text" style="margin-top: 20px; font-size: 12px; color: #a0aec0;">
+        © 2025 {{appName}}. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html> 

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{#if isMaxRetriesReached}}🚨 Webhook Permanently Failed{{else}}⚠️ Webhook Delivery Failed{{/if}} - {{webhookName}}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: linear-gradient(135deg, {{#if isMaxRetriesReached}}#EF4444 0%, #DC2626 100%{{else}}#F59E0B 0%, #D97706 100%{{/if}});
+      padding: 20px;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, {{#if isMaxRetriesReached}}#EF4444 0%, #DC2626 50%, #B91C1C 100%{{else}}#F59E0B 0%, #D97706 50%, #B45309 100%{{/if}});
+      padding: 40px 30px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+      animation: pulse 4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+      50% { transform: scale(1.1) rotate(180deg); opacity: 1; }
+    }
+    .alert-icon {
+      width: 60px;
+      height: 60px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      position: relative;
+      z-index: 2;
+    }
+    .header-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 2;
+    }
+    .header-subtitle {
+      color: rgba(255,255,255,0.9);
+      font-size: 16px;
+      position: relative;
+      z-index: 2;
+    }
+    .content {
+      padding: 40px 30px;
+      background: white;
+    }
+    .greeting {
+      font-size: 20px;
+      color: #1a1a1a;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+    .intro-text {
+      font-size: 16px;
+      color: #4a5568;
+      margin-bottom: 30px;
+      line-height: 1.7;
+    }
+    .failure-card {
+      background: linear-gradient(135deg, {{#if isMaxRetriesReached}}#fef2f2 0%, #fecaca 100%{{else}}#fef3c7 0%, #fde68a 100%{{/if}});
+      border-radius: 15px;
+      padding: 30px;
+      margin: 30px 0;
+      border-left: 5px solid {{#if isMaxRetriesReached}}#EF4444{{else}}#F59E0B{{/if}};
+    }
+    .failure-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .failure-icon-small {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, {{#if isMaxRetriesReached}}#EF4444 0%, #DC2626 100%{{else}}#F59E0B 0%, #D97706 100%{{/if}});
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 15px;
+    }
+    .failure-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: {{#if isMaxRetriesReached}}#991b1b{{else}}#92400e{{/if}};
+    }
+    .failure-details {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 15px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+    .detail-label {
+      font-weight: 600;
+      color: #374151;
+      font-size: 14px;
+      min-width: 120px;
+    }
+    .detail-value {
+      color: #6b7280;
+      font-size: 14px;
+      text-align: right;
+      word-break: break-all;
+      flex: 1;
+    }
+    .submission-info {
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+      border-left: 4px solid #6b7280;
+    }
+    .submission-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+    .submission-text {
+      font-size: 14px;
+      color: #6b7280;
+      line-height: 1.5;
+    }
+    .error-details {
+      background: #fef2f2;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+      border-left: 4px solid #ef4444;
+    }
+    .error-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #991b1b;
+      margin-bottom: 8px;
+    }
+    .error-text {
+      font-size: 14px;
+      color: #dc2626;
+      line-height: 1.5;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      background: #fff5f5;
+      padding: 10px;
+      border-radius: 6px;
+    }
+    .status-section {
+      background: linear-gradient(135deg, {{#if isMaxRetriesReached}}#fee2e2 0%, #fecaca 100%{{else}}#fef3c7 0%, #fde68a 100%{{/if}});
+      border-radius: 15px;
+      padding: 25px;
+      margin: 30px 0;
+      border-left: 5px solid {{#if isMaxRetriesReached}}#EF4444{{else}}#F59E0B{{/if}};
+    }
+    .status-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: {{#if isMaxRetriesReached}}#991b1b{{else}}#92400e{{/if}};
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+    .status-icon {
+      width: 20px;
+      height: 20px;
+      margin-right: 8px;
+    }
+    .status-text {
+      font-size: 14px;
+      color: {{#if isMaxRetriesReached}}#b91c1c{{else}}#a16207{{/if}};
+      line-height: 1.6;
+    }
+    .retry-info {
+      background: #eff6ff;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+      border-left: 4px solid #3b82f6;
+    }
+    .retry-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e40af;
+      margin-bottom: 8px;
+    }
+    .retry-text {
+      font-size: 14px;
+      color: #1d4ed8;
+      line-height: 1.5;
+    }
+    .quick-actions {
+      display: grid;
+      grid-template-columns: {{#if isMaxRetriesReached}}1fr 1fr{{else}}1fr 1fr 1fr{{/if}};
+      gap: 15px;
+      margin: 30px 0;
+    }
+    .action-button {
+      display: inline-block;
+      padding: 15px 25px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .primary-action {
+      background: linear-gradient(135deg, {{#if isMaxRetriesReached}}#EF4444 0%, #DC2626 100%{{else}}#F59E0B 0%, #D97706 100%{{/if}});
+      color: white;
+      box-shadow: 0 8px 20px rgba({{#if isMaxRetriesReached}}239, 68, 68{{else}}245, 158, 11{{/if}}, 0.3);
+    }
+    .secondary-action {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      color: #374151;
+      border: 1px solid #d1d5db;
+    }
+    .action-steps {
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      margin: 30px 0;
+    }
+    .steps-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: {{#if isMaxRetriesReached}}#fecaca{{else}}#fef3c7{{/if}};
+    }
+    .steps-list {
+      list-style: none;
+      padding: 0;
+    }
+    .steps-list li {
+      font-size: 14px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+      padding-left: 20px;
+      position: relative;
+    }
+    .steps-list li::before {
+      content: '{{#if isMaxRetriesReached}}🔧{{else}}⚠️{{/if}}';
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+    }
+    .footer {
+      background: #f7fafc;
+      padding: 30px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+    .footer-text {
+      font-size: 14px;
+      color: #718096;
+      margin-bottom: 15px;
+    }
+    .footer-links {
+      margin-top: 20px;
+    }
+    .footer-link {
+      color: {{#if isMaxRetriesReached}}#EF4444{{else}}#F59E0B{{/if}};
+      text-decoration: none;
+      font-size: 14px;
+      margin: 0 15px;
+    }
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+    @media (max-width: 600px) {
+      .email-container { margin: 10px; border-radius: 15px; }
+      .header { padding: 30px 20px; }
+      .content { padding: 30px 20px; }
+      .quick-actions { grid-template-columns: 1fr; }
+      .detail-row { flex-direction: column; align-items: flex-start; }
+      .detail-value { text-align: left; margin-top: 5px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <div class="alert-icon">
+        {{#if isMaxRetriesReached}}
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="white">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        {{else}}
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="white">
+          <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+        </svg>
+        {{/if}}
+      </div>
+      <h1 class="header-title">{{#if isMaxRetriesReached}}Webhook Failed{{else}}Delivery Issue{{/if}}</h1>
+      <p class="header-subtitle">{{#if isMaxRetriesReached}}Maximum retry attempts reached{{else}}Webhook delivery failed, retrying{{/if}}</p>
+    </div>
+
+    <div class="content">
+      <h2 class="greeting">Hi {{userName}}! 👋</h2>
+      
+      <p class="intro-text">
+        {{#if isMaxRetriesReached}}
+        We're sorry to inform you that your webhook "<strong>{{webhookName}}</strong>" has permanently failed after {{maxRetries}} retry attempts. 
+        A form submission from <strong>{{submittedBy}}</strong> could not be delivered to your endpoint.
+        {{else}}
+        Your webhook "<strong>{{webhookName}}</strong>" failed to deliver a form submission from <strong>{{submittedBy}}</strong>. 
+        We'll automatically retry the delivery, but wanted to alert you about this issue.
+        {{/if}}
+      </p>
+
+      <div class="failure-card">
+        <div class="failure-header">
+          <div class="failure-icon-small">
+            {{#if isMaxRetriesReached}}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            {{else}}
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+              <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+            {{/if}}
+          </div>
+          <h3 class="failure-title">{{webhookName}}</h3>
+        </div>
+        
+        <div class="failure-details">
+          <div class="detail-row">
+            <span class="detail-label">Endpoint URL:</span>
+            <span class="detail-value">{{webhookUrl}}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Form:</span>
+            <span class="detail-value">{{formTitle}}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Failure Date:</span>
+            <span class="detail-value">{{failureDate}} at {{failureTime}}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Attempt:</span>
+            <span class="detail-value">{{attemptCount}} of {{maxRetries}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="submission-info">
+        <div class="submission-title">Failed Submission Details:</div>
+        <div class="submission-text">
+          <strong>Submission ID:</strong> {{submissionId}}<br>
+          <strong>Submitted by:</strong> {{submittedBy}}<br>
+          <strong>Form:</strong> {{formTitle}}
+        </div>
+      </div>
+
+      <div class="error-details">
+        <div class="error-title">Error Details:</div>
+        <div class="error-text">{{failureReason}}</div>
+      </div>
+
+      {{#unless isMaxRetriesReached}}
+      {{#if nextRetryDate}}
+      <div class="retry-info">
+        <div class="retry-title">Automatic Retry Scheduled:</div>
+        <div class="retry-text">
+          We'll automatically retry delivering this webhook on <strong>{{nextRetryDate}} at {{nextRetryTime}}</strong>. 
+          You don't need to take any action unless the retries continue to fail.
+        </div>
+      </div>
+      {{/if}}
+      {{/unless}}
+
+      <div class="status-section">
+        <h3 class="status-title">
+          {{#if isMaxRetriesReached}}
+          <svg class="status-icon" viewBox="0 0 24 24" fill="#EF4444">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          Webhook Permanently Failed
+          {{else}}
+          <svg class="status-icon" viewBox="0 0 24 24" fill="#F59E0B">
+            <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+          </svg>
+          Temporary Delivery Failure
+          {{/if}}
+        </h3>
+        <p class="status-text">
+          {{#if isMaxRetriesReached}}
+          This webhook has reached the maximum number of retry attempts and will no longer receive automatic retries. 
+          The form submission data is still available in your dashboard, but you'll need to manually address the webhook issue.
+          {{else}}
+          This is a temporary failure and we'll continue trying to deliver the webhook. Common causes include server downtime, 
+          network issues, or endpoint configuration problems. Monitor your logs for patterns.
+          {{/if}}
+        </p>
+      </div>
+
+      <div class="quick-actions">
+        <a href="{{webhookUrl_manage}}" class="action-button primary-action">
+          Fix Webhook
+        </a>
+        <a href="{{submissionUrl}}" class="action-button secondary-action">
+          View Submission
+        </a>
+        {{#unless isMaxRetriesReached}}
+        <a href="{{webhookUrl_logs}}" class="action-button secondary-action">
+          View Logs
+        </a>
+        {{/unless}}
+      </div>
+
+      <div class="action-steps">
+        <h3 class="steps-title">{{#if isMaxRetriesReached}}Recommended Actions:{{else}}Troubleshooting Steps:{{/if}}</h3>
+        <ul class="steps-list">
+          {{#if isMaxRetriesReached}}
+          <li>Check your server logs for error messages</li>
+          <li>Verify your endpoint URL is correct and accessible</li>
+          <li>Test your webhook manually to identify the issue</li>
+          <li>Fix the problem and manually retry the delivery</li>
+          <li>Consider updating your webhook configuration</li>
+          {{else}}
+          <li>Monitor your server to ensure it's running properly</li>
+          <li>Check if this is an isolated incident or pattern</li>
+          <li>Verify your endpoint can handle the webhook payload</li>
+          <li>Review your server logs for any error messages</li>
+          <li>Wait for the automatic retry or manually retry if needed</li>
+          {{/if}}
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p class="footer-text">
+        This email was sent from {{appName}}. {{#if isMaxRetriesReached}}Please address this issue to ensure future webhooks work correctly.{{else}}We'll continue monitoring and retrying this delivery.{{/if}}
+      </p>
+      <div class="footer-links">
+        <a href="{{dashboardUrl}}" class="footer-link">Dashboard</a>
+        <a href="{{webhookUrl_manage}}" class="footer-link">Webhook Settings</a>
+        <a href="{{webhookUrl_logs}}" class="footer-link">View Logs</a>
+        <a href="{{submissionUrl}}" class="footer-link">View Submission</a>
+      </div>
+      <p class="footer-text" style="margin-top: 20px; font-size: 12px; color: #a0aec0;">
+        © 2025 {{appName}}. All rights reserved.
+      </p>
+    </div>
+  </div>
+</body>
+</html> 

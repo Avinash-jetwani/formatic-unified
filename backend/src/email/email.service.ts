@@ -17,6 +17,54 @@ export interface FormSubmissionEmailData {
   timezone?: string;
 }
 
+export interface WebhookEmailData {
+  webhookName: string;
+  webhookId: string;
+  webhookUrl: string;
+  formTitle: string;
+  formId: string;
+  createdAt: Date;
+  eventTypes: string[];
+}
+
+export interface WebhookApprovalEmailData extends WebhookEmailData {
+  approved: boolean;
+  adminNotes?: string;
+  adminName: string;
+}
+
+export interface WebhookTestEmailData extends WebhookEmailData {
+  success: boolean;
+  statusCode?: number;
+  errorMessage?: string;
+  responseData?: any;
+  testDate: Date;
+}
+
+export interface WebhookFailureEmailData extends WebhookEmailData {
+  submissionId: string;
+  submittedBy: string;
+  failureReason: string;
+  attemptCount: number;
+  maxRetries: number;
+  failureDate: Date;
+  nextRetryDate?: Date;
+}
+
+export interface WebhookPerformanceEmailData extends WebhookEmailData {
+  period: string; // e.g., "Last 7 days"
+  totalDeliveries: number;
+  successfulDeliveries: number;
+  failedDeliveries: number;
+  successRate: number;
+  averageResponseTime: number;
+  recentFailures: Array<{
+    date: Date;
+    reason: string;
+    submissionId: string;
+  }>;
+}
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
@@ -108,7 +156,173 @@ export class EmailService {
       formUrl: `${this.frontendUrl}/dashboard/forms/${submissionData.formId}`,
       dashboardUrl: `${this.frontendUrl}/dashboard`,
       submissionData: submissionData.submissionData,
-      // Modern celebration design with quick actions and tips
+    });
+  }
+
+  /**
+   * Send webhook setup confirmation email
+   */
+  async sendWebhookSetupConfirmation(
+    user: EmailUser,
+    webhookData: WebhookEmailData
+  ): Promise<void> {
+    const subject = `🔗 Webhook "${webhookData.webhookName}" created and pending approval`;
+    
+    await this.sendEmail(user.email, subject, 'webhook-setup-confirmation', {
+      userName: user.name,
+      appName: this.appName,
+      webhookName: webhookData.webhookName,
+      webhookUrl: webhookData.webhookUrl,
+      formTitle: webhookData.formTitle,
+      eventTypes: webhookData.eventTypes.join(', '),
+      createdDate: webhookData.createdAt.toLocaleDateString('en-US', { 
+        year: 'numeric',
+        month: 'long', 
+        day: 'numeric'
+      }),
+      webhookUrl_manage: `${this.frontendUrl}/dashboard/forms/${webhookData.formId}/webhooks`,
+      dashboardUrl: `${this.frontendUrl}/dashboard`,
+    });
+  }
+
+  /**
+   * Send webhook approval/rejection notification
+   */
+  async sendWebhookApprovalNotification(
+    user: EmailUser,
+    approvalData: WebhookApprovalEmailData
+  ): Promise<void> {
+    const subject = approvalData.approved 
+      ? `✅ Webhook "${approvalData.webhookName}" approved and active`
+      : `❌ Webhook "${approvalData.webhookName}" rejected`;
+    
+    await this.sendEmail(user.email, subject, 'webhook-approval', {
+      userName: user.name,
+      appName: this.appName,
+      webhookName: approvalData.webhookName,
+      webhookUrl: approvalData.webhookUrl,
+      formTitle: approvalData.formTitle,
+      approved: approvalData.approved,
+      adminName: approvalData.adminName,
+      adminNotes: approvalData.adminNotes || (approvalData.approved ? 'Your webhook has been approved and is now active.' : 'Your webhook has been rejected.'),
+      webhookUrl_manage: `${this.frontendUrl}/dashboard/forms/${approvalData.formId}/webhooks`,
+      dashboardUrl: `${this.frontendUrl}/dashboard`,
+    });
+  }
+
+  /**
+   * Send webhook test result notification
+   */
+  async sendWebhookTestNotification(
+    user: EmailUser,
+    testData: WebhookTestEmailData
+  ): Promise<void> {
+    const subject = testData.success 
+      ? `✅ Webhook test successful - "${testData.webhookName}"`
+      : `❌ Webhook test failed - "${testData.webhookName}"`;
+    
+    await this.sendEmail(user.email, subject, 'webhook-test-result', {
+      userName: user.name,
+      appName: this.appName,
+      webhookName: testData.webhookName,
+      webhookUrl: testData.webhookUrl,
+      formTitle: testData.formTitle,
+      success: testData.success,
+      statusCode: testData.statusCode,
+      errorMessage: testData.errorMessage,
+      responseData: testData.responseData ? JSON.stringify(testData.responseData, null, 2) : null,
+      testDate: testData.testDate.toLocaleDateString('en-US', { 
+        year: 'numeric',
+        month: 'long', 
+        day: 'numeric'
+      }),
+      testTime: testData.testDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }),
+      webhookUrl_manage: `${this.frontendUrl}/dashboard/forms/${testData.formId}/webhooks`,
+      webhookUrl_logs: `${this.frontendUrl}/dashboard/forms/${testData.formId}/webhooks/${testData.webhookId}/logs`,
+      dashboardUrl: `${this.frontendUrl}/dashboard`,
+    });
+  }
+
+  /**
+   * Send webhook delivery failure alert
+   */
+  async sendWebhookFailureAlert(
+    user: EmailUser,
+    failureData: WebhookFailureEmailData
+  ): Promise<void> {
+    const isMaxRetriesReached = failureData.attemptCount >= failureData.maxRetries;
+    const subject = isMaxRetriesReached
+      ? `🚨 Webhook "${failureData.webhookName}" permanently failed`
+      : `⚠️ Webhook "${failureData.webhookName}" delivery failed`;
+    
+    await this.sendEmail(user.email, subject, 'webhook-failure-alert', {
+      userName: user.name,
+      appName: this.appName,
+      webhookName: failureData.webhookName,
+      webhookUrl: failureData.webhookUrl,
+      formTitle: failureData.formTitle,
+      submissionId: failureData.submissionId,
+      submittedBy: failureData.submittedBy,
+      failureReason: failureData.failureReason,
+      attemptCount: failureData.attemptCount,
+      maxRetries: failureData.maxRetries,
+      isMaxRetriesReached,
+      failureDate: failureData.failureDate.toLocaleDateString('en-US', { 
+        year: 'numeric',
+        month: 'long', 
+        day: 'numeric'
+      }),
+      failureTime: failureData.failureDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }),
+      nextRetryDate: failureData.nextRetryDate ? failureData.nextRetryDate.toLocaleDateString('en-US', { 
+        year: 'numeric',
+        month: 'long', 
+        day: 'numeric'
+      }) : null,
+      nextRetryTime: failureData.nextRetryDate ? failureData.nextRetryDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }) : null,
+      webhookUrl_manage: `${this.frontendUrl}/dashboard/forms/${failureData.formId}/webhooks`,
+      webhookUrl_logs: `${this.frontendUrl}/dashboard/forms/${failureData.formId}/webhooks/${failureData.webhookId}/logs`,
+      submissionUrl: `${this.frontendUrl}/dashboard/submissions/${failureData.submissionId}`,
+      dashboardUrl: `${this.frontendUrl}/dashboard`,
+    });
+  }
+
+  /**
+   * Send webhook performance report
+   */
+  async sendWebhookPerformanceReport(
+    user: EmailUser,
+    performanceData: WebhookPerformanceEmailData
+  ): Promise<void> {
+    const subject = `📊 Webhook performance report - "${performanceData.webhookName}"`;
+    
+    await this.sendEmail(user.email, subject, 'webhook-performance-report', {
+      userName: user.name,
+      appName: this.appName,
+      webhookName: performanceData.webhookName,
+      webhookUrl: performanceData.webhookUrl,
+      formTitle: performanceData.formTitle,
+      period: performanceData.period,
+      totalDeliveries: performanceData.totalDeliveries,
+      successfulDeliveries: performanceData.successfulDeliveries,
+      failedDeliveries: performanceData.failedDeliveries,
+      successRate: performanceData.successRate.toFixed(1),
+      averageResponseTime: Math.round(performanceData.averageResponseTime),
+      recentFailures: performanceData.recentFailures,
+      webhookUrl_manage: `${this.frontendUrl}/dashboard/forms/${performanceData.formId}/webhooks`,
+      webhookUrl_logs: `${this.frontendUrl}/dashboard/forms/${performanceData.formId}/webhooks/${performanceData.webhookId}/logs`,
+      dashboardUrl: `${this.frontendUrl}/dashboard`,
     });
   }
 
