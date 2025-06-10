@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 
+// Force production mode for email sending - deployment trigger
 export interface EmailUser {
   email: string;
   name: string;
