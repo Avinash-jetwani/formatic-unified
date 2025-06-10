@@ -91,10 +91,21 @@ export class EmailService {
       formTitle: submissionData.formTitle,
       submissionId: submissionData.submissionId,
       submittedBy: submissionData.submittedBy || 'Anonymous',
-      submissionDate: submissionData.submissionDate.toLocaleDateString(),
-      submissionTime: submissionData.submissionDate.toLocaleTimeString(),
-      viewSubmissionUrl: `${this.frontendUrl}/submissions/${submissionData.submissionId}`,
-      formUrl: `${this.frontendUrl}/forms/${submissionData.formId}`,
+      submissionDate: submissionData.submissionDate.toLocaleDateString('en-US', { 
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: 'numeric', 
+        day: 'numeric'
+      }),
+      submissionTime: submissionData.submissionDate.toLocaleTimeString('en-US', {
+        timeZone: 'America/New_York',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }),
+      viewSubmissionUrl: `${this.frontendUrl}/dashboard/submissions/${submissionData.submissionId}`,
+      formUrl: `${this.frontendUrl}/dashboard/forms/${submissionData.formId}`,
+      dashboardUrl: `${this.frontendUrl}/dashboard`,
       submissionData: submissionData.submissionData,
       // Modern celebration design with quick actions and tips
     });

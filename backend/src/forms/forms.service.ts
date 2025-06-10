@@ -617,6 +617,60 @@ export class FormsService {
 
     // Send email notification to form owner
     try {
+      // Extract submitter information from form data
+      const submissionDataObj = submission.data as Record<string, any>;
+      let submittedBy = 'Anonymous';
+      
+      // Try to find name and email information
+      const nameFields = ['name', 'fullName', 'full_name', 'firstName', 'first_name'];
+      const emailFields = ['email', 'emailAddress', 'email_address'];
+      
+      let submitterName = '';
+      let submitterEmail = '';
+      
+      // Look for name fields
+      for (const field of nameFields) {
+        if (submissionDataObj[field] && typeof submissionDataObj[field] === 'string') {
+          submitterName = submissionDataObj[field];
+          break;
+        }
+      }
+      
+      // Look for email fields
+      for (const field of emailFields) {
+        if (submissionDataObj[field] && typeof submissionDataObj[field] === 'string') {
+          submitterEmail = submissionDataObj[field];
+          break;
+        }
+      }
+      
+      // If no specific fields found, look for any field containing an email pattern
+      if (!submitterEmail) {
+        for (const [key, value] of Object.entries(submissionDataObj)) {
+          if (typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+            submitterEmail = value;
+            break;
+          }
+        }
+      }
+      
+      // Build submittedBy string
+      if (submitterName && submitterEmail) {
+        submittedBy = `${submitterName} (${submitterEmail})`;
+      } else if (submitterName) {
+        submittedBy = submitterName;
+      } else if (submitterEmail) {
+        submittedBy = submitterEmail;
+      } else {
+        // If no name/email found, show the first non-empty field value
+        for (const [key, value] of Object.entries(submissionDataObj)) {
+          if (value && typeof value === 'string' && value.trim() && key !== 'emailAccess') {
+            submittedBy = `${value} (via ${key})`;
+            break;
+          }
+        }
+      }
+
       await this.emailService.sendFormSubmissionNotification(
         {
           email: form.client.email,
@@ -627,7 +681,7 @@ export class FormsService {
           formTitle: form.title,
           formId: form.id,
           submissionId: submission.id,
-          submittedBy: 'Anonymous', // Could be enhanced to capture user info
+          submittedBy: submittedBy,
           submissionData: submission.data as Record<string, any>,
           submissionDate: submission.createdAt,
         }
