@@ -7,6 +7,7 @@ import { UpdateFormFieldDto } from './dto/update-form-field.dto';
 import { Role, Form, WebhookEventType } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { WebhookDeliveryService } from '../webhooks/webhook-delivery.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class FormsService {
@@ -15,6 +16,7 @@ export class FormsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly webhookDeliveryService: WebhookDeliveryService,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(userId: string, createFormDto: CreateFormDto) {
@@ -554,6 +556,15 @@ export class FormsService {
     // Validate the form exists and is published
     const form = await this.prisma.form.findUnique({
       where: { id: formId },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        }
+      }
     });
 
     if (!form) {
@@ -603,6 +614,28 @@ export class FormsService {
         location
       },
     });
+
+    // Send email notification to form owner
+    try {
+      await this.emailService.sendFormSubmissionNotification(
+        {
+          email: form.client.email,
+          name: form.client.name,
+          id: form.client.id,
+        },
+        {
+          formTitle: form.title,
+          formId: form.id,
+          submissionId: submission.id,
+          submittedBy: 'Anonymous', // Could be enhanced to capture user info
+          submissionData: submission.data as Record<string, any>,
+          submissionDate: submission.createdAt,
+        }
+      );
+    } catch (error) {
+      this.logger.error(`Failed to send form submission notification: ${error.message}`, error.stack);
+      // Don't fail the submission if email fails
+    }
 
     // Trigger webhooks for this submission
     try {
