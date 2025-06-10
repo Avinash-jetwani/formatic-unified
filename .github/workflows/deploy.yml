@@ -198,6 +198,14 @@ jobs:
           sed -i "s|AWS_SECRET_ACCESS_KEY=.*|AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}|g" .env
           sed -i "s|S3_BUCKET_NAME=.*|S3_BUCKET_NAME=formatic-uploads-dev|g" .env
           
+          # Set NODE_ENV to production for email sending
+          echo "Setting NODE_ENV to production..."
+          if grep -q "NODE_ENV=" .env; then
+            sed -i "s|NODE_ENV=.*|NODE_ENV=production|g" .env
+          else
+            echo "NODE_ENV=production" >> .env
+          fi
+          
           # Run database migrations
           echo "=== Running database migrations ==="
           npx prisma migrate deploy

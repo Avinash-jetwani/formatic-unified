@@ -68,7 +68,8 @@ export interface WebhookPerformanceEmailData extends WebhookEmailData {
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private readonly isDev = process.env.NODE_ENV !== 'production';
+  // Force production mode if we have SMTP credentials (indicating production server)
+  private readonly isDev = process.env.NODE_ENV !== 'production' && !process.env.SMTP_HOST;
   private readonly appName = process.env.APP_NAME || 'Datizmo';
   private readonly frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
