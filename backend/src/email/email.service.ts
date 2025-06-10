@@ -70,7 +70,7 @@ export interface WebhookPerformanceEmailData extends WebhookEmailData {
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   // Force production mode if we have SMTP credentials (indicating production server)
-  private readonly isDev = process.env.NODE_ENV !== 'production' && !process.env.SMTP_HOST;
+  private readonly isDev = process.env.NODE_ENV !== 'production' && !process.env.SMTP_HOST && !process.env.MAIL_HOST;
   private readonly appName = process.env.APP_NAME || 'Datizmo';
   private readonly frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
@@ -80,7 +80,8 @@ export class EmailService {
     this.logger.log(`📧 Email Service - NODE_ENV: ${process.env.NODE_ENV}, isDev: ${this.isDev}`);
     this.logger.log(`📧 Attempting to send email to: ${to}, subject: ${subject}, template: ${templateName}`);
     this.logger.log(`🔧 SMTP_HOST: ${process.env.SMTP_HOST ? 'configured' : 'not configured'}`);
-    this.logger.log(`🔧 SMTP_USER: ${process.env.SMTP_USER ? 'configured' : 'not configured'}`);
+    this.logger.log(`🔧 MAIL_HOST: ${process.env.MAIL_HOST ? 'configured' : 'not configured'}`);
+    this.logger.log(`🔧 MAIL_USER: ${process.env.MAIL_USER ? 'configured' : 'not configured'}`);
     
     if (this.isDev) {
       this.logger.warn(`⚠️ Development mode detected - email will be logged instead of sent`);
@@ -89,6 +90,9 @@ export class EmailService {
     }
 
     this.logger.log(`🚀 Production mode - attempting to send via SMTP...`);
+    this.logger.log(`📝 Template path: ./${templateName}`);
+    this.logger.log(`📋 Context keys: ${Object.keys(context).join(', ')}`);
+    
     try {
       await this.mailerService.sendMail({
         to,
@@ -96,9 +100,11 @@ export class EmailService {
         template: `./${templateName}`,
         context,
       });
-      this.logger.log(`✅ Email sent via SMTP to ${to}`);
+      this.logger.log(`✅ Email sent via SMTP to ${to} with template ${templateName}`);
     } catch (error) {
-      this.logger.error(`❌ Failed to send email to ${to}:`, error);
+      this.logger.error(`❌ Failed to send email to ${to} with template ${templateName}:`, error);
+      this.logger.error(`❌ Error details:`, error.message);
+      this.logger.error(`❌ Stack trace:`, error.stack);
       throw error;
     }
   }
@@ -178,7 +184,8 @@ export class EmailService {
     this.logger.log(`🔍 WEBHOOK EMAIL SERVICE DEBUG - Starting sendWebhookSetupConfirmation`);
     this.logger.log(`📧 Recipient: ${user.email}, Name: ${user.name}`);
     this.logger.log(`🔗 Webhook: ${webhookData.webhookName} (${webhookData.webhookId})`);
-    this.logger.log(`📊 Environment: NODE_ENV=${process.env.NODE_ENV}, isDev=${this.isDev}, SMTP_HOST=${process.env.SMTP_HOST ? 'configured' : 'not configured'}`);
+    this.logger.log(`📊 Environment: NODE_ENV=${process.env.NODE_ENV}, isDev=${this.isDev}`);
+    this.logger.log(`📊 SMTP Config: MAIL_HOST=${process.env.MAIL_HOST ? 'configured' : 'not configured'}, MAIL_USER=${process.env.MAIL_USER ? 'configured' : 'not configured'}`);
     
     const subject = `🔗 Webhook "${webhookData.webhookName}" created and pending approval`;
     
@@ -201,9 +208,13 @@ export class EmailService {
     this.logger.log(`📝 Email context: ${JSON.stringify(emailContext, null, 2)}`);
     this.logger.log(`🚀 Calling sendEmail with template: webhook-setup-confirmation`);
     
-    await this.sendEmail(user.email, subject, 'webhook-setup-confirmation', emailContext);
-    
-    this.logger.log(`✅ sendWebhookSetupConfirmation completed successfully`);
+    try {
+      await this.sendEmail(user.email, subject, 'webhook-setup-confirmation', emailContext);
+      this.logger.log(`✅ sendWebhookSetupConfirmation completed successfully`);
+    } catch (error) {
+      this.logger.error(`❌ sendWebhookSetupConfirmation failed: ${error.message}`, error.stack);
+      throw error; // Re-throw to ensure the error is properly handled by the calling service
+    }
   }
 
   /**
