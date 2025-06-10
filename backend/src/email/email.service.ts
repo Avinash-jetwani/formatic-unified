@@ -79,6 +79,8 @@ export class EmailService {
   private async sendEmail(to: string, subject: string, templateName: string, context: Record<string, any>): Promise<void> {
     this.logger.log(`📧 Email Service - NODE_ENV: ${process.env.NODE_ENV}, isDev: ${this.isDev}`);
     this.logger.log(`📧 Attempting to send email to: ${to}, subject: ${subject}, template: ${templateName}`);
+    this.logger.log(`🔧 SMTP_HOST: ${process.env.SMTP_HOST ? 'configured' : 'not configured'}`);
+    this.logger.log(`🔧 SMTP_USER: ${process.env.SMTP_USER ? 'configured' : 'not configured'}`);
     
     if (this.isDev) {
       this.logger.warn(`⚠️ Development mode detected - email will be logged instead of sent`);
@@ -86,6 +88,7 @@ export class EmailService {
       return;
     }
 
+    this.logger.log(`🚀 Production mode - attempting to send via SMTP...`);
     try {
       await this.mailerService.sendMail({
         to,
@@ -172,9 +175,14 @@ export class EmailService {
     user: EmailUser,
     webhookData: WebhookEmailData
   ): Promise<void> {
+    this.logger.log(`🔍 WEBHOOK EMAIL SERVICE DEBUG - Starting sendWebhookSetupConfirmation`);
+    this.logger.log(`📧 Recipient: ${user.email}, Name: ${user.name}`);
+    this.logger.log(`🔗 Webhook: ${webhookData.webhookName} (${webhookData.webhookId})`);
+    this.logger.log(`📊 Environment: NODE_ENV=${process.env.NODE_ENV}, isDev=${this.isDev}, SMTP_HOST=${process.env.SMTP_HOST ? 'configured' : 'not configured'}`);
+    
     const subject = `🔗 Webhook "${webhookData.webhookName}" created and pending approval`;
     
-    await this.sendEmail(user.email, subject, 'webhook-setup-confirmation', {
+    const emailContext = {
       userName: user.name,
       appName: this.appName,
       webhookName: webhookData.webhookName,
@@ -188,7 +196,14 @@ export class EmailService {
       }),
       webhookUrl_manage: `${this.frontendUrl}/dashboard/forms/${webhookData.formId}/webhooks`,
       dashboardUrl: `${this.frontendUrl}/dashboard`,
-    });
+    };
+    
+    this.logger.log(`📝 Email context: ${JSON.stringify(emailContext, null, 2)}`);
+    this.logger.log(`🚀 Calling sendEmail with template: webhook-setup-confirmation`);
+    
+    await this.sendEmail(user.email, subject, 'webhook-setup-confirmation', emailContext);
+    
+    this.logger.log(`✅ sendWebhookSetupConfirmation completed successfully`);
   }
 
   /**

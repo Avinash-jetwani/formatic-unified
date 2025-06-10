@@ -57,10 +57,20 @@ export class WebhooksService {
     // Send webhook setup confirmation email
     // For CLIENT users: send confirmation that webhook is pending approval
     // For SUPER_ADMIN users: send confirmation that webhook is auto-approved
-    this.logger.log(`Attempting to send webhook setup confirmation email to ${form.client.email} for webhook ${webhook.name} (${webhook.id})`);
-    this.logger.log(`User role: ${userRole}, Webhook admin approved: ${webhook.adminApproved}`);
+    this.logger.log(`🔍 WEBHOOK EMAIL DEBUG - Starting email process for webhook ${webhook.id}`);
+    this.logger.log(`📧 Email recipient: ${form.client.email}`);
+    this.logger.log(`👤 User role: ${userRole}, Webhook admin approved: ${webhook.adminApproved}`);
+    this.logger.log(`📝 Webhook data: ${JSON.stringify({
+      webhookName: webhook.name,
+      webhookId: webhook.id,
+      webhookUrl: webhook.url,
+      formTitle: form.title,
+      formId: form.id,
+      eventTypes: webhook.eventTypes
+    }, null, 2)}`);
     
     try {
+      this.logger.log(`🚀 Calling emailService.sendWebhookSetupConfirmation...`);
       await this.emailService.sendWebhookSetupConfirmation(
         {
           email: form.client.email,
