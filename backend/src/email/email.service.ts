@@ -75,7 +75,11 @@ export class EmailService {
   constructor(private mailerService: MailerService) {}
 
   private async sendEmail(to: string, subject: string, templateName: string, context: Record<string, any>): Promise<void> {
+    this.logger.log(`📧 Email Service - NODE_ENV: ${process.env.NODE_ENV}, isDev: ${this.isDev}`);
+    this.logger.log(`📧 Attempting to send email to: ${to}, subject: ${subject}, template: ${templateName}`);
+    
     if (this.isDev) {
+      this.logger.warn(`⚠️ Development mode detected - email will be logged instead of sent`);
       this.logEmailInDevelopment(to, subject, context);
       return;
     }
@@ -87,9 +91,9 @@ export class EmailService {
         template: `./${templateName}`,
         context,
       });
-      this.logger.log(`Email sent via SMTP to ${to}`);
+      this.logger.log(`✅ Email sent via SMTP to ${to}`);
     } catch (error) {
-      this.logger.error(`Failed to send email to ${to}:`, error);
+      this.logger.error(`❌ Failed to send email to ${to}:`, error);
       throw error;
     }
   }
