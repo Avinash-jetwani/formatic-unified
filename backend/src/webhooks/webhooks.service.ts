@@ -54,29 +54,33 @@ export class WebhooksService {
       },
     });
 
-    // Send webhook setup confirmation email (only for CLIENT users, not SUPER_ADMIN)
-    if (userRole === Role.CLIENT) {
-      try {
-        await this.emailService.sendWebhookSetupConfirmation(
-          {
-            email: form.client.email,
-            name: form.client.name,
-            id: form.client.id,
-          },
-          {
-            webhookName: webhook.name,
-            webhookId: webhook.id,
-            webhookUrl: webhook.url,
-            formTitle: form.title,
-            formId: form.id,
-            createdAt: webhook.createdAt,
-            eventTypes: webhook.eventTypes,
-          }
-        );
-      } catch (error) {
-        this.logger.error(`Failed to send webhook setup confirmation email: ${error.message}`, error.stack);
-        // Don't fail the webhook creation if email fails
-      }
+    // Send webhook setup confirmation email
+    // For CLIENT users: send confirmation that webhook is pending approval
+    // For SUPER_ADMIN users: send confirmation that webhook is auto-approved
+    this.logger.log(`Attempting to send webhook setup confirmation email to ${form.client.email} for webhook ${webhook.name} (${webhook.id})`);
+    this.logger.log(`User role: ${userRole}, Webhook admin approved: ${webhook.adminApproved}`);
+    
+    try {
+      await this.emailService.sendWebhookSetupConfirmation(
+        {
+          email: form.client.email,
+          name: form.client.name,
+          id: form.client.id,
+        },
+        {
+          webhookName: webhook.name,
+          webhookId: webhook.id,
+          webhookUrl: webhook.url,
+          formTitle: form.title,
+          formId: form.id,
+          createdAt: webhook.createdAt,
+          eventTypes: webhook.eventTypes,
+        }
+      );
+      this.logger.log(`✅ Webhook setup confirmation email sent successfully to ${form.client.email} for webhook ${webhook.id}`);
+    } catch (error) {
+      this.logger.error(`❌ Failed to send webhook setup confirmation email to ${form.client.email}: ${error.message}`, error.stack);
+      // Don't fail the webhook creation if email fails
     }
 
     return this.toResponseDto(webhook);
