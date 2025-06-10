@@ -14,6 +14,7 @@ export interface FormSubmissionEmailData {
   submittedBy?: string;
   submissionData: Record<string, any>;
   submissionDate: Date;
+  timezone?: string;
 }
 
 @Injectable()
@@ -92,16 +93,16 @@ export class EmailService {
       submissionId: submissionData.submissionId,
       submittedBy: submissionData.submittedBy || 'Anonymous',
       submissionDate: submissionData.submissionDate.toLocaleDateString('en-US', { 
-        timeZone: 'America/New_York',
         year: 'numeric',
         month: 'numeric', 
-        day: 'numeric'
+        day: 'numeric',
+        timeZone: submissionData.timezone || 'UTC'
       }),
       submissionTime: submissionData.submissionDate.toLocaleTimeString('en-US', {
-        timeZone: 'America/New_York',
         hour: 'numeric',
         minute: '2-digit',
-        hour12: true
+        hour12: true,
+        timeZone: submissionData.timezone || 'UTC'
       }),
       viewSubmissionUrl: `${this.frontendUrl}/dashboard/submissions/${submissionData.submissionId}`,
       formUrl: `${this.frontendUrl}/dashboard/forms/${submissionData.formId}`,

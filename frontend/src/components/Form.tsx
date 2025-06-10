@@ -466,6 +466,7 @@ export function Form({ form }: FormProps) {
         browser: getBrowser(),
         device: getDeviceType(),
         location: null, // We'll get this from the server side
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Capture user's timezone
         // If we already have a submissionId from file uploads, include it
         ...(submissionId ? { submissionId } : {})
       };

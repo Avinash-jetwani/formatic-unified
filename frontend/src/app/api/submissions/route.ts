@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
         browser: body.browser || request.headers.get('user-agent')?.split(' ')[0] || '',
         device: body.device || (request.headers.get('user-agent')?.includes('Mobile') ? 'mobile' : 'desktop'),
         location: body.location || null,
+        timezone: body.timezone || null,
       }),
     });
     

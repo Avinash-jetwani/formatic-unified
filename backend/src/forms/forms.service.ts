@@ -589,6 +589,7 @@ export class FormsService {
       browser,
       device,
       location,
+      timezone,
       // Any other fields would be caught here
       ...otherFields 
     } = submissionData;
@@ -611,7 +612,8 @@ export class FormsService {
         referrer,
         browser,
         device,
-        location
+        location,
+        timezone
       },
     });
 
@@ -684,6 +686,7 @@ export class FormsService {
           submittedBy: submittedBy,
           submissionData: submission.data as Record<string, any>,
           submissionDate: submission.createdAt,
+          timezone: submission.timezone,
         }
       );
     } catch (error) {

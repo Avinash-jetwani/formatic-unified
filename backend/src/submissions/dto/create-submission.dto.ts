@@ -36,4 +36,8 @@ export class CreateSubmissionDto {
     country?: string;
     city?: string;
   };
+  
+  @IsOptional()
+  @IsString()
+  timezone?: string;
 }

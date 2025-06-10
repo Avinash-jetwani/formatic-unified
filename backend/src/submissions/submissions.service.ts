@@ -49,6 +49,7 @@ export class SubmissionsService {
         browser: createSubmissionDto.browser,
         device: createSubmissionDto.device,
         location: createSubmissionDto.location,
+        timezone: createSubmissionDto.timezone,
       },
     });
 
@@ -65,8 +66,9 @@ export class SubmissionsService {
           formId: form.id,
           submissionId: submission.id,
           submittedBy: 'Anonymous', // Could be enhanced to capture user info
-                     submissionData: submission.data as Record<string, any>,
+          submissionData: submission.data as Record<string, any>,
           submissionDate: submission.createdAt,
+          timezone: submission.timezone,
         }
       );
     } catch (error) {

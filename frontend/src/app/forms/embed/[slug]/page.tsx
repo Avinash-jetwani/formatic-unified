@@ -514,7 +514,8 @@ const FormEmbedPage = () => {
         },
         data: {
           formId: form?.id,
-          data: formValues
+          data: formValues,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         }
       });
       

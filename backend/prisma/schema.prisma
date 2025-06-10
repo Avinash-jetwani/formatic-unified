@@ -91,6 +91,7 @@ model Submission {
   status            String                @default("new")
   statusUpdatedAt   DateTime?
   tags              String[]              @default([])
+  timezone          String?
   updatedAt         DateTime              @updatedAt
   userAgent         String?
   messages          Message[]
