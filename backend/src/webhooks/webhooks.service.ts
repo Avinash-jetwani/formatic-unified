@@ -1,5 +1,6 @@
 import { Injectable, Logger, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import { CreateWebhookDto } from './dto/create-webhook.dto';
 import { UpdateWebhookDto } from './dto/update-webhook.dto';
 import { TestWebhookDto } from './dto/test-webhook.dto';
@@ -14,12 +15,24 @@ import { IsOptional, IsObject, IsEnum } from 'class-validator';
 export class WebhooksService {
   private readonly logger = new Logger(WebhooksService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService
+  ) {}
 
   async create(formId: string, createWebhookDto: CreateWebhookDto, userId: string, userRole: Role): Promise<WebhookResponseDto> {
     // Check if form exists and user has access
     const form = await this.prisma.form.findUnique({
       where: { id: formId },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        }
+      }
     });
 
     if (!form) {
@@ -40,6 +53,31 @@ export class WebhooksService {
         adminApproved: userRole === Role.SUPER_ADMIN ? true : null,
       },
     });
+
+    // Send webhook setup confirmation email (only for CLIENT users, not SUPER_ADMIN)
+    if (userRole === Role.CLIENT) {
+      try {
+        await this.emailService.sendWebhookSetupConfirmation(
+          {
+            email: form.client.email,
+            name: form.client.name,
+            id: form.client.id,
+          },
+          {
+            webhookName: webhook.name,
+            webhookId: webhook.id,
+            webhookUrl: webhook.url,
+            formTitle: form.title,
+            formId: form.id,
+            createdAt: webhook.createdAt,
+            eventTypes: webhook.eventTypes,
+          }
+        );
+      } catch (error) {
+        this.logger.error(`Failed to send webhook setup confirmation email: ${error.message}`, error.stack);
+        // Don't fail the webhook creation if email fails
+      }
+    }
 
     return this.toResponseDto(webhook);
   }
@@ -167,7 +205,19 @@ export class WebhooksService {
   async testWebhook(id: string, testDto: TestWebhookDto, userId: string, userRole: Role): Promise<any> {
     const webhook = await this.prisma.webhook.findUnique({
       where: { id },
-      include: { form: true },
+      include: { 
+        form: {
+          include: {
+            client: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              }
+            }
+          }
+        }
+      },
     });
 
     if (!webhook) {
@@ -277,6 +327,34 @@ export class WebhooksService {
         }
       });
 
+              // Send test success email notification
+        try {
+          await this.emailService.sendWebhookTestNotification(
+            {
+              email: webhook.form.client.email,
+              name: webhook.form.client.name,
+              id: webhook.form.client.id,
+            },
+            {
+              webhookName: webhook.name,
+              webhookId: webhook.id,
+              webhookUrl: webhook.url,
+              formTitle: webhook.form.title,
+              formId: webhook.form.id,
+              createdAt: webhook.createdAt,
+              eventTypes: webhook.eventTypes,
+              success: true,
+              statusCode: response.status,
+              responseData: response.data,
+              errorMessage: undefined,
+              testDate: new Date(),
+            }
+          );
+        } catch (emailError) {
+          this.logger.error(`Failed to send webhook test success email: ${emailError.message}`, emailError.stack);
+          // Don't fail the test if email fails
+        }
+
       return {
         success: true,
         message: `Test webhook sent to ${webhook.url}`,
@@ -303,6 +381,34 @@ export class WebhooksService {
         }
       });
 
+      // Send test failure email notification
+      try {
+        await this.emailService.sendWebhookTestNotification(
+          {
+            email: webhook.form.client.email,
+            name: webhook.form.client.name,
+            id: webhook.form.client.id,
+          },
+          {
+            webhookName: webhook.name,
+            webhookId: webhook.id,
+            webhookUrl: webhook.url,
+            formTitle: webhook.form.title,
+            formId: webhook.form.id,
+            createdAt: webhook.createdAt,
+            eventTypes: webhook.eventTypes,
+            success: false,
+            statusCode: error.response?.status,
+            responseData: undefined,
+            errorMessage: error.message,
+            testDate: new Date(),
+          }
+        );
+      } catch (emailError) {
+        this.logger.error(`Failed to send webhook test failure email: ${emailError.message}`, emailError.stack);
+        // Don't fail the test if email fails
+      }
+
       return {
         success: false,
         message: `Failed to send test webhook: ${error.message}`,
@@ -323,12 +429,30 @@ export class WebhooksService {
 
     const webhook = await this.prisma.webhook.findUnique({
       where: { id },
-      include: { form: true },
+      include: { 
+        form: {
+          include: {
+            client: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              }
+            }
+          }
+        }
+      },
     });
 
     if (!webhook) {
       throw new NotFoundException(`Webhook with ID ${id} not found`);
     }
+
+    // Get admin user info for the email
+    const adminUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true }
+    });
 
     const updatedWebhook = await this.prisma.webhook.update({
       where: { id },
@@ -337,6 +461,32 @@ export class WebhooksService {
         adminNotes: approved ? 'Approved by admin' : 'Rejected by admin',
       },
     });
+
+    // Send approval/rejection email to webhook owner
+    try {
+      await this.emailService.sendWebhookApprovalNotification(
+        {
+          email: webhook.form.client.email,
+          name: webhook.form.client.name,
+          id: webhook.form.client.id,
+        },
+        {
+          webhookName: webhook.name,
+          webhookId: webhook.id,
+          webhookUrl: webhook.url,
+          formTitle: webhook.form.title,
+          formId: webhook.form.id,
+          createdAt: webhook.createdAt,
+          eventTypes: webhook.eventTypes,
+          approved: approved,
+          adminNotes: approved ? 'Your webhook has been approved and is now active.' : 'Your webhook has been rejected.',
+          adminName: adminUser?.name || 'Administrator',
+        }
+      );
+    } catch (error) {
+      this.logger.error(`Failed to send webhook approval notification email: ${error.message}`, error.stack);
+      // Don't fail the approval if email fails
+    }
 
     this.logger.log(`Webhook ${id} ${approved ? 'approved' : 'rejected'} by admin ${userId}`);
 
