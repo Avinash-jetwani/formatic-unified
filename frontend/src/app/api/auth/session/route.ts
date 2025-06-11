@@ -1,9 +1,4 @@
-export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,10 +10,10 @@ export async function GET(request: NextRequest) {
       null;
 
     if (!authToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ user: null }, { status: 200 });
     }
 
-    // Call the backend profile endpoint to get user data
+    // Call the backend profile endpoint to validate the token
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
     const response = await fetch(`${backendUrl}/api/auth/profile`, {
       headers: {
@@ -28,13 +23,23 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ user: null }, { status: 200 });
     }
 
     const userData = await response.json();
-    return NextResponse.json(userData);
+    
+    // Return session data in NextAuth format
+    return NextResponse.json({
+      user: {
+        id: userData.id,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role,
+      },
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+    });
   } catch (error) {
-    console.error('Me endpoint error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Session endpoint error:', error);
+    return NextResponse.json({ user: null }, { status: 200 });
   }
 } 

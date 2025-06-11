@@ -2,12 +2,26 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  // Allow all NextAuth API routes to pass through without modification
-  if (request.nextUrl.pathname.startsWith('/api/auth/')) {
+  // Handle specific auth routes that should be processed by Next.js
+  const authRoutesToHandle = [
+    '/api/auth/session',
+    '/api/auth/me', 
+    '/api/auth/_log',
+    '/api/auth/debug'
+  ];
+
+  if (authRoutesToHandle.some(route => request.nextUrl.pathname === route)) {
+    // These routes should be handled by Next.js API routes
     return NextResponse.next()
   }
 
-  // For all other API routes, continue with normal processing
+  // All other /api/auth/* routes should be forwarded to backend
+  if (request.nextUrl.pathname.startsWith('/api/auth/')) {
+    // Forward to backend (this will be handled by Nginx or rewrites)
+    return NextResponse.next()
+  }
+
+  // For all other routes, continue with normal processing
   return NextResponse.next()
 }
 

@@ -53,24 +53,50 @@ export class SubmissionsService {
       },
     });
 
-    // Send email notification to form owner
+    // Send email notifications
     try {
+      // Prepare notification data once
+      const notificationData = {
+        formTitle: form.title,
+        formId: form.id,
+        submissionId: submission.id,
+        submittedBy: 'Anonymous', // Could be enhanced to capture user info
+        submissionData: submission.data as Record<string, any>,
+        submissionDate: submission.createdAt,
+        timezone: submission.timezone,
+      };
+
+      // Always send to form owner
       await this.emailService.sendFormSubmissionNotification(
         {
           email: form.client.email,
           name: form.client.name,
           id: form.client.id,
         },
-        {
-          formTitle: form.title,
-          formId: form.id,
-          submissionId: submission.id,
-          submittedBy: 'Anonymous', // Could be enhanced to capture user info
-          submissionData: submission.data as Record<string, any>,
-          submissionDate: submission.createdAt,
-          timezone: submission.timezone,
-        }
+        notificationData
       );
+      
+      // Send to additional notification emails if configured and email notifications are enabled
+      if (form.emailNotifications && form.notificationEmails && form.notificationEmails.length > 0) {
+        this.logger.log(`Sending form submission notifications to ${form.notificationEmails.length} additional recipients`);
+        
+        for (const notificationEmail of form.notificationEmails) {
+          try {
+            await this.emailService.sendFormSubmissionNotification(
+              {
+                email: notificationEmail,
+                name: 'Form Recipient', // Default name for additional recipients
+                id: 'notification-recipient',
+              },
+              notificationData
+            );
+            this.logger.log(`Notification sent to: ${notificationEmail}`);
+          } catch (emailError) {
+            this.logger.error(`Failed to send notification to ${notificationEmail}: ${emailError.message}`);
+            // Continue sending to other recipients even if one fails
+          }
+        }
+      }
     } catch (error) {
       this.logger.error(`Failed to send form submission notification: ${error.message}`, error.stack);
       // Don't fail the submission if email fails
