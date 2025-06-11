@@ -946,10 +946,20 @@ const FormCreatePage: React.FC = () => {
                       <Label htmlFor="notificationEmails" className="text-sm">Notification Recipients</Label>
                       <Textarea
                         id="notificationEmails"
-                        placeholder="Enter email addresses separated by commas"
+                        placeholder="Enter email addresses, one per line or separated by commas"
                         className="mt-1"
                         value={notificationEmails.join(', ')}
-                        onChange={(e) => setNotificationEmails(e.target.value.split(',').map(email => email.trim()).filter(Boolean))}
+                        onChange={(e) => {
+                          // Handle both comma-separated and newline-separated emails
+                          const input = e.target.value;
+                          let emails = [];
+                          if (input.includes('\n')) {
+                            emails = input.split('\n').map(email => email.trim()).filter(Boolean);
+                          } else {
+                            emails = input.split(',').map(email => email.trim()).filter(Boolean);
+                          }
+                          setNotificationEmails(emails);
+                        }}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         These email addresses will receive notifications when the form is submitted.

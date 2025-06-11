@@ -291,7 +291,13 @@ const FormEditPage = () => {
       setAccessPassword(data.accessPassword || '');
       setAllowedEmails(data.allowedEmails || []);
       setEmailNotifications(data.emailNotifications || false);
-      setNotificationEmails(data.notificationEmails || []);
+      // Handle notification emails - parse any comma-separated strings into proper array
+      const cleanNotificationEmails = (data.notificationEmails || []).flatMap(email => 
+        typeof email === 'string' && email.includes(',') 
+          ? email.split(',').map(e => e.trim()).filter(Boolean)
+          : [email]
+      ).filter(Boolean);
+      setNotificationEmails(cleanNotificationEmails);
       setNotificationType(data.notificationType || 'all');
     } catch (error) {
       console.error('Failed to load form:', error);
@@ -1900,7 +1906,7 @@ const FormEditPage = () => {
                                   id="notificationEmails"
                                   placeholder="Enter email addresses, one per line"
                                   value={notificationEmails.join('\n')}
-                                  onChange={(e) => setNotificationEmails(e.target.value.split('\n').filter(Boolean))}
+                                  onChange={(e) => setNotificationEmails(e.target.value.split('\n').map(email => email.trim()).filter(Boolean))}
                                   className="mt-1 bg-gray-700 border-gray-600 text-white"
                                 />
                               </div>
