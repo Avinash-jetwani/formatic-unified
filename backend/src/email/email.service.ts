@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
+import { PrismaService } from '../prisma/prisma.service';
 
 // Force production mode for email sending - deployment trigger
 export interface EmailUser {
@@ -74,14 +75,26 @@ export class EmailService {
   private readonly appName = process.env.APP_NAME || 'Datizmo';
   private readonly frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-  constructor(private mailerService: MailerService) {}
+  constructor(
+    private mailerService: MailerService,
+    private prisma: PrismaService
+  ) {}
 
-  private async sendEmail(to: string, subject: string, templateName: string, context: Record<string, any>): Promise<void> {
+  private async sendEmail(to: string, subject: string, templateName: string, context: Record<string, any>, checkUserPreferences: boolean = true): Promise<void> {
     this.logger.log(`📧 Email Service - NODE_ENV: ${process.env.NODE_ENV}, isDev: ${this.isDev}`);
     this.logger.log(`📧 Attempting to send email to: ${to}, subject: ${subject}, template: ${templateName}`);
     this.logger.log(`🔧 SMTP_HOST: ${process.env.SMTP_HOST ? 'configured' : 'not configured'}`);
     this.logger.log(`🔧 MAIL_HOST: ${process.env.MAIL_HOST ? 'configured' : 'not configured'}`);
     this.logger.log(`🔧 MAIL_USER: ${process.env.MAIL_USER ? 'configured' : 'not configured'}`);
+    
+    // Check user email preferences if enabled
+    if (checkUserPreferences) {
+      const canSendEmail = await this.checkEmailPreferences(to, templateName);
+      if (!canSendEmail) {
+        this.logger.log(`🚫 Email sending blocked by user preferences: ${to}, template: ${templateName}`);
+        return;
+      }
+    }
     
     if (this.isDev) {
       this.logger.warn(`⚠️ Development mode detected - email will be logged instead of sent`);
@@ -483,6 +496,76 @@ export class EmailService {
       frontendUrl: this.frontendUrl,
       ...context,
     });
+  }
+
+  /**
+   * Check user email preferences to determine if email should be sent
+   */
+  private async checkEmailPreferences(email: string, templateName: string): Promise<boolean> {
+    try {
+      // Get user by email
+      const user = await this.prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          emailNotificationsEnabled: true,
+          securityNotifications: true,
+          accountUpdates: true,
+          webhookNotifications: true,
+          productUpdates: true,
+          marketingEmails: true,
+          weeklyReports: true,
+        }
+      });
+
+      if (!user) {
+        // If user not found, allow email (might be admin notifications, etc.)
+        this.logger.log(`🔍 User not found for email ${email}, allowing email`);
+        return true;
+      }
+
+      // Check master toggle first
+      if (!user.emailNotificationsEnabled) {
+        this.logger.log(`🚫 Master email toggle disabled for user ${email}`);
+        return false;
+      }
+
+      // Check specific email type preferences
+      switch (templateName) {
+        case 'password-reset':
+        case 'email-verification':
+          return user.securityNotifications;
+        
+        case 'welcome':
+        case 'admin-notification':
+          return user.accountUpdates;
+        
+        case 'webhook-setup-confirmation':
+        case 'webhook-approval':
+        case 'webhook-test-result':
+        case 'webhook-failure-alert':
+        case 'webhook-performance-report':
+          return user.webhookNotifications;
+        
+        case 'product-announcement':
+          return user.productUpdates;
+        
+        case 'marketing':
+          return user.marketingEmails;
+        
+        case 'weekly-report':
+          return user.weeklyReports;
+        
+        case 'form-submission':
+        default:
+          // For form submissions and unknown templates, check if user exists and has master toggle
+          return user.emailNotificationsEnabled;
+      }
+    } catch (error) {
+      this.logger.error(`Error checking email preferences for ${email}:`, error);
+      // If error checking preferences, allow email to be safe
+      return true;
+    }
   }
 
   /**

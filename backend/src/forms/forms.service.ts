@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { CreateFormDto } from './dto/create-form.dto';
 import { UpdateFormDto } from './dto/update-form.dto';
+import { UpdateFormEmailPreferencesDto } from './dto/update-form-email-preferences.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateFormFieldDto } from './dto/create-form-field.dto';
 import { UpdateFormFieldDto } from './dto/update-form-field.dto';
@@ -809,5 +810,45 @@ export class FormsService {
     } catch (error) {
       this.logger.error(`Error triggering form webhooks: ${error.message}`, error.stack);
     }
+  }
+
+  async getFormEmailPreferences(formId: string, userId: string, userRole: Role) {
+    // Check if form exists and user has permission
+    const form = await this.findOne(formId, userId, userRole);
+
+    return {
+      id: form.id,
+      title: form.title,
+      emailNotifications: form.emailNotifications,
+      webhookNotificationsEnabled: form.webhookNotificationsEnabled,
+      formAnalyticsReports: form.formAnalyticsReports,
+      securityAlerts: form.securityAlerts,
+    };
+  }
+
+  async updateFormEmailPreferences(
+    formId: string,
+    updateFormEmailPreferencesDto: UpdateFormEmailPreferencesDto,
+    userId: string,
+    userRole: Role
+  ) {
+    // Check if form exists and user has permission
+    await this.findOne(formId, userId, userRole);
+
+    // Update form email preferences
+    const updatedForm = await this.prisma.form.update({
+      where: { id: formId },
+      data: updateFormEmailPreferencesDto,
+      select: {
+        id: true,
+        title: true,
+        emailNotifications: true,
+        webhookNotificationsEnabled: true,
+        formAnalyticsReports: true,
+        securityAlerts: true,
+      }
+    });
+
+    return updatedForm;
   }
 }

@@ -1,8 +1,10 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateEmailPreferencesDto } from './dto/update-email-preferences.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import { Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -367,5 +369,76 @@ export class UsersService {
     }
     
     return user;
+  }
+
+  async getEmailPreferences(userId: string, requestingUserId: string, requestingUserRole: Role) {
+    // Check permissions: users can only access their own preferences, super admins can access anyone's
+    if (userId !== requestingUserId && requestingUserRole !== Role.SUPER_ADMIN) {
+      throw new ForbiddenException('You can only access your own email preferences');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        emailNotificationsEnabled: true,
+        securityNotifications: true,
+        accountUpdates: true,
+        webhookNotifications: true,
+        productUpdates: true,
+        marketingEmails: true,
+        weeklyReports: true,
+      }
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    return user;
+  }
+
+  async updateEmailPreferences(
+    userId: string, 
+    updateEmailPreferencesDto: UpdateEmailPreferencesDto,
+    requestingUserId: string,
+    requestingUserRole: Role
+  ) {
+    // Check permissions: users can only update their own preferences, super admins can update anyone's
+    if (userId !== requestingUserId && requestingUserRole !== Role.SUPER_ADMIN) {
+      throw new ForbiddenException('You can only update your own email preferences');
+    }
+
+    // Check if user exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true }
+    });
+
+    if (!existingUser) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    // Update email preferences
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: updateEmailPreferencesDto,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        emailNotificationsEnabled: true,
+        securityNotifications: true,
+        accountUpdates: true,
+        webhookNotifications: true,
+        productUpdates: true,
+        marketingEmails: true,
+        weeklyReports: true,
+      }
+    });
+
+    return updatedUser;
   }
 }

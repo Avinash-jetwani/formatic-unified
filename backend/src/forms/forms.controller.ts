@@ -18,6 +18,7 @@ import { FormsService } from './forms.service';
 import { FormAccessService } from './form-access.service';
 import { CreateFormDto } from './dto/create-form.dto';
 import { UpdateFormDto } from './dto/update-form.dto';
+import { UpdateFormEmailPreferencesDto } from './dto/update-form-email-preferences.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -181,5 +182,21 @@ export class FormsController {
       
       throw new BadRequestException('Failed to submit form. Please try again later.');
     }
+  }
+
+  @Get(':id/email-preferences')
+  @UseGuards(JwtAuthGuard)
+  getFormEmailPreferences(@Param('id') id: string, @Request() req) {
+    return this.formsService.getFormEmailPreferences(id, req.user.id, req.user.role);
+  }
+
+  @Patch(':id/email-preferences')
+  @UseGuards(JwtAuthGuard)
+  updateFormEmailPreferences(
+    @Param('id') id: string,
+    @Body() updateFormEmailPreferencesDto: UpdateFormEmailPreferencesDto,
+    @Request() req
+  ) {
+    return this.formsService.updateFormEmailPreferences(id, updateFormEmailPreferencesDto, req.user.id, req.user.role);
   }
 }

@@ -22,6 +22,16 @@ model User {
   website             String?
   resetToken          String?
   resetTokenExpires   DateTime?
+  
+  // Email Notification Preferences
+  emailNotificationsEnabled Boolean @default(true)  // Master toggle
+  securityNotifications    Boolean @default(true)  // Login attempts, password changes
+  accountUpdates           Boolean @default(true)  // Profile changes, subscription changes
+  webhookNotifications     Boolean @default(true)  // All webhook-related emails
+  productUpdates           Boolean @default(true)  // Product announcements and updates
+  marketingEmails          Boolean @default(false) // Optional marketing communications
+  weeklyReports            Boolean @default(true)  // Weekly activity summaries
+  
   forms               Form[]
   webhooks            Webhook[]
   deactivatedWebhooks Webhook[]  @relation("DeactivatedWebhooks")
@@ -46,7 +56,10 @@ model Form {
   accessRestriction  String?               @default("none")
   allowedEmails      String[]              @default([])
   consentText        String?               @default("I consent to having this website store my submitted information.")
-  emailNotifications Boolean               @default(false)
+  emailNotifications Boolean               @default(true)
+  webhookNotificationsEnabled Boolean     @default(true)  // Form-specific webhook emails
+  formAnalyticsReports Boolean             @default(true)  // Weekly/monthly form reports
+  securityAlerts       Boolean             @default(true)  // Spam/security alerts for this form
   expirationDate     DateTime?
   maxSubmissions     Int?
   notificationEmails String[]              @default([])
