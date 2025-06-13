@@ -158,9 +158,18 @@ export class EmailService {
    */
   async sendFormSubmissionNotification(
     formOwner: EmailUser,
-    submissionData: FormSubmissionEmailData
+    submissionData: FormSubmissionEmailData,
+    bypassUserPreferences: boolean = false
   ): Promise<void> {
     const subject = `🎉 New submission for "${submissionData.formTitle}"`;
+    
+    // Determine whether to check user preferences
+    // Form owners should always respect their preferences, additional recipients should bypass them
+    const checkPreferences = !bypassUserPreferences;
+    
+    this.logger.log(`📧 Sending form submission notification to: ${formOwner.email}`);
+    this.logger.log(`🔒 Checking user preferences: ${checkPreferences}`);
+    this.logger.log(`👤 Recipient type: ${bypassUserPreferences ? 'Additional notification recipient' : 'Form owner'}`);
     
     await this.sendEmail(formOwner.email, subject, 'form-submission', {
       ownerName: formOwner.name,
@@ -184,7 +193,7 @@ export class EmailService {
       formUrl: `${this.frontendUrl}/dashboard/forms/${submissionData.formId}`,
       dashboardUrl: `${this.frontendUrl}/dashboard`,
       submissionData: submissionData.submissionData,
-    });
+    }, checkPreferences);
   }
 
   /**
@@ -222,8 +231,8 @@ export class EmailService {
     this.logger.log(`🚀 Calling sendEmail with template: webhook-setup-confirmation`);
     
     try {
-      await this.sendEmail(user.email, subject, 'webhook-setup-confirmation', emailContext);
-      this.logger.log(`✅ sendWebhookSetupConfirmation completed successfully`);
+    await this.sendEmail(user.email, subject, 'webhook-setup-confirmation', emailContext);
+    this.logger.log(`✅ sendWebhookSetupConfirmation completed successfully`);
     } catch (error) {
       this.logger.error(`❌ sendWebhookSetupConfirmation failed: ${error.message}`, error.stack);
       throw error; // Re-throw to ensure the error is properly handled by the calling service
@@ -501,8 +510,15 @@ export class EmailService {
   /**
    * Check user email preferences to determine if email should be sent
    */
-  private async checkEmailPreferences(email: string, templateName: string): Promise<boolean> {
+  private async checkEmailPreferences(email: string, templateName: string, bypassPreferences: boolean = false): Promise<boolean> {
     try {
+      // If bypassPreferences is true (for form submission notifications to additional recipients),
+      // allow the email regardless of user preferences
+      if (bypassPreferences) {
+        this.logger.log(`🔓 Bypassing user preferences for ${email} (${templateName})`);
+        return true;
+      }
+
       // Get user by email
       const user = await this.prisma.user.findUnique({
         where: { email },
@@ -519,7 +535,7 @@ export class EmailService {
       });
 
       if (!user) {
-        // If user not found, allow email (might be admin notifications, etc.)
+        // If user not found, allow email (might be admin notifications, additional form recipients, etc.)
         this.logger.log(`🔍 User not found for email ${email}, allowing email`);
         return true;
       }

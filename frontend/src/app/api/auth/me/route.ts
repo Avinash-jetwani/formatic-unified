@@ -13,20 +13,20 @@ export async function GET(request: NextRequest) {
       request.cookies.get('auth_token')?.value ||
       request.headers.get('authorization')?.replace('Bearer ', '') ||
       null;
-
+      
     if (!authToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
+    
     // Call the backend profile endpoint to get user data
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
     const response = await fetch(`${backendUrl}/api/auth/profile`, {
-      headers: {
-        'Authorization': `Bearer ${authToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
     if (!response.ok) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

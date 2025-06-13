@@ -55,6 +55,10 @@ export class SubmissionsService {
 
     // Send email notifications
     try {
+      this.logger.log(`📧 Processing email notifications for form submission ${submission.id}`);
+      this.logger.log(`Form email notifications enabled: ${form.emailNotifications}`);
+      this.logger.log(`Additional notification emails: ${JSON.stringify(form.notificationEmails)}`);
+      
       // Prepare notification data once
       const notificationData = {
         formTitle: form.title,
@@ -66,39 +70,51 @@ export class SubmissionsService {
         timezone: submission.timezone,
       };
 
-      // Always send to form owner
+      // Always send to form owner (respects user preferences)
+      this.logger.log(`📨 Sending form submission notification to form owner: ${form.client.email}`);
       await this.emailService.sendFormSubmissionNotification(
         {
           email: form.client.email,
           name: form.client.name,
           id: form.client.id,
         },
-        notificationData
+        notificationData,
+        false // Don't bypass preferences for form owner
       );
+      this.logger.log(`✅ Form owner notification sent successfully to: ${form.client.email}`);
       
       // Send to additional notification emails if configured and email notifications are enabled
       if (form.emailNotifications && form.notificationEmails && form.notificationEmails.length > 0) {
-        this.logger.log(`Sending form submission notifications to ${form.notificationEmails.length} additional recipients`);
+        this.logger.log(`📬 Form has email notifications enabled with ${form.notificationEmails.length} additional recipients`);
+        this.logger.log(`📧 Additional recipients: ${form.notificationEmails.join(', ')}`);
         
         for (const notificationEmail of form.notificationEmails) {
           try {
+            this.logger.log(`📨 Sending notification to additional recipient: ${notificationEmail}`);
             await this.emailService.sendFormSubmissionNotification(
               {
                 email: notificationEmail,
                 name: 'Form Recipient', // Default name for additional recipients
                 id: 'notification-recipient',
               },
-              notificationData
+              notificationData,
+              true // Bypass user preferences for additional recipients
             );
-            this.logger.log(`Notification sent to: ${notificationEmail}`);
+            this.logger.log(`✅ Successfully sent notification to: ${notificationEmail}`);
           } catch (emailError) {
-            this.logger.error(`Failed to send notification to ${notificationEmail}: ${emailError.message}`);
+            this.logger.error(`❌ Failed to send notification to ${notificationEmail}: ${emailError.message}`, emailError.stack);
             // Continue sending to other recipients even if one fails
           }
         }
+      } else {
+        if (!form.emailNotifications) {
+          this.logger.log(`❌ Email notifications disabled for form ${form.id} (${form.title})`);
+        } else if (!form.notificationEmails || form.notificationEmails.length === 0) {
+          this.logger.log(`❌ No additional notification emails configured for form ${form.id} (${form.title})`);
+        }
       }
     } catch (error) {
-      this.logger.error(`Failed to send form submission notification: ${error.message}`, error.stack);
+      this.logger.error(`❌ Failed to send form submission notification: ${error.message}`, error.stack);
       // Don't fail the submission if email fails
     }
 
