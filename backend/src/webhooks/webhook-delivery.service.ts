@@ -27,7 +27,11 @@ export class WebhookDeliveryService {
       const webhook = await this.prisma.webhook.findUnique({
         where: { id: webhookId },
         include: {
-          form: true
+          form: {
+            include: {
+              fields: true
+            }
+          }
         }
       });
       
@@ -51,13 +55,23 @@ export class WebhookDeliveryService {
         // For submission events, include submission data
         const submission = await this.prisma.submission.findUnique({
           where: { id: submissionId },
-          include: { form: true }
+          include: { 
+            form: {
+              include: {
+                fields: true
+              }
+            }
+          }
         });
         
         if (!submission) {
           this.logger.debug(`Submission ${submissionId} not found - skipping delivery`);
           return;
         }
+        
+        // Transform field IDs to labels and then apply filters
+        const transformedData = this.transformFieldIdsToLabels(submission.data, submission.form.fields);
+        const filteredData = this.filterSubmissionData(transformedData, webhook, submission.form.fields);
         
         payload = {
           ...payload,
@@ -70,7 +84,7 @@ export class WebhookDeliveryService {
             createdAt: submission.createdAt,
             updatedAt: submission.updatedAt,
             status: submission.status,
-            data: this.filterSubmissionData(submission.data, webhook)
+            data: filteredData
           }
         };
       } 
@@ -112,18 +126,69 @@ export class WebhookDeliveryService {
   }
   
   /**
-   * Filter submission data based on webhook include/exclude fields
+   * Transform field IDs to labels in submission data
    */
-  private filterSubmissionData(data: any, webhook: any) {
+  private transformFieldIdsToLabels(data: any, formFields: any[]): any {
+    if (!data || typeof data !== 'object') return {};
+    
+    const transformedData: any = {};
+    
+    Object.entries(data).forEach(([key, value]) => {
+      // Try to find the field definition from the form fields
+      const field = formFields.find(f => f.id === key);
+      
+      let label: string;
+      if (field?.label) {
+        // Use the real field label from the form definition
+        label = field.label;
+      } else {
+        // Fallback to formatting the key if no field definition found
+        if (key.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          // For UUID keys, use a generic label
+          label = 'Response';
+        } else {
+          // For regular keys, format them nicely
+          label = key
+            .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+            .replace(/[-_]/g, ' ') // Replace dashes and underscores with spaces
+            .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize first letter of each word
+            .trim();
+        }
+      }
+      
+      transformedData[label] = value;
+    });
+    
+    return transformedData;
+  }
+  
+  /**
+   * Filter submission data based on webhook include/exclude fields
+   * Now works with field labels instead of field IDs
+   */
+  private filterSubmissionData(data: any, webhook: any, formFields: any[]): any {
     if (!data) return {};
     
     // Create a copy of the data
     const filteredData = { ...data };
     
+    // Helper function to convert field ID to label (for backward compatibility with existing webhook configurations)
+    const getFieldLabel = (fieldIdOrLabel: string): string => {
+      // First check if it's already a label (direct match)
+      if (filteredData[fieldIdOrLabel] !== undefined) {
+        return fieldIdOrLabel;
+      }
+      
+      // Otherwise, try to find the field by ID and return its label
+      const field = formFields.find(f => f.id === fieldIdOrLabel);
+      return field?.label || fieldIdOrLabel;
+    };
+    
     // Apply include fields filter
     if (webhook.includeFields && webhook.includeFields.length > 0) {
+      const keysToKeep = webhook.includeFields.map(getFieldLabel);
       Object.keys(filteredData).forEach(key => {
-        if (!webhook.includeFields.includes(key)) {
+        if (!keysToKeep.includes(key)) {
           delete filteredData[key];
         }
       });
@@ -131,8 +196,9 @@ export class WebhookDeliveryService {
     
     // Apply exclude fields filter
     if (webhook.excludeFields && webhook.excludeFields.length > 0) {
-      webhook.excludeFields.forEach(field => {
-        delete filteredData[field];
+      const keysToRemove = webhook.excludeFields.map(getFieldLabel);
+      keysToRemove.forEach(key => {
+        delete filteredData[key];
       });
     }
     
